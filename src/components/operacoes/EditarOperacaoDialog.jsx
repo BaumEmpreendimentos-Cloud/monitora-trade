@@ -7,24 +7,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
 const OPERACOES = ['COMPRA', 'VENDA'];
+const isOption = (c) => c === 'CALL' || c === 'PUT';
 
 export default function EditarOperacaoDialog({ operacao, onClose, onSubmit }) {
   const [ativo, setAtivo] = useState('');
+  const [ativoBase, setAtivoBase] = useState('');
   const [categoria, setCategoria] = useState('ACAO');
   const [operacaoField, setOperacaoField] = useState('COMPRA');
   const [quantidade, setQuantidade] = useState('');
   const [preco, setPreco] = useState('');
   const [dataAbertura, setDataAbertura] = useState('');
+  const [strike, setStrike] = useState('');
+  const [vencimento, setVencimento] = useState('');
   const [err, setErr] = useState('');
 
   useEffect(() => {
     if (operacao) {
       setAtivo(operacao.ativo || '');
+      setAtivoBase(operacao.ativo_base || '');
       setCategoria(operacao.categoria || 'ACAO');
       setOperacaoField(operacao.operacao || 'COMPRA');
       setQuantidade(String(operacao.quantidade ?? ''));
       setPreco(String(operacao.preco_entrada ?? ''));
       setDataAbertura(operacao.data_abertura ? operacao.data_abertura.slice(0, 10) : new Date().toISOString().slice(0, 10));
+      setStrike(operacao.strike != null ? String(operacao.strike) : '');
+      setVencimento(operacao.vencimento ? operacao.vencimento.slice(0, 10) : '');
       setErr('');
     }
   }, [operacao]);
@@ -37,7 +44,17 @@ export default function EditarOperacaoDialog({ operacao, onClose, onSubmit }) {
     if (!q || q <= 0) return setErr('Quantidade inválida.');
     if (!p || p <= 0) return setErr('Preço de entrada inválido.');
     if (!dataAbertura) return setErr('Data de abertura inválida.');
-    onSubmit({ ativo: a, categoria, operacao: operacaoField, quantidade: q, precoEntrada: p, dataAbertura });
+    const opt = isOption(categoria);
+    let strikeVal, vencVal, baseVal;
+    if (opt) {
+      strikeVal = Number(strike);
+      if (!strikeVal || strikeVal <= 0) return setErr('Strike inválido para opção.');
+      if (!vencimento) return setErr('Data de vencimento obrigatória para opção.');
+      vencVal = vencimento;
+      baseVal = ativoBase.trim().toUpperCase();
+      if (!baseVal) return setErr('Ativo base (underlying) obrigatório para opção.');
+    }
+    onSubmit({ ativo: a, ativo_base: baseVal, categoria, operacao: operacaoField, quantidade: q, precoEntrada: p, dataAbertura, strike: strikeVal, vencimento: vencVal });
   };
 
   return (
@@ -49,6 +66,12 @@ export default function EditarOperacaoDialog({ operacao, onClose, onSubmit }) {
             <Label>Ativo</Label>
             <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} className="uppercase" maxLength={8} />
           </div>
+          {isOption(categoria) && (
+            <div>
+              <Label>Ativo base (underlying)</Label>
+              <Input value={ativoBase} onChange={(e) => setAtivoBase(e.target.value.toUpperCase())} className="uppercase" maxLength={8} />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
@@ -65,6 +88,12 @@ export default function EditarOperacaoDialog({ operacao, onClose, onSubmit }) {
               </Select>
             </div>
           </div>
+          {isOption(categoria) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Strike</Label><Input type="number" step="0.01" value={strike} onChange={(e) => setStrike(e.target.value)} /></div>
+              <div><Label>Vencimento</Label><Input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} /></div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Quantidade</Label><Input type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} /></div>
             <div><Label>Preço de Entrada</Label><Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(e.target.value)} /></div>

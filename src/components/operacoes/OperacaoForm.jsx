@@ -7,23 +7,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
 const OPERACOES = ['COMPRA', 'VENDA'];
+const isOption = (c) => c === 'CALL' || c === 'PUT';
 
 export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
   const [identificador, setIdentificador] = useState('');
   const [ativo, setAtivo] = useState('');
+  const [ativoBase, setAtivoBase] = useState('');
   const [categoria, setCategoria] = useState('ACAO');
   const [operacao, setOperacao] = useState('COMPRA');
   const [quantidade, setQuantidade] = useState('');
   const [preco, setPreco] = useState('');
   const [dataAbertura, setDataAbertura] = useState('');
+  const [strike, setStrike] = useState('');
+  const [vencimento, setVencimento] = useState('');
   const [err, setErr] = useState('');
 
   useEffect(() => {
     if (open) {
-      setIdentificador(''); setAtivo(''); setCategoria('ACAO');
+      setIdentificador(''); setAtivo(''); setAtivoBase(''); setCategoria('ACAO');
       setOperacao('COMPRA'); setQuantidade(''); setPreco('');
       setDataAbertura(new Date().toISOString().slice(0, 10));
-      setErr('');
+      setStrike(''); setVencimento(''); setErr('');
     }
   }, [open]);
 
@@ -35,8 +39,18 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
     if (!q || q <= 0) return setErr('Quantidade inválida.');
     if (!p || p <= 0) return setErr('Preço de entrada inválido.');
     if (!dataAbertura) return setErr('Data de abertura inválida.');
+    const opt = isOption(categoria);
+    let strikeVal, vencVal, baseVal;
+    if (opt) {
+      strikeVal = Number(strike);
+      if (!strikeVal || strikeVal <= 0) return setErr('Strike inválido para opção.');
+      if (!vencimento) return setErr('Data de vencimento obrigatória para opção.');
+      vencVal = vencimento;
+      baseVal = ativoBase.trim().toUpperCase();
+      if (!baseVal) return setErr('Ativo base (underlying) obrigatório para opção.');
+    }
     const nome = identificador.trim() || `OP-${(grupos.length || 0) + 1}`;
-    onSubmit({ identificador: nome, ativo: a, categoria, operacao, quantidade: q, precoEntrada: p, dataAbertura });
+    onSubmit({ identificador: nome, ativo: a, ativo_base: baseVal, categoria, operacao, quantidade: q, precoEntrada: p, dataAbertura, strike: strikeVal, vencimento: vencVal });
   };
 
   return (
@@ -60,6 +74,12 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
             <Label>Ativo</Label>
             <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} placeholder="PETR4" className="uppercase" maxLength={8} />
           </div>
+          {isOption(categoria) && (
+            <div>
+              <Label>Ativo base (underlying)</Label>
+              <Input value={ativoBase} onChange={(e) => setAtivoBase(e.target.value.toUpperCase())} placeholder="PETR4" className="uppercase" maxLength={8} />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
@@ -80,6 +100,18 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
               </Select>
             </div>
           </div>
+          {isOption(categoria) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Strike</Label>
+                <Input type="number" step="0.01" value={strike} onChange={(e) => setStrike(e.target.value)} placeholder="0,00" />
+              </div>
+              <div>
+                <Label>Vencimento</Label>
+                <Input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} />
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Quantidade</Label>

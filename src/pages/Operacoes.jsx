@@ -7,11 +7,13 @@ import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
 import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
-import { calcValorInicial, calcResultadoValor, calcResultadoPct } from '@/lib/operacoes';
+import MapaCalor from '@/components/operacoes/MapaCalor';
+import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
+const isOption = (c) => c === 'CALL' || c === 'PUT';
 
 export default function Operacoes() {
   const [grupos, setGrupos] = useState([]);
@@ -23,6 +25,7 @@ export default function Operacoes() {
   const [encerrar, setEncerrar] = useState(null);
   const [editarOp, setEditarOp] = useState(null);
   const [editarGrupo, setEditarGrupo] = useState(null);
+  const [selectedOp, setSelectedOp] = useState(null);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -41,7 +44,10 @@ export default function Operacoes() {
   const fetchQuotes = useCallback(async () => {
     const open = ops.filter((x) => x.status === 'ABERTA');
     if (!open.length) { setQuotes({}); return; }
-    const tickers = [...new Set(open.map((x) => x.ativo))];
+    const tickers = [...new Set([
+      ...open.map((x) => x.ativo),
+      ...open.filter((x) => isOption(x.categoria)).map((x) => x.ativo_base).filter(Boolean),
+    ])];
     setLoadingQuotes(true);
     try {
       const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: tickers.join(',') });
@@ -72,7 +78,7 @@ export default function Operacoes() {
     return s + (r || 0);
   }, 0);
 
-  const handleCreate = async ({ identificador, ativo, categoria, operacao, quantidade, precoEntrada, dataAbertura }) => {
+  const handleCreate = async ({ identificador, ativo, ativo_base, categoria, operacao, quantidade, precoEntrada, dataAbertura, strike, vencimento }) => {
     setError('');
     try {
       let grupo = grupos.find((g) => g.nome.toLowerCase() === identificador.toLowerCase());
@@ -82,9 +88,9 @@ export default function Operacoes() {
       }
       const valorInicial = calcValorInicial(operacao, quantidade, precoEntrada);
       const nova = await base44.entities.Operacao.create({
-        grupo_id: grupo.id, grupo_nome: grupo.nome, ativo, categoria, operacao,
+        grupo_id: grupo.id, grupo_nome: grupo.nome, ativo, ativo_base, categoria, operacao,
         quantidade, preco_entrada: precoEntrada, valor_inicial: valorInicial,
-        data_abertura: dataAbertura, status: 'ABERTA',
+        data_abertura: dataAbertura, strike, vencimento, status: 'ABERTA',
       });
       setOps((p) => [...p, nova]);
       setFormOpen(false);
@@ -114,9 +120,10 @@ export default function Operacoes() {
     try {
       const valorInicial = calcValorInicial(dados.operacao, dados.quantidade, dados.precoEntrada);
       const updated = await base44.entities.Operacao.update(o.id, {
-        ativo: dados.ativo, categoria: dados.categoria, operacao: dados.operacao,
+        ativo: dados.ativo, ativo_base: dados.ativo_base, categoria: dados.categoria, operacao: dados.operacao,
         quantidade: dados.quantidade, preco_entrada: dados.precoEntrada,
         valor_inicial: valorInicial, data_abertura: dados.dataAbertura,
+        strike: dados.strike, vencimento: dados.vencimento,
       });
       setOps((p) => p.map((x) => (x.id === o.id ? updated : x)));
       setEditarOp(null);
@@ -165,6 +172,7 @@ export default function Operacoes() {
               const gOpen = openOps.filter((o) => o.grupo_id === g.id);
               const hist = groupHistorico(g.id);
               const dia = groupDia(g.id);
+              const selectedInGroup = selectedOp && gOpen.some((o) => o.id === selectedOp.id);
               return (
                 <Card key={g.id}>
                   <CardContent className="p-0 overflow-x-auto">
@@ -177,8 +185,11 @@ export default function Operacoes() {
                           <th className="text-left p-2">Op.</th>
                           <th className="text-right p-2">Qtd</th>
                           <th className="text-right p-2">Preço Entr.</th>
+                          <th className="text-right p-2">Strike</th>
+                          <th className="text-right p-2">Venc. (d.u.)</th>
                           <th className="text-right p-2">Valor Inicial</th>
                           <th className="text-right p-2">Cotação</th>
+                          <th className="text-right p-2">Extrínseco</th>
                           <th className="text-right p-2">Result. %</th>
                           <th className="text-right p-2">Result. Valor</th>
                           <th className="p-2"></th>
@@ -186,7 +197,7 @@ export default function Operacoes() {
                       </thead>
                       <tbody>
                         <tr className="bg-primary/5">
-                          <td colSpan={11} className="p-2.5">
+                          <td colSpan={14} className="p-2.5">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold">{g.nome}</span>
@@ -203,19 +214,25 @@ export default function Operacoes() {
                           const atual = quotes[o.ativo];
                           const rv = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, atual);
                           const rp = calcResultadoPct(o.operacao, o.preco_entrada, atual);
+                          const extr = isOption(o.categoria) ? calcExtrinseco(o.categoria, o.strike, atual, quotes[o.ativo_base]) : null;
+                          const diasVenc = businessDaysUntil(o.vencimento);
+                          const isSel = selectedOp?.id === o.id;
                           return (
-                            <tr key={o.id} className="border-t">
+                            <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''}`} onClick={() => setSelectedOp(isSel ? null : o)}>
                               <td className="p-2 font-medium">{o.ativo}</td>
                               <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>
                               <td className="p-2">{o.operacao}</td>
                               <td className="p-2 text-right">{o.quantidade}</td>
                               <td className="p-2 text-right">{fmt(o.preco_entrada)}</td>
+                              <td className="p-2 text-right">{isOption(o.categoria) ? fmt(o.strike) : '—'}</td>
+                              <td className="p-2 text-right">{isOption(o.categoria) ? (diasVenc != null ? `${diasVenc}` : '—') : '—'}</td>
                               <td className="p-2 text-right">{fmt(o.valor_inicial)}</td>
                               <td className="p-2 text-right">{fmt(atual)}</td>
+                              <td className={`p-2 text-right ${color(extr)}`}>{isOption(o.categoria) ? fmt(extr) : '—'}</td>
                               <td className={`p-2 text-right ${color(rp)}`}>{fmtPct(rp)}</td>
                               <td className={`p-2 text-right ${color(rv)}`}>{fmt(rv)}</td>
-                              <td className="p-2">
+                              <td className="p-2" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex gap-1">
                                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
                                   <Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button>
@@ -226,6 +243,9 @@ export default function Operacoes() {
                         })}
                       </tbody>
                     </table>
+                    {selectedInGroup && (
+                      <MapaCalor operation={selectedOp} currentPrice={quotes[selectedOp.ativo]} />
+                    )}
                   </CardContent>
                 </Card>
               );

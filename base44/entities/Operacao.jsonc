@@ -16,6 +16,10 @@
       "minLength": 4,
       "maxLength": 8
     },
+    "ativo_base": {
+      "type": "string",
+      "title": "Ativo base (underlying)"
+    },
     "categoria": {
       "type": "string",
       "enum": [
@@ -47,6 +51,15 @@
     "data_abertura": {
       "type": "string",
       "format": "date"
+    },
+    "strike": {
+      "type": "number",
+      "title": "Strike"
+    },
+    "vencimento": {
+      "type": "string",
+      "format": "date",
+      "title": "Vencimento"
     },
     "status": {
       "type": "string",
