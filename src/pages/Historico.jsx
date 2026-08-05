@@ -45,6 +45,7 @@ export default function Historico() {
                     <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
                       <tr>
                         <th className="text-left p-2">Ativo</th>
+                        <th className="text-left p-2">Abertura</th>
                         <th className="text-left p-2">Cat.</th>
                         <th className="text-left p-2">Op.</th>
                         <th className="text-right p-2">Qtd</th>
@@ -57,7 +58,7 @@ export default function Historico() {
                     </thead>
                     <tbody>
                       <tr className="bg-primary/5">
-                        <td colSpan={9} className="p-2.5">
+                        <td colSpan={10} className="p-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold">{nome}</span>
                             <span>Resultado Total: <b className={color(total)}>{fmt(total)}</b></span>
@@ -67,6 +68,7 @@ export default function Historico() {
                       {lista.map((o) => (
                         <tr key={o.id} className="border-t">
                           <td className="p-2 font-medium">{o.ativo}</td>
+                          <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                           <td className="p-2">{o.categoria}</td>
                           <td className="p-2">{o.operacao}</td>
                           <td className="p-2 text-right">{o.quantidade}</td>

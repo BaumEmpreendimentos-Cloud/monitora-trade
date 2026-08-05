@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw, Plus, Pencil } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
@@ -172,6 +172,7 @@ export default function Operacoes() {
                       <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
                         <tr>
                           <th className="text-left p-2">Ativo</th>
+                          <th className="text-left p-2">Abertura</th>
                           <th className="text-left p-2">Cat.</th>
                           <th className="text-left p-2">Op.</th>
                           <th className="text-right p-2">Qtd</th>
@@ -185,11 +186,11 @@ export default function Operacoes() {
                       </thead>
                       <tbody>
                         <tr className="bg-primary/5">
-                          <td colSpan={10} className="p-2.5">
+                          <td colSpan={11} className="p-2.5">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold">{g.nome}</span>
-                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditarGrupo(g)}>Editar</Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarGrupo(g)} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
                               </div>
                               <div className="flex gap-6 text-sm">
                                 <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
@@ -205,6 +206,7 @@ export default function Operacoes() {
                           return (
                             <tr key={o.id} className="border-t">
                               <td className="p-2 font-medium">{o.ativo}</td>
+                              <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>
                               <td className="p-2">{o.operacao}</td>
                               <td className="p-2 text-right">{o.quantidade}</td>
@@ -215,7 +217,7 @@ export default function Operacoes() {
                               <td className={`p-2 text-right ${color(rv)}`}>{fmt(rv)}</td>
                               <td className="p-2">
                                 <div className="flex gap-1">
-                                  <Button size="sm" variant="ghost" onClick={() => setEditarOp(o)}>Editar</Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
                                   <Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button>
                                 </div>
                               </td>
