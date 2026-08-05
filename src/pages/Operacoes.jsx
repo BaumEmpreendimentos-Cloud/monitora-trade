@@ -179,8 +179,24 @@ export default function Operacoes() {
                 <Card key={g.id}>
                   <CardContent className="p-0 overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
-                        <tr>
+                      <thead>
+                        <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => { setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }}>
+                          <th colSpan={14} className="p-2.5 text-left font-normal normal-case">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm">{g.nome}</span>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
+                                <span className="text-xs text-muted-foreground">Mapa de calor do grupo</span>
+                              </div>
+                              <div className="flex gap-6 text-sm">
+                                <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
+                                <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
+                                <span>Valor Total: <b className={color(hist + dia)}>{fmt(hist + dia)}</b></span>
+                              </div>
+                            </div>
+                          </th>
+                        </tr>
+                        <tr className="bg-muted/50 text-xs text-muted-foreground uppercase">
                           <th className="text-left p-2">Ativo</th>
                           <th className="text-left p-2">Abertura</th>
                           <th className="text-left p-2">Cat.</th>
@@ -198,21 +214,6 @@ export default function Operacoes() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => { setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }}>
-                          <td colSpan={14} className="p-2.5">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold">{g.nome}</span>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
-                                <span className="text-xs text-muted-foreground">Mapa de calor do grupo</span>
-                              </div>
-                              <div className="flex gap-6 text-sm">
-                                <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
-                                <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
                         {gOpen.map((o) => {
                           const atual = quotes[o.ativo];
                           const rv = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, atual);
