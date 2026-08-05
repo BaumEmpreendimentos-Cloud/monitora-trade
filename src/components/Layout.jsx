@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LineChart } from 'lucide-react';
+import { LineChart, Crown } from 'lucide-react';
 
 const linkClass = ({ isActive }) =>
   `px-3 py-1.5 rounded-md text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`;
@@ -17,6 +17,7 @@ export default function Layout() {
             <NavLink to="/" end className={linkClass}>Operações</NavLink>
             <NavLink to="/historico" className={linkClass}>Histórico</NavLink>
             <NavLink to="/cotacoes" className={linkClass}>Cotações</NavLink>
+            <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
           </nav>
         </div>
       </header>

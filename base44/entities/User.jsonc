@@ -7,6 +7,30 @@
         "admin",
         "user"
       ]
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "title": "Stripe Customer ID"
+    },
+    "subscription_status": {
+      "type": "string",
+      "title": "Status da assinatura",
+      "enum": [
+        "none",
+        "active",
+        "past_due",
+        "canceled",
+        "incomplete"
+      ],
+      "default": "none"
+    },
+    "plan": {
+      "type": "string",
+      "title": "Plano"
+    },
+    "current_period_end": {
+      "type": "string",
+      "title": "Fim do per\u00edodo atual"
     }
   },
   "required": [

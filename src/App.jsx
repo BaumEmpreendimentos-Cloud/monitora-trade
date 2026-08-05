@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Cotacoes from './pages/Cotacoes';
 import Operacoes from './pages/Operacoes';
 import Historico from './pages/Historico';
+import Assinatura from './pages/Assinatura';
 import Layout from './components/Layout';
 // Add page imports here
 
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Operacoes />} />
         <Route path="/historico" element={<Historico />} />
         <Route path="/cotacoes" element={<Cotacoes />} />
+        <Route path="/assinatura" element={<Assinatura />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
