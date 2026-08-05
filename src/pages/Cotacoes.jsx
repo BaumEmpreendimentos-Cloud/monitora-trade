@@ -60,7 +60,10 @@ export default function Cotacoes() {
     if (trackedRef.current.some((p) => p.symbol === entry.symbol)) return;
     setResults([]);
     setTerm('');
-    refreshQuotes([...trackedRef.current, entry]);
+    const newList = [...trackedRef.current, entry];
+    trackedRef.current = newList;
+    setTracked(newList);
+    refreshQuotes(newList);
   };
 
   useEffect(() => {
