@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,9 +10,11 @@ const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 
 export default function Cotacoes() {
+  const { user, checkUserAuth } = useAuth();
   const [term, setTerm] = useState('');
   const [results, setResults] = useState([]);
   const [tracked, setTracked] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +58,24 @@ export default function Cotacoes() {
     }
   }, []);
 
+  const persist = useCallback((list) => {
+    base44.auth.updateMe({ tracked_tickers: list })
+      .then(() => checkUserAuth && checkUserAuth())
+      .catch((e) => console.error('persist tickers', e));
+  }, [checkUserAuth]);
+
+  // Carrega ativos acompanhados salvos no perfil do usuário
+  useEffect(() => {
+    if (loaded || !user) return;
+    const saved = Array.isArray(user.tracked_tickers) ? user.tracked_tickers : [];
+    setLoaded(true);
+    if (saved.length) {
+      setTracked(saved);
+      trackedRef.current = saved;
+      refreshQuotes(saved);
+    }
+  }, [user, loaded, refreshQuotes]);
+
   const addSymbol = (r) => {
     const entry = { symbol: r.symbol, name: r.description || r.name || r.full_name || '' };
     if (trackedRef.current.some((p) => p.symbol === entry.symbol)) return;
@@ -63,6 +84,7 @@ export default function Cotacoes() {
     const newList = [...trackedRef.current, entry];
     trackedRef.current = newList;
     setTracked(newList);
+    persist(newList);
     refreshQuotes(newList);
   };
 
@@ -74,7 +96,12 @@ export default function Cotacoes() {
   }, [refreshQuotes]);
 
   const removeSymbol = (sym) => {
-    setTracked((prev) => prev.filter((p) => p.symbol !== sym));
+    setTracked((prev) => {
+      const next = prev.filter((p) => p.symbol !== sym);
+      trackedRef.current = next;
+      persist(next);
+      return next;
+    });
   };
 
   return (
@@ -141,7 +168,7 @@ export default function Cotacoes() {
           </div>
 
           {tracked.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-10">Busque e selecione ativos para acompanhar os fechamentos.</p>
+            <p className="text-sm text-muted-foreground text-center py-10">Busque e selecione ativos para acompanhar os fechamentos. Eles ficam salvos no seu perfil.</p>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { isPremium, trialDaysLeft } from '@/lib/access';
+import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Crown, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Loader2, Clock, ShieldCheck } from 'lucide-react';
 
 export default function Assinatura() {
   const { user, checkUserAuth } = useAuth();
@@ -23,6 +23,7 @@ export default function Assinatura() {
     }
   }, [checkUserAuth]);
 
+  const admin = isGestor(user);
   const premium = isPremium(user);
   const daysLeft = trialDaysLeft(user);
   const trialEnded = user?.trial_start && daysLeft !== null && daysLeft <= 0;
@@ -70,7 +71,14 @@ export default function Assinatura() {
 
         <Card>
           <CardContent className="p-6 space-y-4">
-            {premium ? (
+            {admin ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-purple-600 font-semibold">
+                  <ShieldCheck className="w-5 h-5" /> Gestor de Suporte
+                </div>
+                <p className="text-sm text-muted-foreground">Você é o Gestor de Suporte (proprietário). Tem acesso total ao sistema, sem cobrança de mensalidade.</p>
+              </div>
+            ) : premium ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-emerald-600 font-semibold">
                   <CheckCircle2 className="w-5 h-5" /> Assinatura ativa

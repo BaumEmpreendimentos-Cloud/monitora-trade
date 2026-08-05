@@ -1,7 +1,11 @@
 export const TRIAL_DAYS = 7;
 
+export function isGestor(user) {
+  return user?.role === 'admin';
+}
+
 export function isPremium(user) {
-  return user?.subscription_status === 'active';
+  return user?.subscription_status === 'active' || isGestor(user);
 }
 
 export function trialDaysLeft(user) {

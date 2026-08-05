@@ -36,6 +36,26 @@
       "type": "string",
       "format": "date-time",
       "title": "In\u00edcio do per\u00edodo de teste"
+    },
+    "blocked": {
+      "type": "boolean",
+      "title": "Bloqueado",
+      "default": false
+    },
+    "tracked_tickers": {
+      "type": "array",
+      "title": "Ativos acompanhados",
+      "items": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [
