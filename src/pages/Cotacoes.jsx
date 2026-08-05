@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,11 @@ export default function Cotacoes() {
     }
   }, [term]);
 
+  const trackedRef = useRef(tracked);
+  useEffect(() => { trackedRef.current = tracked; }, [tracked]);
+
   const refreshQuotes = useCallback(async (symbols) => {
-    const list = symbols || tracked;
+    const list = symbols || trackedRef.current;
     if (!list.length) return;
     const tickers = list.map((s) => s.symbol || s);
     setLoadingQuotes(true);
@@ -50,15 +53,22 @@ export default function Cotacoes() {
     } finally {
       setLoadingQuotes(false);
     }
-  }, [tracked]);
+  }, []);
 
   const addSymbol = (r) => {
     const entry = { symbol: r.symbol, name: r.description || r.name || r.full_name || '' };
-    if (tracked.some((p) => p.symbol === entry.symbol)) return;
+    if (trackedRef.current.some((p) => p.symbol === entry.symbol)) return;
     setResults([]);
     setTerm('');
-    refreshQuotes([...tracked, entry]);
+    refreshQuotes([...trackedRef.current, entry]);
   };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (trackedRef.current.length) refreshQuotes();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [refreshQuotes]);
 
   const removeSymbol = (sym) => {
     setTracked((prev) => prev.filter((p) => p.symbol !== sym));
@@ -99,7 +109,7 @@ export default function Cotacoes() {
                 {results.map((r, i) => (
                   <button
                     key={i}
-                    onClick={() => addSymbol(r.symbol)}
+                    onClick={() => addSymbol(r)}
                     className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-accent text-left"
                   >
                     <div>
