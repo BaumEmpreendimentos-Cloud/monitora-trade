@@ -31,6 +31,11 @@
     "current_period_end": {
       "type": "string",
       "title": "Fim do per\u00edodo atual"
+    },
+    "trial_start": {
+      "type": "string",
+      "format": "date-time",
+      "title": "In\u00edcio do per\u00edodo de teste"
     }
   },
   "required": [

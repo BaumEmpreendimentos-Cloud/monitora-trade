@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { isPremium, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Crown, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 
 export default function Assinatura() {
   const { user, checkUserAuth } = useAuth();
@@ -22,7 +23,9 @@ export default function Assinatura() {
     }
   }, [checkUserAuth]);
 
-  const isPremium = user?.subscription_status === 'active';
+  const premium = isPremium(user);
+  const daysLeft = trialDaysLeft(user);
+  const trialEnded = user?.trial_start && daysLeft !== null && daysLeft <= 0;
 
   const handleSubscribe = async () => {
     if (window.self !== window.top) {
@@ -67,7 +70,7 @@ export default function Assinatura() {
 
         <Card>
           <CardContent className="p-6 space-y-4">
-            {isPremium ? (
+            {premium ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-emerald-600 font-semibold">
                   <CheckCircle2 className="w-5 h-5" /> Assinatura ativa
@@ -79,6 +82,16 @@ export default function Assinatura() {
               </div>
             ) : (
               <>
+                {daysLeft !== null && daysLeft > 0 && (
+                  <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 text-amber-800 text-sm">
+                    <Clock className="w-4 h-4" /> Você está no período grátis: restam {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}.
+                  </div>
+                )}
+                {trialEnded && (
+                  <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                    <XCircle className="w-4 h-4" /> Seu período grátis acabou. Assine para continuar usando.
+                  </div>
+                )}
                 <div className="space-y-2">
                   <p className="text-3xl font-heading font-bold">R$ 49,90<span className="text-base font-normal text-muted-foreground">/mês</span></p>
                   <ul className="text-sm space-y-1.5 text-muted-foreground">
