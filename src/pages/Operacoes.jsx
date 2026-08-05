@@ -68,7 +68,7 @@ export default function Operacoes() {
     return s + (r || 0);
   }, 0);
 
-  const handleCreate = async ({ identificador, ativo, categoria, operacao, quantidade, precoEntrada }) => {
+  const handleCreate = async ({ identificador, ativo, categoria, operacao, quantidade, precoEntrada, dataAbertura }) => {
     setError('');
     try {
       let grupo = grupos.find((g) => g.nome.toLowerCase() === identificador.toLowerCase());
@@ -79,7 +79,8 @@ export default function Operacoes() {
       const valorInicial = calcValorInicial(operacao, quantidade, precoEntrada);
       const nova = await base44.entities.Operacao.create({
         grupo_id: grupo.id, grupo_nome: grupo.nome, ativo, categoria, operacao,
-        quantidade, preco_entrada: precoEntrada, valor_inicial: valorInicial, status: 'ABERTA',
+        quantidade, preco_entrada: precoEntrada, valor_inicial: valorInicial,
+        data_abertura: dataAbertura, status: 'ABERTA',
       });
       setOps((p) => [...p, nova]);
       setFormOpen(false);

@@ -15,12 +15,15 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
   const [operacao, setOperacao] = useState('COMPRA');
   const [quantidade, setQuantidade] = useState('');
   const [preco, setPreco] = useState('');
+  const [dataAbertura, setDataAbertura] = useState('');
   const [err, setErr] = useState('');
 
   useEffect(() => {
     if (open) {
       setIdentificador(''); setAtivo(''); setCategoria('ACAO');
-      setOperacao('COMPRA'); setQuantidade(''); setPreco(''); setErr('');
+      setOperacao('COMPRA'); setQuantidade(''); setPreco('');
+      setDataAbertura(new Date().toISOString().slice(0, 10));
+      setErr('');
     }
   }, [open]);
 
@@ -31,8 +34,9 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
     const p = Number(preco);
     if (!q || q <= 0) return setErr('Quantidade inválida.');
     if (!p || p <= 0) return setErr('Preço de entrada inválido.');
+    if (!dataAbertura) return setErr('Data de abertura inválida.');
     const nome = identificador.trim() || `OP-${(grupos.length || 0) + 1}`;
-    onSubmit({ identificador: nome, ativo: a, categoria, operacao, quantidade: q, precoEntrada: p });
+    onSubmit({ identificador: nome, ativo: a, categoria, operacao, quantidade: q, precoEntrada: p, dataAbertura });
   };
 
   return (
@@ -85,6 +89,10 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
               <Label>Preço de Entrada</Label>
               <Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(e.target.value)} />
             </div>
+          </div>
+          <div>
+            <Label>Data de Abertura</Label>
+            <Input type="date" value={dataAbertura} onChange={(e) => setDataAbertura(e.target.value)} />
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}
         </div>
