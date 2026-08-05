@@ -247,7 +247,7 @@ export default function Operacoes() {
                       </tbody>
                     </table>
                     {selectedInGroup && (
-                      <MapaCalor operation={selectedOp} currentPrice={quotes[selectedOp.ativo]} />
+                      <MapaCalor operation={selectedOp} currentPrice={quotes[isOption(selectedOp.categoria) ? selectedOp.ativo_base : selectedOp.ativo]} />
                     )}
                     {!selectedInGroup && selectedGroup === g.id && (
                       <MapaCalorGrupo operacoes={gOpen} quotes={quotes} />

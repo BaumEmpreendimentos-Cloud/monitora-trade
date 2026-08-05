@@ -51,3 +51,12 @@ export const businessDaysUntil = (dateStr) => {
   }
   return count;
 };
+
+// Resultado de uma opção no vencimento dado o preço do ativo base (underlying)
+export const calcResultadoOpcaoUnderlying = (categoria, operacao, strike, precoEntrada, quantidade, underlying) => {
+  if (underlying == null || underlying === '' || strike == null) return null;
+  const u = Number(underlying); const s = Number(strike);
+  if (Number.isNaN(u) || Number.isNaN(s)) return null;
+  const intr = categoria === 'CALL' ? Math.max(0, u - s) : Math.max(0, s - u);
+  return operacao === 'COMPRA' ? (intr - precoEntrada) * quantidade : (precoEntrada - intr) * quantidade;
+};

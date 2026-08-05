@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { calcResultadoValor } from '@/lib/operacoes';
+import { calcResultadoValor, calcResultadoOpcaoUnderlying } from '@/lib/operacoes';
+
+const isOption = (c) => c === 'CALL' || c === 'PUT';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
@@ -20,7 +22,9 @@ export default function MapaCalor({ operation, currentPrice }) {
   if (currentPrice == null || currentPrice === '') {
     return (
       <div className="border-t bg-muted/30 p-3 text-sm text-muted-foreground">
-        Sem cotação do ativo para gerar o mapa de calor.
+        {isOption(operation.categoria) && !operation.ativo_base
+          ? 'Informe o ativo base da opção para gerar o mapa de calor.'
+          : 'Sem cotação do ativo de referência para gerar o mapa de calor.'}
       </div>
     );
   }
@@ -29,7 +33,9 @@ export default function MapaCalor({ operation, currentPrice }) {
   const step = price * (percent / 100);
   const indices = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
   const points = indices.map((i) => ({ i, pricePoint: price + step * i }));
-  const pnlOf = (pp) => calcResultadoValor(operation.operacao, operation.quantidade, operation.preco_entrada, pp);
+  const pnlOf = (pp) => isOption(operation.categoria)
+    ? calcResultadoOpcaoUnderlying(operation.categoria, operation.operacao, operation.strike, operation.preco_entrada, operation.quantidade, pp)
+    : calcResultadoValor(operation.operacao, operation.quantidade, operation.preco_entrada, pp);
 
   return (
     <div className="border-t bg-muted/30 p-3 space-y-3">

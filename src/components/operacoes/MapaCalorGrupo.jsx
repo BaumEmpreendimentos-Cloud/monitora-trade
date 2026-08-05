@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { calcResultadoValor } from '@/lib/operacoes';
+import { calcResultadoValor, calcResultadoOpcaoUnderlying } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const isOption = (c) => c === 'CALL' || c === 'PUT';
@@ -45,10 +45,17 @@ export default function MapaCalorGrupo({ operacoes, quotes }) {
   const indices = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
 
   const totalPnl = (percentMove) => operacoes.reduce((sum, o) => {
-    const q = quotes[o.ativo];
-    if (q == null || q === '') return sum;
-    const opPrice = Number(q) * (1 + percentMove);
-    const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, opPrice);
+    if (isOption(o.categoria)) {
+      const basePrice = quotes[o.ativo_base];
+      if (basePrice == null || basePrice === '') return sum;
+      const scenario = Number(basePrice) * (1 + percentMove);
+      const r = calcResultadoOpcaoUnderlying(o.categoria, o.operacao, o.strike, o.preco_entrada, o.quantidade, scenario);
+      return sum + (r || 0);
+    }
+    const ownPrice = quotes[o.ativo];
+    if (ownPrice == null || ownPrice === '') return sum;
+    const scenario = Number(ownPrice) * (1 + percentMove);
+    const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, scenario);
     return sum + (r || 0);
   }, 0);
 
