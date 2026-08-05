@@ -14,7 +14,7 @@
       "type": "string",
       "title": "Ativo",
       "minLength": 4,
-      "maxLength": 6
+      "maxLength": 8
     },
     "categoria": {
       "type": "string",

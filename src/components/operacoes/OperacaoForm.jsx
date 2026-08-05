@@ -26,7 +26,7 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
 
   const submit = () => {
     const a = ativo.trim().toUpperCase();
-    if (a.length < 4 || a.length > 6) return setErr('Ativo deve ter de 4 a 6 caracteres.');
+    if (a.length < 4 || a.length > 8) return setErr('Ativo deve ter de 4 a 8 caracteres.');
     const q = Number(quantidade);
     const p = Number(preco);
     if (!q || q <= 0) return setErr('Quantidade inválida.');
@@ -54,7 +54,7 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
           </div>
           <div>
             <Label>Ativo</Label>
-            <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} placeholder="PETR4" className="uppercase" maxLength={6} />
+            <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} placeholder="PETR4" className="uppercase" maxLength={8} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
