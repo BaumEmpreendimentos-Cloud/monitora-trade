@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { lookupOption } from '@/lib/oplab';
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
 const OPERACOES = ['COMPRA', 'VENDA'];
@@ -21,6 +22,23 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
   const [strike, setStrike] = useState('');
   const [vencimento, setVencimento] = useState('');
   const [err, setErr] = useState('');
+  const [looking, setLooking] = useState(false);
+
+  const doLookup = async (ticker) => {
+    const t = (ticker || '').trim().toUpperCase();
+    if (t.length < 5) return;
+    setLooking(true);
+    try {
+      const data = await lookupOption(t);
+      if (data) {
+        if (data.categoria === 'CALL' || data.categoria === 'PUT') setCategoria(data.categoria);
+        if (data.ativo_base) setAtivoBase(data.ativo_base);
+        if (data.strike != null) setStrike(String(data.strike));
+        if (data.vencimento) setVencimento(data.vencimento);
+      }
+    } catch (e) { /* silencioso */ }
+    finally { setLooking(false); }
+  };
 
   useEffect(() => {
     if (open) {
@@ -72,7 +90,8 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
           </div>
           <div>
             <Label>Ativo</Label>
-            <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} placeholder="PETR4" className="uppercase" maxLength={8} />
+            <Input value={ativo} onChange={(e) => setAtivo(e.target.value.toUpperCase())} onBlur={(e) => doLookup(e.target.value)} placeholder="PETR4 ou PETRK100" className="uppercase" maxLength={8} />
+            {looking && <p className="text-xs text-muted-foreground mt-1">Buscando dados da opção...</p>}
           </div>
           {isOption(categoria) && (
             <div>
