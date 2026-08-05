@@ -1,0 +1,92 @@
+{
+  "name": "Operacao",
+  "type": "object",
+  "properties": {
+    "grupo_id": {
+      "type": "string",
+      "title": "Grupo"
+    },
+    "grupo_nome": {
+      "type": "string",
+      "title": "Identificador"
+    },
+    "ativo": {
+      "type": "string",
+      "title": "Ativo",
+      "minLength": 4,
+      "maxLength": 6
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "ACAO",
+        "CALL",
+        "PUT",
+        "DOLLAR"
+      ],
+      "default": "ACAO"
+    },
+    "operacao": {
+      "type": "string",
+      "enum": [
+        "COMPRA",
+        "VENDA"
+      ],
+      "default": "COMPRA"
+    },
+    "quantidade": {
+      "type": "number",
+      "minimum": 0
+    },
+    "preco_entrada": {
+      "type": "number"
+    },
+    "valor_inicial": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ABERTA",
+        "FECHADA"
+      ],
+      "default": "ABERTA"
+    },
+    "preco_fechamento": {
+      "type": "number"
+    },
+    "resultado_valor": {
+      "type": "number"
+    },
+    "resultado_pct": {
+      "type": "number"
+    },
+    "data_fechamento": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "grupo_id",
+    "grupo_nome",
+    "ativo",
+    "categoria",
+    "operacao",
+    "quantidade",
+    "preco_entrada"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

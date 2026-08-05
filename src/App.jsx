@@ -7,6 +7,9 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import Cotacoes from './pages/Cotacoes';
+import Operacoes from './pages/Operacoes';
+import Historico from './pages/Historico';
+import Layout from './components/Layout';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -35,9 +38,11 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="/cotacoes" element={<Cotacoes />} />
-      <Route path="/" element={<Cotacoes />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Operacoes />} />
+        <Route path="/historico" element={<Historico />} />
+        <Route path="/cotacoes" element={<Cotacoes />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
