@@ -14,7 +14,7 @@ export async function lookupOption(ticker) {
 
   const desc = exact.description || '';
   let strike = null;
-  const strikeMatch = desc.match(/R\$\s*([\d.,]+)/);
+  const strikeMatch = desc.match(/R\$\s*(\d+(?:[.,]\d+)*)/);
   if (strikeMatch) {
     let raw = strikeMatch[1];
     if (raw.includes(',')) raw = raw.replace(/\./g, '').replace(',', '.');
