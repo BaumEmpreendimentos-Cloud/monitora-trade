@@ -8,6 +8,7 @@ import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
 import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
 import MapaCalor from '@/components/operacoes/MapaCalor';
+import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -26,6 +27,7 @@ export default function Operacoes() {
   const [editarOp, setEditarOp] = useState(null);
   const [editarGrupo, setEditarGrupo] = useState(null);
   const [selectedOp, setSelectedOp] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -196,12 +198,13 @@ export default function Operacoes() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="bg-primary/5">
+                        <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => { setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }}>
                           <td colSpan={14} className="p-2.5">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold">{g.nome}</span>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarGrupo(g)} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
+                                <span className="text-xs text-muted-foreground">Mapa de calor do grupo</span>
                               </div>
                               <div className="flex gap-6 text-sm">
                                 <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
@@ -218,7 +221,7 @@ export default function Operacoes() {
                           const diasVenc = businessDaysUntil(o.vencimento);
                           const isSel = selectedOp?.id === o.id;
                           return (
-                            <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''}`} onClick={() => setSelectedOp(isSel ? null : o)}>
+                            <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''}`} onClick={() => { setSelectedGroup(null); setSelectedOp(isSel ? null : o); }}>
                               <td className="p-2 font-medium">{o.ativo}</td>
                               <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>
@@ -245,6 +248,9 @@ export default function Operacoes() {
                     </table>
                     {selectedInGroup && (
                       <MapaCalor operation={selectedOp} currentPrice={quotes[selectedOp.ativo]} />
+                    )}
+                    {!selectedInGroup && selectedGroup === g.id && (
+                      <MapaCalorGrupo operacoes={gOpen} quotes={quotes} />
                     )}
                   </CardContent>
                 </Card>
