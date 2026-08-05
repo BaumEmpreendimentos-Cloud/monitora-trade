@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw, Plus } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
+import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
+import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -19,6 +21,8 @@ export default function Operacoes() {
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [encerrar, setEncerrar] = useState(null);
+  const [editarOp, setEditarOp] = useState(null);
+  const [editarGrupo, setEditarGrupo] = useState(null);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -103,6 +107,35 @@ export default function Operacoes() {
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
 
+  const handleEditarOperacao = async (dados) => {
+    const o = editarOp;
+    if (!o) return;
+    setError('');
+    try {
+      const valorInicial = calcValorInicial(dados.operacao, dados.quantidade, dados.precoEntrada);
+      const updated = await base44.entities.Operacao.update(o.id, {
+        ativo: dados.ativo, categoria: dados.categoria, operacao: dados.operacao,
+        quantidade: dados.quantidade, preco_entrada: dados.precoEntrada,
+        valor_inicial: valorInicial, data_abertura: dados.dataAbertura,
+      });
+      setOps((p) => p.map((x) => (x.id === o.id ? updated : x)));
+      setEditarOp(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
+  const handleEditarIdentificador = async (novoNome) => {
+    const g = editarGrupo;
+    if (!g) return;
+    setError('');
+    try {
+      await base44.entities.GrupoOperacao.update(g.id, { nome: novoNome });
+      setGrupos((p) => p.map((x) => (x.id === g.id ? { ...x, nome: novoNome } : x)));
+      await base44.entities.Operacao.updateMany({ grupo_id: g.id }, { $set: { grupo_nome: novoNome } });
+      setOps((p) => p.map((x) => (x.grupo_id === g.id ? { ...x, grupo_nome: novoNome } : x)));
+      setEditarGrupo(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -154,7 +187,10 @@ export default function Operacoes() {
                         <tr className="bg-primary/5">
                           <td colSpan={10} className="p-2.5">
                             <div className="flex items-center justify-between flex-wrap gap-2">
-                              <span className="font-bold">{g.nome}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold">{g.nome}</span>
+                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditarGrupo(g)}>Editar</Button>
+                              </div>
                               <div className="flex gap-6 text-sm">
                                 <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
@@ -177,7 +213,12 @@ export default function Operacoes() {
                               <td className="p-2 text-right">{fmt(atual)}</td>
                               <td className={`p-2 text-right ${color(rp)}`}>{fmtPct(rp)}</td>
                               <td className={`p-2 text-right ${color(rv)}`}>{fmt(rv)}</td>
-                              <td className="p-2"><Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button></td>
+                              <td className="p-2">
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => setEditarOp(o)}>Editar</Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button>
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
@@ -193,6 +234,8 @@ export default function Operacoes() {
 
       <OperacaoForm open={formOpen} onClose={() => setFormOpen(false)} grupos={grupos} onSubmit={handleCreate} />
       <EncerrarDialog operacao={encerrar} onClose={() => setEncerrar(null)} onConfirm={handleEncerrar} />
+      <EditarOperacaoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditarOperacao} />
+      <EditarIdentificadorDialog grupo={editarGrupo} onClose={() => setEditarGrupo(null)} onSubmit={handleEditarIdentificador} />
     </div>
   );
 }
