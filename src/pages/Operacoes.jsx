@@ -61,10 +61,13 @@ export default function Operacoes() {
       arr.forEach((q) => {
         const sym = q.symbol || q.ticker;
         map[sym] = q.close;
-        const prev = q.previous_close != null ? q.previous_close
-          : q.previousClose != null ? q.previousClose
-          : (q.close != null && q.change != null ? q.close - q.change : null);
-        prevMap[sym] = prev != null ? prev : q.close;
+        let prev = q.close;
+        if (q.variation != null && q.variation > -99.999) {
+          prev = q.close / (1 + q.variation / 100);
+        } else if (q.previous_close != null) {
+          prev = q.previous_close;
+        }
+        prevMap[sym] = prev;
       });
       setQuotes(map);
       setPrevQuotes(prevMap);
