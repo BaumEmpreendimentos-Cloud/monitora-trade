@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Pencil } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
@@ -28,6 +28,7 @@ export default function Operacoes() {
   const [editarGrupo, setEditarGrupo] = useState(null);
   const [selectedOp, setSelectedOp] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [expanded, setExpanded] = useState({});
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -79,6 +80,9 @@ export default function Operacoes() {
     const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]);
     return s + (r || 0);
   }, 0);
+  const totalDia = openOps.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0);
+  const totalHist = closedOps.reduce((s, o) => s + (o.resultado_valor || 0), 0);
+  const totalTotal = totalDia + totalHist;
 
   const handleCreate = async ({ identificador, ativo, ativo_base, categoria, operacao, quantidade, precoEntrada, dataAbertura, strike, vencimento }) => {
     setError('');
@@ -162,6 +166,21 @@ export default function Operacoes() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Resultado do Dia</p>
+            <p className={`text-xl font-bold ${color(totalDia)}`}>{fmt(totalDia)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Resultado Histórico</p>
+            <p className={`text-xl font-bold ${color(totalHist)}`}>{fmt(totalHist)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Valor Total</p>
+            <p className={`text-xl font-bold ${color(totalTotal)}`}>{fmt(totalTotal)}</p>
+          </CardContent></Card>
+        </div>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {loading ? (
@@ -180,13 +199,14 @@ export default function Operacoes() {
                   <CardContent className="p-0 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => { setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }}>
+                        <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}>
                           <th colSpan={14} className="p-2.5 text-left font-normal normal-case">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
+                                {expanded[g.id] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                                 <span className="font-bold text-sm">{g.nome}</span>
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
-                                <span className="text-xs text-muted-foreground">Mapa de calor do grupo</span>
+                                <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
                               </div>
                               <div className="flex gap-6 text-sm">
                                 <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
@@ -196,6 +216,7 @@ export default function Operacoes() {
                             </div>
                           </th>
                         </tr>
+                        {expanded[g.id] && (
                         <tr className="bg-muted/50 text-xs text-muted-foreground uppercase">
                           <th className="text-left p-2">Ativo</th>
                           <th className="text-left p-2">Abertura</th>
@@ -212,7 +233,9 @@ export default function Operacoes() {
                           <th className="text-right p-2">Result. Valor</th>
                           <th className="p-2"></th>
                         </tr>
+                        )}
                       </thead>
+                      {expanded[g.id] && (
                       <tbody>
                         {gOpen.map((o) => {
                           const atual = quotes[o.ativo];
@@ -246,6 +269,7 @@ export default function Operacoes() {
                           );
                         })}
                       </tbody>
+                      )}
                     </table>
                     {selectedInGroup && (
                       <MapaCalor operation={selectedOp} currentPrice={quotes[isOption(selectedOp.categoria) ? selectedOp.ativo_base : selectedOp.ativo]} />
