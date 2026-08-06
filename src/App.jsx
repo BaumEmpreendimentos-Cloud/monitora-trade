@@ -15,6 +15,7 @@ import ResetPassword from './pages/ResetPassword';
 import Cotacoes from './pages/Cotacoes';
 import Operacoes from './pages/Operacoes';
 import Historico from './pages/Historico';
+import ImportarHistorico from './pages/ImportarHistorico';
 import Assinatura from './pages/Assinatura';
 import Painel from './pages/Painel';
 import Mensagens from './pages/Mensagens';
@@ -49,6 +50,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/operacoes" element={<Operacoes />} />
           <Route path="/historico" element={<Historico />} />
+          <Route path="/importar-historico" element={<ImportarHistorico />} />
           <Route path="/cotacoes" element={<Cotacoes />} />
           <Route path="/assinatura" element={<Assinatura />} />
           <Route path="/mensagens" element={<Mensagens />} />

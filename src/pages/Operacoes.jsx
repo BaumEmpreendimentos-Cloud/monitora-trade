@@ -194,6 +194,12 @@ export default function Operacoes() {
               const hist = groupHistorico(g.id);
               const dia = groupDia(g.id);
               const selectedInGroup = selectedOp && gOpen.some((o) => o.id === selectedOp.id);
+              const baseRef = (() => {
+                const counts = {};
+                gOpen.forEach((o) => { if (o.ativo_base) counts[o.ativo_base] = (counts[o.ativo_base] || 0) + 1; });
+                return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
+              })();
+              const baseQuote = baseRef ? quotes[baseRef] : null;
               return (
                 <Card key={g.id}>
                   <CardContent className="p-0 overflow-x-auto">
@@ -207,6 +213,9 @@ export default function Operacoes() {
                                 <span className="font-bold text-sm">{g.nome}</span>
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
+                                {baseRef && (
+                                  <span className="text-xs text-muted-foreground ml-1">Ativo base: <b className="text-foreground">{baseRef}</b>{baseQuote != null ? ` • ${fmt(baseQuote)}` : ''}</span>
+                                )}
                               </div>
                               <div className="flex gap-6 text-sm">
                                 <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>

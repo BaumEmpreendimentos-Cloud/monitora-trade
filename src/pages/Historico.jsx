@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Upload } from 'lucide-react';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 
 export default function Historico() {
+  const navigate = useNavigate();
   const [ops, setOps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,7 +32,10 @@ export default function Historico() {
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-2xl md:text-3xl font-heading font-bold">Histórico de Operações</h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <h1 className="text-2xl md:text-3xl font-heading font-bold">Histórico de Operações</h1>
+          <Button size="sm" onClick={() => navigate('/importar-historico')}><Upload className="w-4 h-4 mr-1" /> Importar Histórico</Button>
+        </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
