@@ -11,6 +11,7 @@ const TEMPLATE_ROWS = [
   ['identificador', 'ativo', 'ativo_base', 'categoria', 'operacao', 'quantidade', 'preco_entrada', 'data_abertura', 'strike', 'vencimento', 'preco_fechamento', 'resultado_valor', 'resultado_pct', 'data_fechamento'],
   ['Exemplo', 'PETR4', '', 'ACAO', 'COMPRA', '100', '28,50', '2026-01-15', '', '', '28,80', '30,00', '1,07', '2026-01-20'],
   ['Exemplo', 'PETR4', '', 'ACAO', 'COMPRA', '200', '28,50', '2026-01-15', '', '', '27,00', '-30,00', '-5,26', '2026-01-18'],
+  ['Exemplo', 'PETR4', '', 'DIV', '', '100', '0,80', '2026-01-15', '', '', '', '', '', '2026-02-15'],
 ];
 
 const SCHEMA = {
@@ -24,7 +25,7 @@ const SCHEMA = {
           identificador: { type: 'string' },
           ativo: { type: 'string' },
           ativo_base: { type: 'string' },
-          categoria: { type: 'string', enum: ['ACAO', 'CALL', 'PUT', 'DOLLAR'] },
+          categoria: { type: 'string', enum: ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'] },
           operacao: { type: 'string', enum: ['COMPRA', 'VENDA'] },
           quantidade: { type: 'number' },
           preco_entrada: { type: 'number' },
@@ -42,7 +43,7 @@ const SCHEMA = {
   },
 };
 
-const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
+const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 
 const num = (v) => {
@@ -62,6 +63,12 @@ const validateRow = (r) => {
   if (!r.identificador || !String(r.identificador).trim()) return 'Identificador obrigatório';
   if (!r.ativo || !String(r.ativo).trim()) return 'Ativo obrigatório';
   if (!CATEGORIAS.includes(r.categoria)) return 'Categoria inválida';
+  if (r.categoria === 'DIV') {
+    if (num(r.quantidade) == null || num(r.quantidade) <= 0) return 'Quantidade inválida';
+    if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Valor por ação (preco_entrada) inválido';
+    if (!r.data_fechamento) return 'Data de pagamento (data_fechamento) obrigatória';
+    return null;
+  }
   if (!OPERACOES.includes(r.operacao)) return 'Operação inválida';
   if (num(r.quantidade) == null || num(r.quantidade) <= 0) return 'Quantidade inválida';
   if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Preço de entrada inválido';
@@ -153,27 +160,41 @@ export default function ImportarHistorico() {
         return g;
       };
 
-      const records = [];
+      const opRecords = [];
+      const divRecords = [];
       for (const r of valid) {
         const grupo = await ensureGroup(r.identificador);
-        const operacao = r.operacao;
-        const quantidade = num(r.quantidade);
-        const precoEntrada = num(r.preco_entrada);
-        const precoFechamento = num(r.preco_fechamento);
-        const rv = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento);
-        const rp = r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : calcResultadoPct(operacao, precoEntrada, precoFechamento);
-        records.push({
-          grupo_id: grupo.id, grupo_nome: grupo.nome,
-          ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
-          quantidade, preco_entrada: precoEntrada, valor_inicial: calcValorInicial(operacao, quantidade, precoEntrada),
-          data_abertura: r.data_abertura || null, strike: num(r.strike), vencimento: r.vencimento || null,
-          status: 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
-          data_fechamento: toDate(r.data_fechamento),
-        });
+        if (r.categoria === 'DIV') {
+          const quantidade = num(r.quantidade);
+          const valorPorAcao = num(r.preco_entrada);
+          const valorTotal = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : quantidade * valorPorAcao;
+          divRecords.push({
+            grupo_id: grupo.id, grupo_nome: grupo.nome,
+            ativo: r.ativo, data_pagamento: r.data_fechamento,
+            quantidade, valor_por_acao: valorPorAcao, valor_total: valorTotal,
+          });
+        } else {
+          const operacao = r.operacao;
+          const quantidade = num(r.quantidade);
+          const precoEntrada = num(r.preco_entrada);
+          const precoFechamento = num(r.preco_fechamento);
+          const rv = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento);
+          const rp = r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : calcResultadoPct(operacao, precoEntrada, precoFechamento);
+          opRecords.push({
+            grupo_id: grupo.id, grupo_nome: grupo.nome,
+            ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
+            quantidade, preco_entrada: precoEntrada, valor_inicial: calcValorInicial(operacao, quantidade, precoEntrada),
+            data_abertura: r.data_abertura || null, strike: num(r.strike), vencimento: r.vencimento || null,
+            status: 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
+            data_fechamento: toDate(r.data_fechamento),
+          });
+        }
       }
 
-      const createdRecs = await base44.entities.Operacao.bulkCreate(records);
-      setResult({ created: createdRecs?.length || records.length });
+      let createdOps = 0, createdDivs = 0;
+      if (opRecords.length) { const c = await base44.entities.Operacao.bulkCreate(opRecords); createdOps = c?.length || opRecords.length; }
+      if (divRecords.length) { const c = await base44.entities.Dividendo.bulkCreate(divRecords); createdDivs = c?.length || divRecords.length; }
+      setResult({ createdOps, createdDivs });
       setPreview(null);
       setFile(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
@@ -207,13 +228,17 @@ export default function ImportarHistorico() {
               <li><b>identificador</b>: nome do grupo/identificador da operação (será criado se não existir).</li>
               <li><b>ativo</b>: ticker do ativo (ex.: PETR4, BBDCI201).</li>
               <li><b>ativo_base</b>: ativo base para opções (vazio para ações).</li>
-              <li><b>categoria</b>: ACAO, CALL, PUT ou DOLLAR.</li>
-              <li><b>operacao</b>: COMPRA ou VENDA.</li>
+              <li><b>categoria</b>: ACAO, CALL, PUT, DOLLAR ou DIV (dividendos).</li>
+              <li><b>operacao</b>: COMPRA ou VENDA (deixe em branco para DIV).</li>
               <li><b>quantidade, preco_entrada, preco_fechamento</b>: valores numéricos (vírgula decimal).</li>
               <li><b>data_abertura, data_fechamento</b>: formato AAAA-MM-DD (ex.: 2026-01-20).</li>
               <li><b>strike, vencimento</b>: preencha apenas para opções.</li>
               <li><b>resultado_valor, resultado_pct</b>: opcionais — se em branco, serão calculados automaticamente.</li>
+              <li><b>DIV (dividendos)</b>: usar <b>quantidade</b> = nº de ações, <b>preco_entrada</b> = valor por ação e <b>data_fechamento</b> = data de pagamento; <b>resultado_valor</b> (opcional) = valor total.</li>
             </ul>
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <b>Campos obrigatórios:</b> identificador, ativo, categoria e quantidade. Para operações (ACAO/CALL/PUT/DOLLAR): também operacao, preco_entrada e preco_fechamento. Para DIV (dividendos): também preco_entrada (valor por ação) e data_fechamento (data de pagamento). Os demais campos são opcionais.
+            </div>
           </CardContent>
         </Card>
 
@@ -239,7 +264,8 @@ export default function ImportarHistorico() {
             {result && (
               <div className="rounded-md border p-4 space-y-2 text-sm">
                 <p className="font-medium">Importação concluída</p>
-                <p className="text-emerald-600">{result.created} operação(ões) importada(s) com sucesso.</p>
+                <p className="text-emerald-600">{result.createdOps} operação(ões) importada(s) com sucesso.</p>
+                {result.createdDivs > 0 && <p className="text-emerald-600">{result.createdDivs} dividendo(s) importado(s) com sucesso.</p>}
                 <Button variant="outline" size="sm" onClick={() => navigate('/historico')}>Ver histórico</Button>
               </div>
             )}

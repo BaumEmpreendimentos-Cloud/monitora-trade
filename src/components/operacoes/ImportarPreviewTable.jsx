@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2, AlertCircle } from 'lucide-react';
 
-const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
+const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 
 const inputCls = 'w-full px-1.5 py-1 text-xs rounded border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring';
