@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Download, ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct } from '@/lib/operacoes';
+import ImportarPreviewTable from '@/components/operacoes/ImportarPreviewTable';
 
 const TEMPLATE_ROWS = [
   ['identificador', 'ativo', 'ativo_base', 'categoria', 'operacao', 'quantidade', 'preco_entrada', 'data_abertura', 'strike', 'vencimento', 'preco_fechamento', 'resultado_valor', 'resultado_pct', 'data_fechamento'],
@@ -41,6 +42,9 @@ const SCHEMA = {
   },
 };
 
+const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
+const OPERACOES = ['COMPRA', 'VENDA'];
+
 const num = (v) => {
   if (v == null || v === '') return null;
   const n = typeof v === 'string' ? Number(String(v).replace(/\./g, '').replace(',', '.')) : Number(v);
@@ -54,10 +58,23 @@ const toDate = (v) => {
   return s;
 };
 
+const validateRow = (r) => {
+  if (!r.identificador || !String(r.identificador).trim()) return 'Identificador obrigatório';
+  if (!r.ativo || !String(r.ativo).trim()) return 'Ativo obrigatório';
+  if (!CATEGORIAS.includes(r.categoria)) return 'Categoria inválida';
+  if (!OPERACOES.includes(r.operacao)) return 'Operação inválida';
+  if (num(r.quantidade) == null || num(r.quantidade) <= 0) return 'Quantidade inválida';
+  if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Preço de entrada inválido';
+  if (num(r.preco_fechamento) == null) return 'Preço de fechamento inválido';
+  return null;
+};
+
 export default function ImportarHistorico() {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
@@ -72,15 +89,59 @@ export default function ImportarHistorico() {
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = async () => {
+  const handlePreview = async () => {
     if (!file) return;
-    setProcessing(true); setError(''); setResult(null);
+    setProcessing(true); setError(''); setResult(null); setPreview(null);
     try {
       const up = await base44.integrations.Core.UploadFile({ file });
       const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: up.file_url, json_schema: SCHEMA });
       const rows = (res.output && res.output.rows) || (Array.isArray(res.output) ? res.output : []);
       if (!rows.length) { setError('Nenhuma operação encontrada no arquivo.'); setProcessing(false); return; }
 
+      const parsed = rows.map((r) => {
+        const row = {
+          identificador: r.identificador || '',
+          ativo: (r.ativo || '').toUpperCase(),
+          ativo_base: (r.ativo_base || '').toUpperCase(),
+          categoria: (r.categoria || 'ACAO').toUpperCase(),
+          operacao: (r.operacao || 'COMPRA').toUpperCase(),
+          quantidade: r.quantidade ?? '',
+          preco_entrada: r.preco_entrada ?? '',
+          preco_fechamento: r.preco_fechamento ?? '',
+          data_abertura: r.data_abertura || '',
+          data_fechamento: r.data_fechamento || '',
+          strike: r.strike ?? '',
+          vencimento: r.vencimento || '',
+          resultado_valor: r.resultado_valor ?? '',
+          resultado_pct: r.resultado_pct ?? '',
+        };
+        row._error = validateRow(row);
+        return row;
+      });
+      setPreview(parsed);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setProcessing(false); }
+  };
+
+  const updateRow = (i, field, value) => {
+    setPreview((p) => {
+      const next = p.slice();
+      next[i] = { ...next[i], [field]: value };
+      next[i]._error = validateRow(next[i]);
+      return next;
+    });
+  };
+
+  const removeRow = (i) => {
+    setPreview((p) => p.filter((_, idx) => idx !== i));
+  };
+
+  const handleConfirm = async () => {
+    if (!preview) return;
+    const valid = preview.filter((r) => !r._error);
+    if (!valid.length) return;
+    setSaving(true); setError('');
+    try {
       const existing = await base44.entities.GrupoOperacao.list();
       const byName = {};
       (existing || []).forEach((g) => { byName[g.nome.toLowerCase()] = g; });
@@ -93,42 +154,35 @@ export default function ImportarHistorico() {
       };
 
       const records = [];
-      const errors = [];
-      for (const r of rows) {
-        try {
-          const grupo = await ensureGroup(r.identificador);
-          const operacao = (r.operacao || 'COMPRA').toUpperCase();
-          const quantidade = num(r.quantidade);
-          const precoEntrada = num(r.preco_entrada);
-          const precoFechamento = num(r.preco_fechamento);
-          if (precoEntrada == null || quantidade == null || precoFechamento == null) { errors.push(`${r.ativo || 'linha'}: dados insuficientes`); continue; }
-          const categoria = (r.categoria || 'ACAO').toUpperCase();
-          const rv = r.resultado_valor != null && r.resultado_valor !== '' ? num(r.resultado_valor) : calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento);
-          const rp = r.resultado_pct != null && r.resultado_pct !== '' ? num(r.resultado_pct) : calcResultadoPct(operacao, precoEntrada, precoFechamento);
-          records.push({
-            grupo_id: grupo.id, grupo_nome: grupo.nome,
-            ativo: r.ativo, ativo_base: r.ativo_base || null, categoria, operacao,
-            quantidade, preco_entrada: precoEntrada, valor_inicial: calcValorInicial(operacao, quantidade, precoEntrada),
-            data_abertura: r.data_abertura || null, strike: num(r.strike), vencimento: r.vencimento || null,
-            status: 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
-            data_fechamento: toDate(r.data_fechamento),
-          });
-        } catch (e) { errors.push(`${r.ativo || 'linha'}: ${e.message}`); }
+      for (const r of valid) {
+        const grupo = await ensureGroup(r.identificador);
+        const operacao = r.operacao;
+        const quantidade = num(r.quantidade);
+        const precoEntrada = num(r.preco_entrada);
+        const precoFechamento = num(r.preco_fechamento);
+        const rv = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento);
+        const rp = r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : calcResultadoPct(operacao, precoEntrada, precoFechamento);
+        records.push({
+          grupo_id: grupo.id, grupo_nome: grupo.nome,
+          ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
+          quantidade, preco_entrada: precoEntrada, valor_inicial: calcValorInicial(operacao, quantidade, precoEntrada),
+          data_abertura: r.data_abertura || null, strike: num(r.strike), vencimento: r.vencimento || null,
+          status: 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
+          data_fechamento: toDate(r.data_fechamento),
+        });
       }
 
-      let created = 0;
-      if (records.length) {
-        const createdRecs = await base44.entities.Operacao.bulkCreate(records);
-        created = createdRecs?.length || records.length;
-      }
-      setResult({ created, errors, total: rows.length });
+      const createdRecs = await base44.entities.Operacao.bulkCreate(records);
+      setResult({ created: createdRecs?.length || records.length });
+      setPreview(null);
+      setFile(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
-    finally { setProcessing(false); }
+    finally { setSaving(false); }
   };
 
   return (
     <div className="p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/historico')} title="Voltar"><ArrowLeft className="w-4 h-4" /></Button>
           <h1 className="text-2xl md:text-3xl font-heading font-bold">Importar Histórico de Operações</h1>
@@ -175,8 +229,8 @@ export default function ImportarHistorico() {
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-input file:bg-transparent file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent"
               />
-              <Button onClick={handleImport} disabled={!file || processing}>
-                <Upload className="w-4 h-4 mr-1" /> {processing ? 'Importando...' : 'Importar'}
+              <Button onClick={handlePreview} disabled={!file || processing}>
+                <Upload className="w-4 h-4 mr-1" /> {processing ? 'Lendo arquivo...' : 'Visualizar dados'}
               </Button>
             </div>
 
@@ -186,19 +240,29 @@ export default function ImportarHistorico() {
               <div className="rounded-md border p-4 space-y-2 text-sm">
                 <p className="font-medium">Importação concluída</p>
                 <p className="text-emerald-600">{result.created} operação(ões) importada(s) com sucesso.</p>
-                {result.errors?.length > 0 && (
-                  <div>
-                    <p className="text-destructive">{result.errors.length} linha(s) com erro:</p>
-                    <ul className="list-disc pl-5 text-muted-foreground max-h-40 overflow-auto">
-                      {result.errors.map((e, i) => <li key={i}>{e}</li>)}
-                    </ul>
-                  </div>
-                )}
                 <Button variant="outline" size="sm" onClick={() => navigate('/historico')}>Ver histórico</Button>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {preview && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Validar dados antes de confirmar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ImportarPreviewTable
+                rows={preview}
+                onChange={updateRow}
+                onRemove={removeRow}
+                onConfirm={handleConfirm}
+                onCancel={() => setPreview(null)}
+                saving={saving}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

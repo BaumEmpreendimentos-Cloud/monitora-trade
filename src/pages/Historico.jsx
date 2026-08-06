@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, Coins } from 'lucide-react';
+import { Upload, Coins, Pencil, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import EditarHistoricoDialog from '@/components/operacoes/EditarHistoricoDialog';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -15,20 +17,46 @@ export default function Historico() {
   const [dividendos, setDividendos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editarOp, setEditarOp] = useState(null);
+  const [toDelete, setToDelete] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [o, d] = await Promise.all([
-          base44.entities.Operacao.filter({ status: 'FECHADA' }, '-data_fechamento', 500),
-          base44.entities.Dividendo.list('-created_date', 500),
-        ]);
-        setOps(o || []);
-        setDividendos(d || []);
-      } catch (e) { setError(e.response?.data?.error || e.message); }
-      finally { setLoading(false); }
-    })();
-  }, []);
+  const loadData = async () => {
+    setLoading(true); setError('');
+    try {
+      const [o, d] = await Promise.all([
+        base44.entities.Operacao.filter({ status: 'FECHADA' }, '-data_fechamento', 500),
+        base44.entities.Dividendo.list('-created_date', 500),
+      ]);
+      setOps(o || []);
+      setDividendos(d || []);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleEditar = async (id, dados) => {
+    setSaving(true); setError('');
+    try {
+      const updated = await base44.entities.Operacao.update(id, dados);
+      setOps((p) => p.map((o) => (o.id === id ? { ...updated, grupo_nome: o.grupo_nome } : o)));
+      setEditarOp(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
+    const o = toDelete;
+    if (!o) return;
+    setSaving(true); setError('');
+    try {
+      await base44.entities.Operacao.delete(o.id);
+      setOps((p) => p.filter((x) => x.id !== o.id));
+      setToDelete(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setSaving(false); }
+  };
 
   const todayStr = new Date().toISOString().split('T')[0];
   const divPorGrupo = {};
@@ -73,11 +101,12 @@ export default function Historico() {
                         <th className="text-right p-2">Result. %</th>
                         <th className="text-right p-2">Result. Valor</th>
                         <th className="text-right p-2">Encerrado em</th>
+                        <th className="p-2">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="bg-primary/5">
-                        <td colSpan={10} className="p-2.5">
+                        <td colSpan={11} className="p-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold">{nome}</span>
                             <span>Resultado Total: <b className={color(total)}>{fmt(total)}</b></span>
@@ -96,6 +125,12 @@ export default function Historico() {
                           <td className={`p-2 text-right ${color(o.resultado_pct)}`}>{fmtPct(o.resultado_pct)}</td>
                           <td className={`p-2 text-right ${color(o.resultado_valor)}`}>{fmt(o.resultado_valor)}</td>
                           <td className="p-2 text-right text-muted-foreground">{o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
+                          <td className="p-2">
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(o)} title="Excluir operação"><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                       {divs.map((d) => (
@@ -119,6 +154,18 @@ export default function Historico() {
             );
           })
         )}
+        <EditarHistoricoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditar} />
+        <Dialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Excluir operação</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">Deseja realmente excluir a operação <b>{toDelete?.ativo}</b>? Essa ação não pode ser desfeita.</p>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setToDelete(null)} disabled={saving}>Cancelar</Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={saving}>{saving ? 'Excluindo...' : 'Excluir'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
