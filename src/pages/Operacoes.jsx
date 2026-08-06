@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2 } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
 import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
+import DividendoForm from '@/components/operacoes/DividendoForm';
 import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
@@ -30,17 +31,20 @@ export default function Operacoes() {
   const [selectedOp, setSelectedOp] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const [dividendoGrupo, setDividendoGrupo] = useState(null);
+  const [dividendos, setDividendos] = useState([]);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const [g, o] = await Promise.all([
+      const [g, o, d] = await Promise.all([
         base44.entities.GrupoOperacao.list(),
         base44.entities.Operacao.list('-created_date', 500),
+        base44.entities.Dividendo.list('-created_date', 500),
       ]);
-      setGrupos(g || []); setOps(o || []);
+      setGrupos(g || []); setOps(o || []); setDividendos(d || []);
     } catch (e) { setError(e.response?.data?.error || e.message); }
     finally { setLoading(false); }
   }, []);
@@ -101,10 +105,18 @@ export default function Operacoes() {
     const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]);
     return s + (r || 0);
   }, 0);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isDivPendente = (d) => d.data_pagamento > todayStr;
+  const groupDivPendente = (id) => dividendos.filter((d) => d.grupo_id === id && isDivPendente(d)).reduce((s, d) => s + (d.valor_total || 0), 0);
+  const groupDivPago = (id) => dividendos.filter((d) => d.grupo_id === id && !isDivPendente(d)).reduce((s, d) => s + (d.valor_total || 0), 0);
+  const totalDivPendente = dividendos.filter(isDivPendente).reduce((s, d) => s + (d.valor_total || 0), 0);
+  const totalDivPago = dividendos.filter((d) => !isDivPendente(d)).reduce((s, d) => s + (d.valor_total || 0), 0);
+
   const totalDia = openOps.reduce((s, o) => s + dayVar(o), 0);
   const totalHist = closedOps.reduce((s, o) => s + (o.resultado_valor || 0), 0);
   const totalAberto = openOps.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0);
-  const totalTotal = totalHist + totalAberto;
+  const totalEncerradas = totalHist + totalDivPago;
+  const totalTotal = totalEncerradas + totalAberto + totalDivPendente;
 
   const handleCreate = async ({ identificador, ativo, ativo_base, categoria, operacao, quantidade, precoEntrada, dataAbertura, strike, vencimento }) => {
     setError('');
@@ -171,6 +183,28 @@ export default function Operacoes() {
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
 
+  const handleCreateDividendo = async ({ ativo, dataPagamento, quantidade, valorPorAcao, valorTotal }) => {
+    const g = dividendoGrupo;
+    if (!g) return;
+    setError('');
+    try {
+      const nova = await base44.entities.Dividendo.create({
+        grupo_id: g.id, grupo_nome: g.nome, ativo,
+        data_pagamento: dataPagamento, quantidade, valor_por_acao: valorPorAcao, valor_total: valorTotal,
+      });
+      setDividendos((p) => [...p, nova]);
+      setDividendoGrupo(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
+  const handleDeleteDividendo = async (id) => {
+    setError('');
+    try {
+      await base44.entities.Dividendo.delete(id);
+      setDividendos((p) => p.filter((d) => d.id !== id));
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -191,7 +225,7 @@ export default function Operacoes() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Resultado Op. Encerradas</p>
-            <p className={`text-xl font-bold ${color(totalHist)}`}>{fmt(totalHist)}</p>
+            <p className={`text-xl font-bold ${color(totalEncerradas)}`}>{fmt(totalEncerradas)}</p>
           </CardContent></Card>
           <Card><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Valor Total</p>
@@ -222,6 +256,8 @@ export default function Operacoes() {
                 return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
               })();
               const baseQuote = baseRef ? quotes[baseRef] : null;
+              const ativosBaseGrupo = [...new Set(gOpen.map((o) => o.ativo_base || o.ativo))];
+              const gDivPendente = dividendos.filter((d) => d.grupo_id === g.id && isDivPendente(d));
               return (
                 <Card key={g.id}>
                   <CardContent className="p-0 overflow-x-auto">
@@ -235,13 +271,14 @@ export default function Operacoes() {
                                 <span className="font-bold text-sm">{g.nome}</span>
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
+                                <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
                                 {baseRef && (
                                   <span className="text-xs text-muted-foreground ml-1">Ativo base: <b className="text-foreground">{baseRef}</b>{baseQuote != null ? ` • ${fmt(baseQuote)}` : ''}</span>
                                 )}
                               </div>
                               <div className="flex gap-6 text-sm">
-                                <span>Resultado Op. Encerradas: <b className={color(hist)}>{fmt(hist)}</b></span>
-                                <span>Valor Total: <b className={color(hist + groupAberto(g.id))}>{fmt(hist + groupAberto(g.id))}</b></span>
+                                <span>Resultado Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
+                                <span>Valor Total: <b className={color(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}>{fmt(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
                               </div>
                             </div>
@@ -299,6 +336,26 @@ export default function Operacoes() {
                             </tr>
                           );
                         })}
+                        {gDivPendente.map((d) => (
+                          <tr key={`div-${d.id}`} className="border-t bg-amber-50/50">
+                            <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
+                            <td className="p-2 text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                            <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
+                            <td className="p-2"></td>
+                            <td className="p-2 text-right">{d.quantidade}</td>
+                            <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                            <td className="p-2 text-right text-amber-600 text-xs">Pendente</td>
+                            <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
+                            <td className="p-2">
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDividendo(d.id)} title="Excluir dividendo"><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                       )}
                     </table>
@@ -320,6 +377,13 @@ export default function Operacoes() {
       <EncerrarDialog operacao={encerrar} onClose={() => setEncerrar(null)} onConfirm={handleEncerrar} />
       <EditarOperacaoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditarOperacao} />
       <EditarIdentificadorDialog grupo={editarGrupo} onClose={() => setEditarGrupo(null)} onSubmit={handleEditarIdentificador} />
+      <DividendoForm
+        open={!!dividendoGrupo}
+        onClose={() => setDividendoGrupo(null)}
+        grupo={dividendoGrupo}
+        ativosBase={dividendoGrupo ? [...new Set(openOps.filter((o) => o.grupo_id === dividendoGrupo.id).map((o) => o.ativo_base || o.ativo))] : []}
+        onSubmit={handleCreateDividendo}
+      />
     </div>
   );
 }

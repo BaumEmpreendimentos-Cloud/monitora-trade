@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload } from 'lucide-react';
+import { Upload, Coins } from 'lucide-react';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -12,22 +12,31 @@ const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emeral
 export default function Historico() {
   const navigate = useNavigate();
   const [ops, setOps] = useState([]);
+  const [dividendos, setDividendos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const o = await base44.entities.Operacao.filter({ status: 'FECHADA' }, '-data_fechamento', 500);
+        const [o, d] = await Promise.all([
+          base44.entities.Operacao.filter({ status: 'FECHADA' }, '-data_fechamento', 500),
+          base44.entities.Dividendo.list('-created_date', 500),
+        ]);
         setOps(o || []);
+        setDividendos(d || []);
       } catch (e) { setError(e.response?.data?.error || e.message); }
       finally { setLoading(false); }
     })();
   }, []);
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const divPorGrupo = {};
+  dividendos.filter((d) => d.data_pagamento <= todayStr).forEach((d) => { (divPorGrupo[d.grupo_nome] ||= []).push(d); });
+
   const grupos = {};
   ops.forEach((o) => { (grupos[o.grupo_nome] ||= []).push(o); });
-  const nomes = Object.keys(grupos);
+  const nomes = [...new Set([...Object.keys(grupos), ...Object.keys(divPorGrupo)])];
 
   return (
     <div className="p-4 md:p-8">
@@ -43,8 +52,11 @@ export default function Historico() {
           <p className="text-sm text-muted-foreground text-center py-10">Nenhuma operação encerrada.</p>
         ) : (
           nomes.map((nome) => {
-            const lista = grupos[nome];
-            const total = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
+            const lista = grupos[nome] || [];
+            const divs = divPorGrupo[nome] || [];
+            const totalOps = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
+            const totalDiv = divs.reduce((s, d) => s + (d.valor_total || 0), 0);
+            const total = totalOps + totalDiv;
             return (
               <Card key={nome}>
                 <CardContent className="p-0 overflow-x-auto">
@@ -84,6 +96,20 @@ export default function Historico() {
                           <td className={`p-2 text-right ${color(o.resultado_pct)}`}>{fmtPct(o.resultado_pct)}</td>
                           <td className={`p-2 text-right ${color(o.resultado_valor)}`}>{fmt(o.resultado_valor)}</td>
                           <td className="p-2 text-right text-muted-foreground">{o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
+                        </tr>
+                      ))}
+                      {divs.map((d) => (
+                        <tr key={`div-${d.id}`} className="border-t bg-amber-50/50">
+                          <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
+                          <td className="p-2 text-muted-foreground">—</td>
+                          <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
+                          <td className="p-2">—</td>
+                          <td className="p-2 text-right">{d.quantidade}</td>
+                          <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right">—</td>
+                          <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
+                          <td className="p-2 text-right text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
