@@ -11,8 +11,11 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const origin = (body.origin || '').toString().trim();
-    if (!origin) return Response.json({ error: 'origin é obrigatório.' }, { status: 400 });
+    const appOrigin = (() => { try { return new URL(req.url).origin; } catch { return ''; } })();
+    if (!appOrigin) return Response.json({ error: 'Não foi possível determinar a origem da aplicação.' }, { status: 400 });
+    const sentOrigin = (body.origin || '').toString().trim();
+    if (sentOrigin && sentOrigin !== appOrigin) return Response.json({ error: 'Origem inválida.' }, { status: 400 });
+    const origin = appOrigin;
 
     const stripe = new Stripe(secrets.get('STRIPE_SECRET_KEY'));
     const session = await stripe.checkout.sessions.create({
