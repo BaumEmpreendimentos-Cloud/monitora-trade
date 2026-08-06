@@ -20,6 +20,9 @@
     "texto"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
@@ -38,7 +41,6 @@
         }
       ]
     },
-    "create": true,
     "update": {
       "$or": [
         {
