@@ -20,6 +20,7 @@ export default function Operacoes() {
   const [grupos, setGrupos] = useState([]);
   const [ops, setOps] = useState([]);
   const [quotes, setQuotes] = useState({});
+  const [prevQuotes, setPrevQuotes] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -56,8 +57,17 @@ export default function Operacoes() {
       const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: tickers.join(',') });
       const arr = res.data.quotes || [];
       const map = {};
-      arr.forEach((q) => { map[q.symbol || q.ticker] = q.close; });
+      const prevMap = {};
+      arr.forEach((q) => {
+        const sym = q.symbol || q.ticker;
+        map[sym] = q.close;
+        const prev = q.previous_close != null ? q.previous_close
+          : q.previousClose != null ? q.previousClose
+          : (q.close != null && q.change != null ? q.close - q.change : null);
+        prevMap[sym] = prev != null ? prev : q.close;
+      });
       setQuotes(map);
+      setPrevQuotes(prevMap);
       setLastUpdate(new Date());
     } catch (e) { setError(e.response?.data?.error || e.message); }
     finally { setLoadingQuotes(false); }
@@ -76,13 +86,22 @@ export default function Operacoes() {
   const closedOps = ops.filter((o) => o.status === 'FECHADA');
   const groupsWithOpen = grupos.filter((g) => openOps.some((o) => o.grupo_id === g.id));
   const groupHistorico = (id) => closedOps.filter((o) => o.grupo_id === id).reduce((s, o) => s + (o.resultado_valor || 0), 0);
-  const groupDia = (id) => openOps.filter((o) => o.grupo_id === id).reduce((s, o) => {
+  const dayVar = (o) => {
+    const cur = quotes[o.ativo];
+    const prev = prevQuotes[o.ativo];
+    if (cur == null || prev == null) return 0;
+    const dir = o.operacao === 'VENDA' ? -1 : 1;
+    return (cur - prev) * o.quantidade * dir;
+  };
+  const groupDia = (id) => openOps.filter((o) => o.grupo_id === id).reduce((s, o) => s + dayVar(o), 0);
+  const groupAberto = (id) => openOps.filter((o) => o.grupo_id === id).reduce((s, o) => {
     const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]);
     return s + (r || 0);
   }, 0);
-  const totalDia = openOps.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0);
+  const totalDia = openOps.reduce((s, o) => s + dayVar(o), 0);
   const totalHist = closedOps.reduce((s, o) => s + (o.resultado_valor || 0), 0);
-  const totalTotal = totalDia + totalHist;
+  const totalAberto = openOps.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0);
+  const totalTotal = totalHist + totalAberto;
 
   const handleCreate = async ({ identificador, ativo, ativo_base, categoria, operacao, quantidade, precoEntrada, dataAbertura, strike, vencimento }) => {
     setError('');
@@ -168,16 +187,16 @@ export default function Operacoes() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Resultado do Dia</p>
-            <p className={`text-xl font-bold ${color(totalDia)}`}>{fmt(totalDia)}</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Resultado Histórico</p>
+            <p className="text-xs text-muted-foreground">Resultado Op. Encerradas</p>
             <p className={`text-xl font-bold ${color(totalHist)}`}>{fmt(totalHist)}</p>
           </CardContent></Card>
           <Card><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Valor Total</p>
             <p className={`text-xl font-bold ${color(totalTotal)}`}>{fmt(totalTotal)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Resultado do Dia</p>
+            <p className={`text-xl font-bold ${color(totalDia)}`}>{fmt(totalDia)}</p>
           </CardContent></Card>
         </div>
 
@@ -218,9 +237,9 @@ export default function Operacoes() {
                                 )}
                               </div>
                               <div className="flex gap-6 text-sm">
-                                <span>Resultado Histórico: <b className={color(hist)}>{fmt(hist)}</b></span>
+                                <span>Resultado Op. Encerradas: <b className={color(hist)}>{fmt(hist)}</b></span>
+                                <span>Valor Total: <b className={color(hist + groupAberto(g.id))}>{fmt(hist + groupAberto(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
-                                <span>Valor Total: <b className={color(hist + dia)}>{fmt(hist + dia)}</b></span>
                               </div>
                             </div>
                           </th>
