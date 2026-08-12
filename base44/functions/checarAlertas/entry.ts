@@ -53,7 +53,11 @@ export default async function(req) {
     for (const alerta of precoAlertas) {
       const preco = quotesMap[alerta.ativo];
       if (preco == null) continue;
-      const hit = alerta.condicao === 'ACIMA' ? preco >= alerta.valor_alvo : preco <= alerta.valor_alvo;
+      const hit = alerta.condicao === 'MAIOR_IGUAL'
+        ? preco >= alerta.valor_alvo
+        : alerta.condicao === 'MENOR_IGUAL'
+          ? preco <= alerta.valor_alvo
+          : Math.abs(preco - alerta.valor_alvo) < 0.01;
       if (hit) triggered.push({ alerta, valorAtual: preco });
     }
 
@@ -77,7 +81,11 @@ export default async function(req) {
       } else {
         valorComparar = resultadoValor;
       }
-      const hit = alerta.condicao === 'ACIMA' ? valorComparar >= alerta.valor_alvo : valorComparar <= alerta.valor_alvo;
+      const hit = alerta.condicao === 'MAIOR_IGUAL'
+        ? valorComparar >= alerta.valor_alvo
+        : alerta.condicao === 'MENOR_IGUAL'
+          ? valorComparar <= alerta.valor_alvo
+          : Math.abs(valorComparar - alerta.valor_alvo) < 0.01;
       if (hit) triggered.push({ alerta, valorAtual: valorComparar });
     }
 
@@ -85,11 +93,12 @@ export default async function(req) {
     for (const { alerta, valorAtual } of triggered) {
       const userId = alerta.created_by_id;
       let texto;
+      const condTxt = alerta.condicao === 'MAIOR_IGUAL' ? 'maior ou igual a' : alerta.condicao === 'MENOR_IGUAL' ? 'menor ou igual a' : 'exatamente';
       if (alerta.tipo === 'PRECO') {
-        texto = `🔔 ${alerta.ativo}: preço ${alerta.condicao === 'ACIMA' ? 'acima' : 'abaixo'} de R$ ${alerta.valor_alvo} (atual: R$ ${valorAtual.toFixed(2)}).`;
+        texto = `🔔 ${alerta.ativo}: preço ${condTxt} R$ ${alerta.valor_alvo} (atual: R$ ${valorAtual.toFixed(2)}).`;
       } else {
         const suffix = alerta.metrica === 'PERCENTUAL' ? '%' : ' R$';
-        texto = `🔔 ${alerta.grupo_nome || 'Grupo'}: resultado ${alerta.condicao === 'ACIMA' ? 'acima' : 'abaixo'} de ${alerta.valor_alvo}${suffix} (atual: ${valorAtual.toFixed(2)}${suffix}).`;
+        texto = `🔔 ${alerta.grupo_nome || 'Grupo'}: resultado ${condTxt} ${alerta.valor_alvo}${suffix} (atual: ${valorAtual.toFixed(2)}${suffix}).`;
       }
       // Mensagem in-app
       try {

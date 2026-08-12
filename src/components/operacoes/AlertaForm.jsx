@@ -9,7 +9,7 @@ import { Trash2 } from 'lucide-react';
 
 export default function AlertaForm({ open, onClose, tipo, grupo, operacao }) {
   const [metrica, setMetrica] = useState('VALOR');
-  const [condicao, setCondicao] = useState('ACIMA');
+  const [condicao, setCondicao] = useState('MAIOR_IGUAL');
   const [valorAlvo, setValorAlvo] = useState('');
   const [err, setErr] = useState('');
   const [alertas, setAlertas] = useState([]);
@@ -17,7 +17,7 @@ export default function AlertaForm({ open, onClose, tipo, grupo, operacao }) {
 
   useEffect(() => {
     if (!open) return;
-    setMetrica('VALOR'); setCondicao('ACIMA'); setValorAlvo(''); setErr('');
+    setMetrica('VALOR'); setCondicao('MAIOR_IGUAL'); setValorAlvo(''); setErr('');
     (async () => {
       try {
         const filter = tipo === 'RESULTADO'
@@ -84,7 +84,7 @@ export default function AlertaForm({ open, onClose, tipo, grupo, operacao }) {
             <Label className="text-xs text-muted-foreground">Alertas ativos</Label>
             {alertas.map(a => (
               <div key={a.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
-                <span>{a.condicao === 'ACIMA' ? '≥' : '≤'} {fmtAlvo(a)}</span>
+                <span>{a.condicao === 'MAIOR_IGUAL' ? '≥' : a.condicao === 'MENOR_IGUAL' ? '≤' : '='} {fmtAlvo(a)}</span>
                 <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(a.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -103,7 +103,7 @@ export default function AlertaForm({ open, onClose, tipo, grupo, operacao }) {
           )}
           <div>
             <Label>Condição</Label>
-            <MobileSelect value={condicao} onValueChange={setCondicao} options={['ACIMA', 'ABAIXO']} placeholder="Condição" />
+            <MobileSelect value={condicao} onValueChange={setCondicao} options={[{ value: 'MAIOR_IGUAL', label: '≥ Maior ou igual' }, { value: 'MENOR_IGUAL', label: '≤ Menor ou igual' }, { value: 'EXATO', label: '= Exatamente' }]} placeholder="Condição" />
           </div>
           <div>
             <Label>Valor Alvo {tipo === 'RESULTADO' ? (metrica === 'PERCENTUAL' ? '(%)' : '(R$)') : '(R$)'}</Label>
