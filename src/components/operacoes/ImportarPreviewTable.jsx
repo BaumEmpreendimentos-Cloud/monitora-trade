@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2, AlertCircle } from 'lucide-react';
+import MobileSelect from '@/components/MobileSelect';
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'];
 const OPERACOES = ['COMPRA', 'VENDA'];
@@ -46,15 +47,11 @@ export default function ImportarPreviewTable({ rows, onChange, onRemove, onConfi
                 <td className="p-1"><input className={inputCls} value={r.identificador} onChange={(e) => onChange(i, 'identificador', e.target.value)} /></td>
                 <td className="p-1"><input className={`${inputCls} uppercase`} value={r.ativo} onChange={(e) => onChange(i, 'ativo', e.target.value.toUpperCase())} /></td>
                 <td className="p-1"><input className={`${inputCls} uppercase`} value={r.ativo_base || ''} onChange={(e) => onChange(i, 'ativo_base', e.target.value.toUpperCase())} /></td>
-                <td className="p-1">
-                  <select className={inputCls} value={r.categoria} onChange={(e) => onChange(i, 'categoria', e.target.value)}>
-                    {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                <td className="p-1 min-w-[90px]">
+                  <MobileSelect value={r.categoria} onValueChange={(v) => onChange(i, 'categoria', v)} options={CATEGORIAS} placeholder="Cat." />
                 </td>
-                <td className="p-1">
-                  <select className={inputCls} value={r.operacao} onChange={(e) => onChange(i, 'operacao', e.target.value)}>
-                    {OPERACOES.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                <td className="p-1 min-w-[90px]">
+                  <MobileSelect value={r.operacao} onValueChange={(v) => onChange(i, 'operacao', v)} options={OPERACOES} placeholder="Op." />
                 </td>
                 <td className="p-1"><input className={`${inputCls} text-right`} value={r.quantidade} onChange={(e) => onChange(i, 'quantidade', e.target.value)} /></td>
                 <td className="p-1"><input className={`${inputCls} text-right`} value={r.preco_entrada} onChange={(e) => onChange(i, 'preco_entrada', e.target.value)} /></td>

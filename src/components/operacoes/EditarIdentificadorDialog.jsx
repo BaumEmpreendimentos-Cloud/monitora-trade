@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -19,21 +19,19 @@ export default function EditarIdentificadorDialog({ grupo, onClose, onSubmit }) 
   };
 
   return (
-    <Dialog open={!!grupo} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Editar Identificador</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+    <ResponsiveDialog
+      open={!!grupo}
+      onOpenChange={(v) => !v && onClose()}
+      title="Editar Identificador"
+      footer={<><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={submit}>Salvar</Button></>}
+    >
+      <div className="space-y-3">
           <div>
             <Label>Identificador</Label>
             <Input value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={submit}>Salvar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDialog>
   );
 }

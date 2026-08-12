@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -72,10 +72,13 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Nova Operação</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(v) => !v && onClose()}
+      title="Nova Operação"
+      footer={<><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={submit}>Abrir Operação</Button></>}
+    >
+      <div className="space-y-3">
           <div>
             <Label>Identificador</Label>
             <Input
@@ -136,12 +139,7 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
             <Input type="date" value={dataAbertura} onChange={(e) => setDataAbertura(e.target.value)} />
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={submit}>Abrir Operação</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDialog>
   );
 }

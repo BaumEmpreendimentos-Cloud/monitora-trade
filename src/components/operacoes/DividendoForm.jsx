@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/MobileSelect';
 
 export default function DividendoForm({ open, onClose, grupo, ativosBase, onSubmit }) {
   const [ativo, setAtivo] = useState('');
@@ -41,23 +41,17 @@ export default function DividendoForm({ open, onClose, grupo, ativosBase, onSubm
   const multi = ativosBase && ativosBase.length > 1;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Dividendos — {grupo?.nome}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title={`Dividendos — ${grupo?.nome}`}
+      footer={<><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={handleSubmit}>Adicionar</Button></>}
+    >
+      <div className="space-y-3">
           <div>
             <Label>Ativo base</Label>
             {multi ? (
-              <Select value={ativo} onValueChange={setAtivo}>
-                <SelectTrigger><SelectValue placeholder="Selecione o ativo" /></SelectTrigger>
-                <SelectContent>
-                  {ativosBase.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MobileSelect value={ativo} onValueChange={setAtivo} options={ativosBase} placeholder="Selecione o ativo" />
             ) : (
               <Input value={ativo || '—'} readOnly />
             )}
@@ -75,12 +69,7 @@ export default function DividendoForm({ open, onClose, grupo, ativosBase, onSubm
             <Input type="number" min="0" step="0.01" value={valorPorAcao} onChange={(e) => setValorPorAcao(e.target.value)} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSubmit}>Adicionar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDialog>
   );
 }

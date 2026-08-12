@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -25,11 +25,27 @@ function useIsMobile() {
   return isMobile;
 }
 
+const PAGE_TITLES = {
+  '/operacoes': 'Operações',
+  '/historico': 'Histórico',
+  '/importar-historico': 'Importar Histórico',
+  '/cotacoes': 'Cotações',
+  '/mensagens': 'Mensagens',
+  '/painel': 'Painel',
+  '/assinatura': 'Premium',
+  '/configuracoes': 'Configurações',
+};
+
+const MAIN_TABS = ['/operacoes', '/historico', '/cotacoes', '/mensagens', '/configuracoes'];
+
 export default function Layout() {
   const { user, checkUserAuth, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const admin = isGestor(user);
+  const pageTitle = PAGE_TITLES[location.pathname] || '';
+  const showBack = !MAIN_TABS.includes(location.pathname);
 
   const handleTabClick = (e, path) => {
     if (location.pathname === path) {
@@ -67,7 +83,17 @@ export default function Layout() {
   const premium = isPremium(user);
 
   return (
-    <div className="min-h-screen bg-background pb-safe pt-safe">
+    <div className="min-h-screen bg-background pb-safe">
+      <header className="md:hidden sticky top-0 z-20 bg-card border-b" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="h-12 flex items-center justify-center px-3 relative">
+          {showBack && (
+            <button onClick={() => navigate(-1)} className="absolute left-1 p-2">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <span className="font-heading font-bold text-sm">{pageTitle}</span>
+        </div>
+      </header>
       <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">

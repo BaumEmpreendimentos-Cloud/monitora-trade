@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Coins, Pencil, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ResponsiveDialog from '@/components/ResponsiveDialog';
 import EditarHistoricoDialog from '@/components/operacoes/EditarHistoricoDialog';
 import HistoricoGrupoMobile from '@/components/operacoes/HistoricoGrupoMobile';
 
@@ -159,17 +159,16 @@ export default function Historico() {
           })
         )}
         <EditarHistoricoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditar} />
-        <Dialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>Excluir operação</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Deseja realmente excluir a operação <b>{toDelete?.ativo}</b>? Essa ação não pode ser desfeita.</p>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setToDelete(null)} disabled={saving}>Cancelar</Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={saving}>{saving ? 'Excluindo...' : 'Excluir'}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ResponsiveDialog
+          open={!!toDelete}
+          onOpenChange={(v) => !v && setToDelete(null)}
+          title="Excluir operação"
+          className="max-w-sm"
+          footer={<><Button variant="outline" onClick={() => setToDelete(null)} disabled={saving}>Cancelar</Button><Button variant="destructive" onClick={handleDelete} disabled={saving}>{saving ? 'Excluindo...' : 'Excluir'}</Button></>}
+        >
+          <p className="text-sm text-muted-foreground">Deseja realmente excluir a operação <b>{toDelete?.ativo}</b>? Essa ação não pode ser desfeita.</p>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </ResponsiveDialog>
       </div>
     </div>
   );

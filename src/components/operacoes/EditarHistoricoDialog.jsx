@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -78,10 +78,14 @@ export default function EditarHistoricoDialog({ operacao, onClose, onSubmit }) {
   };
 
   return (
-    <Dialog open={!!operacao} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Editar Operação {operacao?.ativo}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+    <ResponsiveDialog
+      open={!!operacao}
+      onOpenChange={(v) => !v && onClose()}
+      title={`Editar Operação ${operacao?.ativo}`}
+      className="max-w-lg"
+      footer={<><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={submit}>Salvar</Button></>}
+    >
+      <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Ativo</Label>
@@ -144,12 +148,7 @@ export default function EditarHistoricoDialog({ operacao, onClose, onSubmit }) {
           </div>
 
           {err && <p className="text-sm text-destructive">{err}</p>}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={submit}>Salvar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </ResponsiveDialog>
   );
 }
