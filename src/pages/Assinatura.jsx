@@ -4,13 +4,17 @@ import { useAuth } from '@/lib/AuthContext';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Crown, CheckCircle2, XCircle, Loader2, Clock, ShieldCheck } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Loader2, Clock, ShieldCheck, Users, Copy, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Assinatura() {
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [indicacoes, setIndicacoes] = useState([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -22,6 +26,21 @@ export default function Assinatura() {
       setStatusMsg('Assinatura cancelada. Você pode tentar novamente quando quiser.');
     }
   }, [checkUserAuth]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    base44.entities.Indicacao.filter({ indicado_por_id: user.id })
+      .then(setIndicacoes)
+      .catch(() => {});
+  }, [user?.id]);
+
+  const refLink = user?.id ? `${window.location.origin}/register?ref=${user.id}` : '';
+  const copyRefLink = () => {
+    if (!refLink) return;
+    navigator.clipboard.writeText(refLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const admin = isGestor(user);
   const premium = isPremium(user);
@@ -101,7 +120,11 @@ export default function Assinatura() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <p className="text-3xl font-heading font-bold">R$ 49,90<span className="text-base font-normal text-muted-foreground">/mês</span></p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-heading font-bold">R$ 12,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
+                    <span className="text-sm text-muted-foreground line-through">R$ 30,00</span>
+                  </div>
+                  <p className="text-xs text-emerald-600 font-medium">🎯 Lançamento: 60% OFF nos primeiros 6 meses!</p>
                   <ul className="text-sm space-y-1.5 text-muted-foreground">
                     <li>• Cotações em tempo real da B3</li>
                     <li>• Histórico avançado de operações</li>
@@ -116,6 +139,45 @@ export default function Assinatura() {
             )}
           </CardContent>
         </Card>
+
+        {user?.id && !admin && (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-heading font-bold">Programa de Afiliados</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Indique amigos e ganhe <strong>1 mês grátis</strong> por cada assinatura ativa.
+              </p>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Seu link de indicação</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={refLink} className="text-xs" />
+                  <Button variant="outline" size="icon" onClick={copyRefLink} title="Copiar link">
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              {indicacoes.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Indicações</p>
+                    <p className="text-lg font-bold">{indicacoes.length}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Convertidas</p>
+                    <p className="text-lg font-bold text-emerald-600">{indicacoes.filter(i => i.status === 'convertido').length}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Pendentes</p>
+                    <p className="text-lg font-bold text-amber-600">{indicacoes.filter(i => i.status === 'pendente').length}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

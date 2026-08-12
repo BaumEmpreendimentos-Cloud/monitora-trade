@@ -18,11 +18,18 @@ export default async function(req) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: PRICE_ID, quantity: 1 }],
+      discounts: [{ coupon: 'lancamento60' }],
       client_reference_id: user.id,
       customer_email: user.email,
       metadata: {
         user_id: user.id,
         base44_app_id: secrets.get('BASE44_APP_ID') || ''
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          base44_app_id: secrets.get('BASE44_APP_ID') || ''
+        }
       },
       success_url: `${origin}/assinatura?status=success`,
       cancel_url: `${origin}/assinatura?status=canceled`,
