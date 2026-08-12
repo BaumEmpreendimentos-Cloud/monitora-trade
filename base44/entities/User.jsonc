@@ -56,6 +56,21 @@
           }
         }
       }
+    },
+    "notif_push": {
+      "type": "boolean",
+      "title": "Notifica\u00e7\u00f5es Push",
+      "default": true
+    },
+    "notif_email": {
+      "type": "boolean",
+      "title": "Notifica\u00e7\u00f5es por E-mail",
+      "default": true
+    },
+    "notif_inapp": {
+      "type": "boolean",
+      "title": "Notifica\u00e7\u00f5es no App",
+      "default": true
     }
   },
   "required": [

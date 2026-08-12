@@ -5,7 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Trash2, User, Crown, Calendar } from 'lucide-react';
+import { Trash2, User, Crown, Calendar, Bell } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 
 export default function Configuracoes() {
@@ -14,6 +15,18 @@ export default function Configuracoes() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [savingNotif, setSavingNotif] = useState(false);
+
+  const handleNotifToggle = async (field, value) => {
+    setSavingNotif(true);
+    try {
+      await base44.auth.updateMe({ [field]: value });
+    } catch (e) {
+      console.error('notif save error', e);
+    } finally {
+      setSavingNotif(false);
+    }
+  };
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -53,6 +66,46 @@ export default function Configuracoes() {
                 {isPremium(user) || isGestor(user) ? <Crown className="w-4 h-4 text-amber-500" /> : <Calendar className="w-4 h-4" />}
                 {planLabel}
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5" /> Notificações</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">Escolha os canais onde deseja receber os alertas. Todos estão habilitados por padrão.</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Push (Celular)</p>
+                <p className="text-xs text-muted-foreground">Notificações nativas no iOS e Android</p>
+              </div>
+              <Switch
+                checked={user?.notif_push !== false}
+                disabled={savingNotif}
+                onCheckedChange={(v) => handleNotifToggle('notif_push', v)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">E-mail</p>
+                <p className="text-xs text-muted-foreground">Receber alertas no seu e-mail cadastrado</p>
+              </div>
+              <Switch
+                checked={user?.notif_email !== false}
+                disabled={savingNotif}
+                onCheckedChange={(v) => handleNotifToggle('notif_email', v)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">No App</p>
+                <p className="text-xs text-muted-foreground">Mensagens internas na aba Mensagens</p>
+              </div>
+              <Switch
+                checked={user?.notif_inapp !== false}
+                disabled={savingNotif}
+                onCheckedChange={(v) => handleNotifToggle('notif_inapp', v)}
+              />
             </div>
           </CardContent>
         </Card>

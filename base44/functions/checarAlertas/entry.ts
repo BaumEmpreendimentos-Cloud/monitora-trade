@@ -118,27 +118,39 @@ export default async function(req) {
         const suffix = alerta.metrica === 'PERCENTUAL' ? '%' : ' R$';
         texto = `🔔 ${alerta.grupo_nome || 'Grupo'}: resultado ${condTxt} ${alerta.valor_alvo}${suffix} (atual: ${valorAtual.toFixed(2)}${suffix}).`;
       }
+      // Buscar preferências de notificação do usuário (default: tudo habilitado)
+      let userRec = null;
+      try {
+        userRec = await base44.asServiceRole.entities.User.get(userId);
+      } catch (e) { console.error('User fetch failed:', e.message); }
+      const notifInapp = userRec?.notif_inapp !== false;
+      const notifEmail = userRec?.notif_email !== false;
+      const notifPush = userRec?.notif_push !== false;
+
       // Mensagem in-app
-      try {
-        await base44.asServiceRole.entities.Mensagem.create({ para_id: userId, para_nome: 'Alertas', texto });
-      } catch (e) { console.error('Mensagem create failed:', e.message); }
+      if (notifInapp) {
+        try {
+          await base44.asServiceRole.entities.Mensagem.create({ para_id: userId, para_nome: 'Alertas', texto });
+        } catch (e) { console.error('Mensagem create failed:', e.message); }
+      }
       // E-mail
-      try {
-        const user = await base44.asServiceRole.entities.User.get(userId);
-        if (user?.email) {
-          await base44.integrations.Core.SendEmail({ to: user.email, subject: 'Alerta — Monitora Trade', body: texto });
-        }
-      } catch (e) { console.error('Email send failed:', e.message); }
+      if (notifEmail && userRec?.email) {
+        try {
+          await base44.integrations.Core.SendEmail({ to: userRec.email, subject: 'Alerta — Monitora Trade', body: texto });
+        } catch (e) { console.error('Email send failed:', e.message); }
+      }
       // Push notification nativa (iOS/Android)
-      try {
-        await base44.asServiceRole.integrations.Core.SendPushNotification({
-          user_id: userId,
-          title: 'Alerta — Monitora Trade',
-          content: texto,
-          action_label: 'Ver operações',
-          action_url: '/operacoes'
-        });
-      } catch (e) { console.error('Push notification failed:', e.message); }
+      if (notifPush) {
+        try {
+          await base44.asServiceRole.integrations.Core.SendPushNotification({
+            user_id: userId,
+            title: 'Alerta — Monitora Trade',
+            content: texto,
+            action_label: 'Ver operações',
+            action_url: '/operacoes'
+          });
+        } catch (e) { console.error('Push notification failed:', e.message); }
+      }
       // Atualizar status do alerta
       try {
         await base44.asServiceRole.entities.Alerta.update(alerta.id, { status: 'DISPARADO', mensagem_disparo: texto });
