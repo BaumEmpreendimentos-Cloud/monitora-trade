@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2 } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2, Bell } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
 import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
 import DividendoForm from '@/components/operacoes/DividendoForm';
+import AlertaForm from '@/components/operacoes/AlertaForm';
 import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
@@ -34,6 +35,8 @@ export default function Operacoes() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [expanded, setExpanded] = useState({});
   const [dividendoGrupo, setDividendoGrupo] = useState(null);
+  const [alertaGrupo, setAlertaGrupo] = useState(null);
+  const [alertaOp, setAlertaOp] = useState(null);
   const [dividendos, setDividendos] = useState([]);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -276,6 +279,7 @@ export default function Operacoes() {
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
                                 <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
+                                <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setAlertaGrupo(g); }} title="Criar alerta de resultado"><Bell className="w-3.5 h-3.5 mr-1" /> Alerta</Button>
                                 {baseRef && (
                                   <span className="text-xs text-muted-foreground ml-1">Ativo base: <b className="text-foreground">{baseRef}</b>{baseQuote != null ? ` • ${fmt(baseQuote)}` : ''}</span>
                                 )}
@@ -333,6 +337,7 @@ export default function Operacoes() {
                               <td className={`p-2 text-right ${color(rv)}`}>{fmt(rv)}</td>
                               <td className="p-2" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setAlertaOp(o)} title="Criar alerta de preço"><Bell className="w-3.5 h-3.5" /></Button>
                                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
                                   <Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button>
                                 </div>
@@ -379,6 +384,8 @@ export default function Operacoes() {
                      onEncerrar={setEncerrar}
                      onAddDividendo={setDividendoGrupo}
                      onDeleteDividendo={handleDeleteDividendo}
+                     onAlertaGrupo={setAlertaGrupo}
+                     onAlertaOp={setAlertaOp}
                      summary={{ hist, dia, divPago: groupDivPago(g.id), aberto: groupAberto(g.id), divPendente: groupDivPendente(g.id) }}
                     />
                     {selectedInGroup && (
@@ -406,6 +413,8 @@ export default function Operacoes() {
         ativosBase={dividendoGrupo ? [...new Set(openOps.filter((o) => o.grupo_id === dividendoGrupo.id).map((o) => o.ativo_base || o.ativo))] : []}
         onSubmit={handleCreateDividendo}
       />
+      <AlertaForm open={!!alertaGrupo} onClose={() => setAlertaGrupo(null)} tipo="RESULTADO" grupo={alertaGrupo} />
+      <AlertaForm open={!!alertaOp} onClose={() => setAlertaOp(null)} tipo="PRECO" operacao={alertaOp} />
     </div>
     </PullToRefresh>
   );

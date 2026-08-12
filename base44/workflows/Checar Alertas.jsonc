@@ -1,0 +1,43 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * 1-5",
+      "one_time_date": null,
+      "timezone": "America/Sao_Paulo",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "checar_alertas",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "checar": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "checarAlertas"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Verificar alertas"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Checar Alertas",
+  "description": "Verifica alertas de pre\u00e7o e resultado a cada 5 minutos em dias \u00fateis"
+}

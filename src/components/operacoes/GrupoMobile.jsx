@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronRight, Coins, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Coins, Pencil, Trash2, Bell } from 'lucide-react';
 import { calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -8,7 +8,7 @@ const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Nu
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 const isOption = (c) => c === 'CALL' || c === 'PUT';
 
-export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expanded, onToggleExpand, selectedOp, onSelectOp, onSelectGroup, onEditGrupo, onEditOp, onEncerrar, onAddDividendo, onDeleteDividendo, summary }) {
+export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expanded, onToggleExpand, selectedOp, onSelectOp, onSelectGroup, onEditGrupo, onEditOp, onEncerrar, onAddDividendo, onDeleteDividendo, onAlertaGrupo, onAlertaOp, summary }) {
   const { hist, dia, divPago, aberto, divPendente } = summary;
   const ativosBase = [...new Set(openOps.map((o) => o.ativo_base || o.ativo))];
 
@@ -22,6 +22,7 @@ export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expan
         <div className="flex gap-1">
           <Button size="sm" variant="secondary" className="min-h-[44px] bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90" onClick={() => onSelectGroup(grupo.id)}>Mapa</Button>
           <Button size="sm" variant="outline" className="min-h-[44px]" onClick={() => onAddDividendo(grupo)} disabled={!ativosBase.length}><Coins className="w-3.5 h-3.5" /></Button>
+          <Button size="sm" variant="outline" className="min-h-[44px]" onClick={() => onAlertaGrupo(grupo)}><Bell className="w-3.5 h-3.5" /></Button>
           <Button size="icon" variant="ghost" className="h-11 w-11" onClick={() => onEditGrupo(grupo)}><Pencil className="w-3.5 h-3.5" /></Button>
         </div>
       </div>
@@ -60,6 +61,7 @@ export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expan
                   )}
                 </div>
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button size="sm" variant="outline" className="min-h-[44px] flex-1" onClick={() => onAlertaOp(o)}><Bell className="w-3.5 h-3.5 mr-1" />Alerta</Button>
                   <Button size="sm" variant="outline" className="min-h-[44px] flex-1" onClick={() => onEditOp(o)}><Pencil className="w-3.5 h-3.5 mr-1" />Editar</Button>
                   <Button size="sm" variant="outline" className="min-h-[44px] flex-1" onClick={() => onEncerrar(o)}>Encerrar</Button>
                 </div>

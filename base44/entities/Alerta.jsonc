@@ -1,0 +1,84 @@
+{
+  "name": "Alerta",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "RESULTADO",
+        "PRECO"
+      ],
+      "title": "Tipo",
+      "description": "RESULTADO = resultado do grupo em R$ ou %, PRECO = pre\u00e7o alvo do ativo"
+    },
+    "grupo_id": {
+      "type": "string",
+      "title": "ID do Grupo"
+    },
+    "grupo_nome": {
+      "type": "string",
+      "title": "Nome do Grupo"
+    },
+    "operacao_id": {
+      "type": "string",
+      "title": "ID da Opera\u00e7\u00e3o"
+    },
+    "ativo": {
+      "type": "string",
+      "title": "Ativo"
+    },
+    "metrica": {
+      "type": "string",
+      "enum": [
+        "VALOR",
+        "PERCENTUAL"
+      ],
+      "title": "M\u00e9trica"
+    },
+    "condicao": {
+      "type": "string",
+      "enum": [
+        "ACIMA",
+        "ABAIXO"
+      ],
+      "default": "ACIMA",
+      "title": "Condi\u00e7\u00e3o"
+    },
+    "valor_alvo": {
+      "type": "number",
+      "title": "Valor Alvo"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ATIVO",
+        "DISPARADO"
+      ],
+      "default": "ATIVO",
+      "title": "Status"
+    },
+    "mensagem_disparo": {
+      "type": "string",
+      "title": "Mensagem de Disparo"
+    }
+  },
+  "required": [
+    "tipo",
+    "condicao",
+    "valor_alvo"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
