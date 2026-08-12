@@ -116,9 +116,15 @@
   .pb-safe {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
   }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
   @media (min-width: 768px) {
     .pb-safe {
       padding-bottom: 0;
+    }
+    .pt-safe {
+      padding-top: 0;
     }
   }
 }

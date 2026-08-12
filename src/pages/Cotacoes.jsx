@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import PullToRefresh from '@/components/PullToRefresh';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -105,6 +106,7 @@ export default function Cotacoes() {
   };
 
   return (
+    <PullToRefresh onRefresh={refreshQuotes}>
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -209,5 +211,6 @@ export default function Cotacoes() {
         </div>
       </div>
     </div>
+    </PullToRefresh>
   );
 }

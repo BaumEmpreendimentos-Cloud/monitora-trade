@@ -11,6 +11,7 @@ import DividendoForm from '@/components/operacoes/DividendoForm';
 import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
+import PullToRefresh from '@/components/PullToRefresh';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -207,6 +208,7 @@ export default function Operacoes() {
   };
 
   return (
+    <PullToRefresh onRefresh={fetchQuotes}>
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -405,5 +407,6 @@ export default function Operacoes() {
         onSubmit={handleCreateDividendo}
       />
     </div>
+    </PullToRefresh>
   );
 }

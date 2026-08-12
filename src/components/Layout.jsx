@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
@@ -12,10 +13,30 @@ const linkClass = ({ isActive }) =>
 const mobileLinkClass = ({ isActive }) =>
   `flex flex-col items-center justify-center gap-0.5 min-h-[44px] flex-1 no-select ${isActive ? 'text-primary' : 'text-muted-foreground'}`;
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = () => setIsMobile(mq.matches);
+    handler();
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isMobile;
+}
+
 export default function Layout() {
   const { user, checkUserAuth, logout } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const admin = isGestor(user);
+
+  const handleTabClick = (e, path) => {
+    if (location.pathname === path) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (user && !user.trial_start && !admin) {
@@ -46,7 +67,7 @@ export default function Layout() {
   const premium = isPremium(user);
 
   return (
-    <div className="min-h-screen bg-background pb-safe">
+    <div className="min-h-screen bg-background pb-safe pt-safe">
       <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
@@ -72,14 +93,25 @@ export default function Layout() {
           <NavLink to="/assinatura" className="underline font-medium">Assine agora</NavLink>
         </div>
       )}
-      <Outlet />
+      {isMobile ? (
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Outlet />
+        </motion.div>
+      ) : (
+        <Outlet />
+      )}
       <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t bg-card no-select" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around h-14">
-          <NavLink to="/operacoes" className={mobileLinkClass} end><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
-          <NavLink to="/historico" className={mobileLinkClass}><History className="w-5 h-5" /><span className="text-[10px]">Histórico</span></NavLink>
-          <NavLink to="/cotacoes" className={mobileLinkClass}><TrendingUp className="w-5 h-5" /><span className="text-[10px]">Cotações</span></NavLink>
-          <NavLink to="/mensagens" className={mobileLinkClass}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
-          <NavLink to="/configuracoes" className={mobileLinkClass}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>
+          <NavLink to="/operacoes" className={mobileLinkClass} end onClick={(e) => handleTabClick(e, '/operacoes')}><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
+          <NavLink to="/historico" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/historico')}><History className="w-5 h-5" /><span className="text-[10px]">Histórico</span></NavLink>
+          <NavLink to="/cotacoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/cotacoes')}><TrendingUp className="w-5 h-5" /><span className="text-[10px]">Cotações</span></NavLink>
+          <NavLink to="/mensagens" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/mensagens')}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
+          <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>
         </div>
       </nav>
     </div>
