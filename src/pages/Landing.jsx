@@ -8,7 +8,7 @@ export default function Landing() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-blue-50">
       <header className="border-b bg-card sticky top-0 z-10 pt-safe">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
