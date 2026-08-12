@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Ban, CircleCheck, MessageSquare, Megaphone, Users, ShieldAlert } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PainelAfiliados from '@/components/painel/PainelAfiliados';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 
 const statusLabel = (u) => {
@@ -84,63 +86,74 @@ export default function Painel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {stats.map((s) => (
-            <Card key={s.label}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <s.icon className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xl font-heading font-bold leading-none">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="afiliados">Afiliados</TabsTrigger>
+          </TabsList>
+          <TabsContent value="users" className="space-y-6 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stats.map((s) => (
+                <Card key={s.label}>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <s.icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-heading font-bold leading-none">{s.value}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                {loading ? (
+                  <p className="p-6 text-sm text-muted-foreground text-center">Carregando usuários...</p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {users.map((u) => {
+                      const st = statusLabel(u);
+                      return (
+                        <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{u.email}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded ${st.cls}`}>{st.text}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {u.current_period_end ? `Renovação: ${new Date(u.current_period_end).toLocaleDateString('pt-BR')}` : '—'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => navigate(`/mensagens?para=${u.id}`)}>
+                              <MessageSquare className="w-4 h-4 mr-1" /> Mensagem
+                            </Button>
+                            <Button
+                              variant={u.blocked ? 'outline' : 'destructive'}
+                              size="sm"
+                              onClick={() => toggleBlock(u)}
+                            >
+                              <Ban className="w-4 h-4 mr-1" /> {u.blocked ? 'Desbloquear' : 'Bloquear'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!loading && users.length === 0 && (
+                      <p className="p-6 text-sm text-muted-foreground text-center">Nenhum usuário cadastrado.</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            {loading ? (
-              <p className="p-6 text-sm text-muted-foreground text-center">Carregando usuários...</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {users.map((u) => {
-                  const st = statusLabel(u);
-                  return (
-                    <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium truncate">{u.email}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded ${st.cls}`}>{st.text}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {u.current_period_end ? `Renovação: ${new Date(u.current_period_end).toLocaleDateString('pt-BR')}` : '—'}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/mensagens?para=${u.id}`)}>
-                          <MessageSquare className="w-4 h-4 mr-1" /> Mensagem
-                        </Button>
-                        <Button
-                          variant={u.blocked ? 'outline' : 'destructive'}
-                          size="sm"
-                          onClick={() => toggleBlock(u)}
-                        >
-                          <Ban className="w-4 h-4 mr-1" /> {u.blocked ? 'Desbloquear' : 'Bloquear'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-                {!loading && users.length === 0 && (
-                  <p className="p-6 text-sm text-muted-foreground text-center">Nenhum usuário cadastrado.</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+          <TabsContent value="afiliados" className="mt-4">
+            <PainelAfiliados />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

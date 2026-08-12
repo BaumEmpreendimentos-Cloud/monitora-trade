@@ -52,7 +52,7 @@ export default async function(req) {
               const referrer = await base44.asServiceRole.entities.User.get(ind.indicado_por_id);
               if (referrer?.stripe_customer_id) {
                 await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
-                  amount: -3000,
+                  amount: -((ind.beneficio_dias || 30) * 100),
                   currency: 'brl',
                   description: 'Crédito por indicação de usuário'
                 });
@@ -73,7 +73,7 @@ export default async function(req) {
           for (const ind of pending) {
             try {
               await stripe.customers.createBalanceTransaction(customerId, {
-                amount: -3000,
+                amount: -((ind.beneficio_dias || 30) * 100),
                 currency: 'brl',
                 description: 'Crédito por indicação de usuário'
               });
