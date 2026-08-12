@@ -9,7 +9,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header className="border-b bg-card sticky top-0 z-10 pt-safe">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
             <LineChart className="w-5 h-5 text-primary" /> Monitora Trade
