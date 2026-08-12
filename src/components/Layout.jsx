@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 
 const linkClass = ({ isActive }) =>
   `px-3 py-1.5 rounded-md text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`;
+
+const mobileLinkClass = ({ isActive }) =>
+  `flex flex-col items-center justify-center gap-0.5 min-h-[44px] flex-1 no-select ${isActive ? 'text-primary' : 'text-muted-foreground'}`;
 
 export default function Layout() {
   const { user, checkUserAuth, logout } = useAuth();
@@ -43,8 +46,8 @@ export default function Layout() {
   const premium = isPremium(user);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
+    <div className="min-h-screen bg-background pb-safe">
+      <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
             <LineChart className="w-5 h-5 text-primary" /> Monitora Trade
@@ -56,6 +59,7 @@ export default function Layout() {
             <NavLink to="/mensagens" className={linkClass}><MessageSquare className="w-4 h-4 inline -mt-0.5" /> Mensagens</NavLink>
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
+            <NavLink to="/configuracoes" className={linkClass}><Settings className="w-4 h-4 inline -mt-0.5" /> Config</NavLink>
             <button onClick={() => logout()} className="px-2 py-1.5 rounded-md text-sm hover:bg-accent text-muted-foreground inline-flex items-center">
               <LogOut className="w-4 h-4" />
             </button>
@@ -69,6 +73,15 @@ export default function Layout() {
         </div>
       )}
       <Outlet />
+      <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t bg-card no-select" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex items-center justify-around h-14">
+          <NavLink to="/operacoes" className={mobileLinkClass} end><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
+          <NavLink to="/historico" className={mobileLinkClass}><History className="w-5 h-5" /><span className="text-[10px]">Histórico</span></NavLink>
+          <NavLink to="/cotacoes" className={mobileLinkClass}><TrendingUp className="w-5 h-5" /><span className="text-[10px]">Cotações</span></NavLink>
+          <NavLink to="/mensagens" className={mobileLinkClass}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
+          <NavLink to="/configuracoes" className={mobileLinkClass}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>
+        </div>
+      </nav>
     </div>
   );
 }

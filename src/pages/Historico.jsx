@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Coins, Pencil, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import EditarHistoricoDialog from '@/components/operacoes/EditarHistoricoDialog';
+import HistoricoGrupoMobile from '@/components/operacoes/HistoricoGrupoMobile';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -87,7 +88,8 @@ export default function Historico() {
             const total = totalOps + totalDiv;
             return (
               <Card key={nome}>
-                <CardContent className="p-0 overflow-x-auto">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto hidden md:block">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-xs text-muted-foreground uppercase">
                       <tr>
@@ -149,6 +151,8 @@ export default function Historico() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
+                  <HistoricoGrupoMobile nome={nome} lista={lista} divs={divs} total={total} onEdit={setEditarOp} onDelete={setToDelete} />
                 </CardContent>
               </Card>
             );

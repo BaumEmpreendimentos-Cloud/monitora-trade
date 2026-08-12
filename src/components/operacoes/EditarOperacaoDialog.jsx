@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/MobileSelect';
 import { lookupOption } from '@/lib/oplab';
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
@@ -94,17 +94,11 @@ export default function EditarOperacaoDialog({ operacao, onClose, onSubmit }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <Select value={categoria} onValueChange={setCategoria}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{CATEGORIAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect value={categoria} onValueChange={setCategoria} options={CATEGORIAS} placeholder="Categoria" />
             </div>
             <div>
               <Label>Operação</Label>
-              <Select value={operacaoField} onValueChange={setOperacaoField}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{OPERACOES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect value={operacaoField} onValueChange={setOperacaoField} options={OPERACOES} placeholder="Operação" />
             </div>
           </div>
           {isOption(categoria) && (

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MobileSelect from '@/components/MobileSelect';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct } from '@/lib/operacoes';
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
@@ -89,10 +89,7 @@ export default function EditarHistoricoDialog({ operacao, onClose, onSubmit }) {
             </div>
             <div>
               <Label>Categoria</Label>
-              <Select value={f.categoria} onValueChange={(v) => set('categoria', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{CATEGORIAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect value={f.categoria} onValueChange={(v) => set('categoria', v)} options={CATEGORIAS} placeholder="Categoria" />
             </div>
           </div>
 
@@ -116,10 +113,7 @@ export default function EditarHistoricoDialog({ operacao, onClose, onSubmit }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Operação</Label>
-              <Select value={f.operacao} onValueChange={(v) => set('operacao', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{OPERACOES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect value={f.operacao} onValueChange={(v) => set('operacao', v)} options={OPERACOES} placeholder="Operação" />
             </div>
             <div>
               <Label>Quantidade</Label>

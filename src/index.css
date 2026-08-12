@@ -90,3 +90,35 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+/* Mobile WebView compatibility */
+@layer base {
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  button,
+  nav a,
+  [role="tab"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+@layer utilities {
+  .scroll-container {
+    overscroll-behavior: none;
+  }
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .pb-safe {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 768px) {
+    .pb-safe {
+      padding-bottom: 0;
+    }
+  }
+}

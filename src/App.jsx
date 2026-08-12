@@ -1,3 +1,4 @@
+import React, { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -7,20 +8,28 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Cotacoes from './pages/Cotacoes';
-import Operacoes from './pages/Operacoes';
-import Historico from './pages/Historico';
-import ImportarHistorico from './pages/ImportarHistorico';
-import Assinatura from './pages/Assinatura';
-import Painel from './pages/Painel';
-import Mensagens from './pages/Mensagens';
+import { ThemeProvider } from 'next-themes';
+
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Cotacoes = lazy(() => import('./pages/Cotacoes'));
+const Operacoes = lazy(() => import('./pages/Operacoes'));
+const Historico = lazy(() => import('./pages/Historico'));
+const ImportarHistorico = lazy(() => import('./pages/ImportarHistorico'));
+const Assinatura = lazy(() => import('./pages/Assinatura'));
+const Painel = lazy(() => import('./pages/Painel'));
+const Mensagens = lazy(() => import('./pages/Mensagens'));
+const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 import Layout from './components/Layout';
-// Add page imports here
+
+const PageLoader = () => (
+  <div className="fixed inset-0 flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+  </div>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +49,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
@@ -55,10 +65,12 @@ const AuthenticatedApp = () => {
           <Route path="/assinatura" element={<Assinatura />} />
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/painel" element={<Painel />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
@@ -66,6 +78,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -75,6 +88,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
 

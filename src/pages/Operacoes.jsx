@@ -10,6 +10,7 @@ import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificado
 import DividendoForm from '@/components/operacoes/DividendoForm';
 import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
+import GrupoMobile from '@/components/operacoes/GrupoMobile';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -260,7 +261,8 @@ export default function Operacoes() {
               const gDivPendente = dividendos.filter((d) => d.grupo_id === g.id && isDivPendente(d));
               return (
                 <Card key={g.id}>
-                  <CardContent className="p-0 overflow-x-auto">
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto hidden md:block">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}>
@@ -359,6 +361,24 @@ export default function Operacoes() {
                       </tbody>
                       )}
                     </table>
+                    </div>
+                    <GrupoMobile
+                     grupo={g}
+                     openOps={gOpen}
+                     pendingDivs={gDivPendente}
+                     quotes={quotes}
+                     expanded={!!expanded[g.id]}
+                     onToggleExpand={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}
+                     selectedOp={selectedOp}
+                     onSelectOp={(o) => { setSelectedGroup(null); setSelectedOp(o); }}
+                     onSelectGroup={(id) => { setSelectedOp(null); setSelectedGroup((p) => (p === id ? null : id)); }}
+                     onEditGrupo={setEditarGrupo}
+                     onEditOp={setEditarOp}
+                     onEncerrar={setEncerrar}
+                     onAddDividendo={setDividendoGrupo}
+                     onDeleteDividendo={handleDeleteDividendo}
+                     summary={{ hist, dia, divPago: groupDivPago(g.id), aberto: groupAberto(g.id), divPendente: groupDivPendente(g.id) }}
+                    />
                     {selectedInGroup && (
                       <MapaCalor operation={selectedOp} currentPrice={quotes[isOption(selectedOp.categoria) ? selectedOp.ativo_base : selectedOp.ativo]} />
                     )}
