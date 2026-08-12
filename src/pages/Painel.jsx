@@ -27,7 +27,7 @@ export default function Painel() {
     setLoading(true);
     try {
       const res = await base44.entities.User.list();
-      setUsers(res);
+      setUsers(Array.isArray(res) ? res : []);
     } catch (e) {
       console.error('load users', e);
     }
@@ -116,7 +116,7 @@ export default function Painel() {
                           <span className={`text-xs px-2 py-0.5 rounded ${st.cls}`}>{st.text}</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {u.current_period_end ? `Renovação: ${new Date(u.current_period_end).toLocaleDateString('pt-BBR')}` : '—'}
+                          {u.current_period_end ? `Renovação: ${new Date(u.current_period_end).toLocaleDateString('pt-BR')}` : '—'}
                         </p>
                       </div>
                       <div className="flex gap-2 shrink-0">
