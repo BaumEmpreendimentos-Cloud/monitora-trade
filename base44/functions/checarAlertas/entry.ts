@@ -6,6 +6,24 @@ const API_BASE = 'https://api.oplab.com.br/v3';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Security: only admin users or internal workflow calls (authenticated by platform) may execute
+    let authorized = false;
+    let hasUser = false;
+    try {
+      const user = await base44.auth.me();
+      hasUser = true;
+      if (user?.role === 'admin') authorized = true;
+    } catch (e) {
+      // No user context — may be an internal workflow call
+    }
+    if (!hasUser) {
+      try {
+        if (await base44.auth.isAuthenticated()) authorized = true;
+      } catch (e) { /* not authenticated */ }
+    }
+    if (!authorized) return Response.json({ error: 'Unauthorized' }, { status: 403 });
+
     const token = secrets.get('OPLAB_ACCESS_TOKEN');
     if (!token) return Response.json({ error: 'Token OpLab não configurado.' }, { status: 500 });
 
