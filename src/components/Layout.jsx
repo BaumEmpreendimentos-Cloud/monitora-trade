@@ -62,6 +62,16 @@ export default function Layout() {
     }
   }, [user, checkUserAuth, admin]);
 
+  // Solicitar permissão de notificações push (web + nativo iOS/Android)
+  useEffect(() => {
+    if (!user) return;
+    try {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch (e) { /* ignore — no-op em ambientes sem Notification API */ }
+  }, [user]);
+
   if (user?.blocked) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">

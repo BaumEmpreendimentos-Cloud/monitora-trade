@@ -129,6 +129,16 @@ export default async function(req) {
           await base44.integrations.Core.SendEmail({ to: user.email, subject: 'Alerta — Monitora Trade', body: texto });
         }
       } catch (e) { console.error('Email send failed:', e.message); }
+      // Push notification nativa (iOS/Android)
+      try {
+        await base44.asServiceRole.integrations.Core.SendPushNotification({
+          user_id: userId,
+          title: 'Alerta — Monitora Trade',
+          content: texto,
+          action_label: 'Ver operações',
+          action_url: '/operacoes'
+        });
+      } catch (e) { console.error('Push notification failed:', e.message); }
       // Atualizar status do alerta
       try {
         await base44.asServiceRole.entities.Alerta.update(alerta.id, { status: 'DISPARADO', mensagem_disparo: texto });
