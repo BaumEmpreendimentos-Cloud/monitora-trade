@@ -79,9 +79,12 @@ const normalizeDate = (v) => {
 const cleanNumStr = (v) => {
   if (v == null) return '';
   let s = String(v).trim();
+  let neg = false;
+  if (s.startsWith('-')) { neg = true; s = s.substring(1).trim(); }
   if (s.toUpperCase().startsWith('R$')) s = s.substring(2).trim();
+  if (s.startsWith('-')) { neg = true; s = s.substring(1).trim(); }
   if (s === '-' || s === '') return '';
-  return s;
+  return neg ? '-' + s : s;
 };
 const num = (v) => {
   const s = cleanNumStr(v);
@@ -271,8 +274,8 @@ export default function ImportarHistorico() {
           const precoEntrada = num(r.preco_entrada);
           const precoFechamento = num(r.preco_fechamento);
           const isAberta = precoFechamento == null;
-          const rv = !isAberta && r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : (!isAberta ? calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento) : null);
-          const rp = !isAberta && r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : (!isAberta ? calcResultadoPct(operacao, precoEntrada, precoFechamento) : null);
+          const rv = !isAberta ? calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento) : null;
+          const rp = !isAberta ? calcResultadoPct(operacao, precoEntrada, precoFechamento) : null;
           opRecords.push({
             grupo_id: grupo.id, grupo_nome: grupo.nome,
             ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
@@ -284,9 +287,18 @@ export default function ImportarHistorico() {
         }
       }
 
+      const BATCH_SIZE = 400;
       let createdOps = 0, createdDivs = 0;
-      if (opRecords.length) { const c = await base44.entities.Operacao.bulkCreate(opRecords); createdOps = c?.length || opRecords.length; }
-      if (divRecords.length) { const c = await base44.entities.Dividendo.bulkCreate(divRecords); createdDivs = c?.length || divRecords.length; }
+      for (let i = 0; i < opRecords.length; i += BATCH_SIZE) {
+        const batch = opRecords.slice(i, i + BATCH_SIZE);
+        const c = await base44.entities.Operacao.bulkCreate(batch);
+        createdOps += c?.length || batch.length;
+      }
+      for (let i = 0; i < divRecords.length; i += BATCH_SIZE) {
+        const batch = divRecords.slice(i, i + BATCH_SIZE);
+        const c = await base44.entities.Dividendo.bulkCreate(batch);
+        createdDivs += c?.length || batch.length;
+      }
       setResult({ createdOps, createdDivs });
       setPreview(null);
       setFile(null);
@@ -326,11 +338,11 @@ export default function ImportarHistorico() {
               <li><b>quantidade, preco_entrada, preco_fechamento</b>: valores numéricos (vírgula decimal).</li>
               <li><b>data_abertura, data_fechamento</b>: formato AAAA-MM-DD (ex.: 2026-01-20).</li>
               <li><b>strike, vencimento</b>: preencha apenas para opções.</li>
-              <li><b>resultado_valor, resultado_pct</b>: opcionais — se em branco, serão calculados automaticamente.</li>
+              <li><b>resultado_valor, resultado_pct</b>: ignorados — sempre calculados automaticamente a partir dos preços de entrada e fechamento.</li>
               <li><b>DIV (dividendos)</b>: usar <b>quantidade</b> = nº de ações, <b>preco_entrada</b> = valor por ação e <b>data_fechamento</b> = data de pagamento; <b>resultado_valor</b> (opcional) = valor total.</li>
             </ul>
             <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              <b>Campos obrigatórios:</b> identificador, ativo, categoria e quantidade. Para operações (ACAO/CALL/PUT/DOLLAR): também operacao, preco_entrada e preco_fechamento. Para DIV (dividendos): também preco_entrada (valor por ação) e data_fechamento (data de pagamento). Os demais campos são opcionais.
+              <b>Campos obrigatórios:</b> identificador, ativo, categoria e quantidade. Para operações (ACAO/CALL/PUT/DOLLAR): também operacao e preco_entrada (preco_fechamento opcional — se vazio, a operação fica como ABERTA). Para DIV (dividendos): também data_fechamento (data de pagamento) e pelo menos preco_entrada (valor por ação) ou resultado_valor (valor total). Os campos resultado_valor e resultado_pct são sempre calculados automaticamente.
             </div>
           </CardContent>
         </Card>
