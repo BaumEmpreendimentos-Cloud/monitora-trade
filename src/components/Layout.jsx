@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const linkClass = ({ isActive }) =>
   `px-3 py-1.5 rounded-md text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`;
@@ -102,6 +103,9 @@ export default function Layout() {
             </button>
           )}
           <span className="font-heading font-bold text-sm">{pageTitle}</span>
+          <div className="absolute right-1">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
@@ -117,6 +121,7 @@ export default function Layout() {
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
             <NavLink to="/configuracoes" className={linkClass}><Settings className="w-4 h-4 inline -mt-0.5" /> Config</NavLink>
+            <ThemeToggle />
             <button onClick={() => logout()} className="px-2 py-1.5 rounded-md text-sm hover:bg-accent text-muted-foreground inline-flex items-center">
               <LogOut className="w-4 h-4" />
             </button>

@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LineChart, Crown, TrendingUp, Clock, BarChart3, ArrowRight } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen bg-blue-50 dark:bg-background">
       <header className="border-b bg-card sticky top-0 z-10 pt-safe">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
             <LineChart className="w-5 h-5 text-primary" /> Monitora Trade
           </div>
           <nav className="flex gap-2 items-center">
+            <ThemeToggle />
             {isAuthenticated ? (
               <Link to="/operacoes"><Button size="sm">Ir para o app <ArrowRight className="w-4 h-4" /></Button></Link>
             ) : (
