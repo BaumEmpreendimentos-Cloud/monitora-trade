@@ -18,7 +18,6 @@ export default async function(req) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: PRICE_ID, quantity: 1 }],
-      discounts: [{ coupon: 'lancamento60' }],
       client_reference_id: user.id,
       customer_email: user.email,
       metadata: {

@@ -1,4 +1,4 @@
-export const TRIAL_DAYS = 7;
+export const TRIAL_DAYS = 15;
 
 export function isGestor(user) {
   return user?.role === 'admin';

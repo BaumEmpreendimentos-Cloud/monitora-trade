@@ -29,7 +29,7 @@ export default function Landing() {
 
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-6">
-          <Clock className="w-3.5 h-3.5" /> 7 dias grátis para testar
+          <Clock className="w-3.5 h-3.5" /> 15 dias grátis para testar
         </div>
         <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight mb-4">
           Controle total das suas operações na B3
@@ -68,8 +68,8 @@ export default function Landing() {
         <div className="rounded-xl border bg-card p-8">
           <Crown className="w-8 h-8 text-amber-500 mx-auto mb-3" />
           <h2 className="text-2xl font-heading font-bold mb-2">Plano Premium</h2>
-          <p className="text-3xl font-heading font-bold mb-1">R$ 49,90<span className="text-base font-normal text-muted-foreground">/mês</span></p>
-          <p className="text-sm text-muted-foreground mb-6">Após o período de 7 dias grátis.</p>
+          <p className="text-3xl font-heading font-bold mb-1">R$ 30,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
+          <p className="text-sm text-muted-foreground mb-6">Após o período de 15 dias grátis.</p>
           <Link to="/register?returnTo=/operacoes">
             <Button size="lg">Iniciar teste gratuito</Button>
           </Link>
