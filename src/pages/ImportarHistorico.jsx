@@ -67,18 +67,63 @@ const excelDateToISO = (serial) => {
 };
 const normalizeDate = (v) => {
   if (!v || v === '0') return '';
-  const s = String(v).trim();
+  let s = String(v).trim();
+  if (s.toUpperCase().startsWith('R$')) s = s.substring(2).trim();
+  if (s === '' || s === '-' || s === '0') return '';
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.split('T')[0];
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) { const [d, m, y] = s.split('/'); return `${y}-${m}-${d}`; }
   if (/^\d{4,5}$/.test(s)) { const iso = excelDateToISO(Number(s)); if (iso) return iso; }
-  if (/^\d{5}$/.test(s)) { const iso = excelDateToISO(Number(s)); if (iso) return iso; }
   return s;
 };
 
+const cleanNumStr = (v) => {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if (s.toUpperCase().startsWith('R$')) s = s.substring(2).trim();
+  if (s === '-' || s === '') return '';
+  return s;
+};
 const num = (v) => {
-  if (v == null || v === '') return null;
-  const n = typeof v === 'string' ? Number(String(v).replace(/\./g, '').replace(',', '.')) : Number(v);
+  const s = cleanNumStr(v);
+  if (s === '') return null;
+  const n = Number(s.replace(/\./g, '').replace(',', '.'));
   return Number.isNaN(n) ? null : n;
+};
+
+const splitCSVLine = (line) => {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (c === ';' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+};
+
+const parseCSV = (text) => {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim());
+  if (lines.length < 2) return [];
+  const headers = splitCSVLine(lines[0]).map((h) =>
+    h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  );
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = splitCSVLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (values[idx] ?? '').trim(); });
+    rows.push(row);
+  }
+  return rows;
 };
 const toDate = (v) => {
   if (!v) return null;
@@ -102,7 +147,6 @@ const validateRow = (r) => {
   if (!OPERACOES.includes(r.operacao)) return 'Operação inválida';
   if (num(r.quantidade) == null || num(r.quantidade) <= 0) return 'Quantidade inválida';
   if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Preço de entrada inválido';
-  if (num(r.preco_fechamento) == null) return 'Preço de fechamento inválido';
   return null;
 };
 
@@ -116,15 +160,15 @@ const normalizeRow = (r) => {
     ativo_base: (rawAtivoBase === '0' || rawAtivoBase === '') ? '' : rawAtivoBase,
     categoria,
     operacao,
-    quantidade: r.quantidade ?? '',
-    preco_entrada: r.preco_entrada ?? '',
-    preco_fechamento: r.preco_fechamento ?? '',
+    quantidade: cleanNumStr(r.quantidade),
+    preco_entrada: cleanNumStr(r.preco_entrada),
+    preco_fechamento: cleanNumStr(r.preco_fechamento),
     data_abertura: r.data_abertura ? normalizeDate(r.data_abertura) : '',
     data_fechamento: r.data_fechamento ? normalizeDate(r.data_fechamento) : '',
-    strike: r.strike ?? '',
+    strike: cleanNumStr(r.strike),
     vencimento: r.vencimento ? normalizeDate(r.vencimento) : '',
-    resultado_valor: r.resultado_valor ?? '',
-    resultado_pct: r.resultado_pct ?? '',
+    resultado_valor: cleanNumStr(r.resultado_valor),
+    resultado_pct: cleanNumStr(r.resultado_pct),
   };
 };
 
@@ -152,9 +196,16 @@ export default function ImportarHistorico() {
     if (!file) return;
     setProcessing(true); setError(''); setResult(null); setPreview(null);
     try {
-      const up = await base44.integrations.Core.UploadFile({ file });
-      const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: up.file_url, json_schema: SCHEMA });
-      const rows = (res.output && res.output.rows) || (Array.isArray(res.output) ? res.output : []);
+      let rows;
+      const isCSV = file.name.toLowerCase().endsWith('.csv');
+      if (isCSV) {
+        const text = await file.text();
+        rows = parseCSV(text);
+      } else {
+        const up = await base44.integrations.Core.UploadFile({ file });
+        const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: up.file_url, json_schema: SCHEMA });
+        rows = (res.output && res.output.rows) || (Array.isArray(res.output) ? res.output : []);
+      }
       if (!rows.length) { setError('Nenhuma operação encontrada no arquivo.'); setProcessing(false); return; }
 
       const parsed = rows.map((r) => {
@@ -219,15 +270,16 @@ export default function ImportarHistorico() {
           const quantidade = num(r.quantidade);
           const precoEntrada = num(r.preco_entrada);
           const precoFechamento = num(r.preco_fechamento);
-          const rv = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento);
-          const rp = r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : calcResultadoPct(operacao, precoEntrada, precoFechamento);
+          const isAberta = precoFechamento == null;
+          const rv = !isAberta && r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : (!isAberta ? calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento) : null);
+          const rp = !isAberta && r.resultado_pct !== '' && r.resultado_pct != null ? num(r.resultado_pct) : (!isAberta ? calcResultadoPct(operacao, precoEntrada, precoFechamento) : null);
           opRecords.push({
             grupo_id: grupo.id, grupo_nome: grupo.nome,
             ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
             quantidade, preco_entrada: precoEntrada, valor_inicial: calcValorInicial(operacao, quantidade, precoEntrada),
             data_abertura: r.data_abertura || null, strike: num(r.strike), vencimento: r.vencimento || null,
-            status: 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
-            data_fechamento: toDate(r.data_fechamento),
+            status: isAberta ? 'ABERTA' : 'FECHADA', preco_fechamento: precoFechamento, resultado_valor: rv, resultado_pct: rp,
+            data_fechamento: isAberta ? null : toDate(r.data_fechamento),
           });
         }
       }
