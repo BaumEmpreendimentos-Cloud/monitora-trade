@@ -22,6 +22,7 @@ export default function Historico() {
   const [toDelete, setToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState({});
+  const [collapsedInit, setCollapsedInit] = useState(false);
 
   const loadData = async () => {
     setLoading(true); setError('');
@@ -37,6 +38,15 @@ export default function Historico() {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (!collapsedInit && !loading && nomes.length) {
+      const init = {};
+      nomes.forEach((n) => { init[n] = true; });
+      setCollapsed(init);
+      setCollapsedInit(true);
+    }
+  }, [loading, nomes, collapsedInit]);
 
   const handleEditar = async (id, dados) => {
     setSaving(true); setError('');
