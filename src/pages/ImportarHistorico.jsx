@@ -25,19 +25,18 @@ const SCHEMA = {
           identificador: { type: 'string' },
           ativo: { type: 'string' },
           ativo_base: { type: 'string' },
-          categoria: { type: 'string', enum: ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'] },
-          operacao: { type: 'string', enum: ['COMPRA', 'VENDA'] },
-          quantidade: { type: 'number' },
-          preco_entrada: { type: 'number' },
+          categoria: { type: 'string' },
+          operacao: { type: 'string' },
+          quantidade: { type: 'string' },
+          preco_entrada: { type: 'string' },
           data_abertura: { type: 'string' },
-          strike: { type: 'number' },
+          strike: { type: 'string' },
           vencimento: { type: 'string' },
-          preco_fechamento: { type: 'number' },
-          resultado_valor: { type: 'number' },
-          resultado_pct: { type: 'number' },
+          preco_fechamento: { type: 'string' },
+          resultado_valor: { type: 'string' },
+          resultado_pct: { type: 'string' },
           data_fechamento: { type: 'string' },
         },
-        required: ['identificador', 'ativo', 'categoria', 'operacao', 'quantidade', 'preco_entrada', 'preco_fechamento'],
       },
     },
   },
@@ -45,6 +44,36 @@ const SCHEMA = {
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'];
 const OPERACOES = ['COMPRA', 'VENDA'];
+
+const normalizeStr = (v) => (v == null ? '' : String(v).trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase());
+const normalizeCategoria = (v) => {
+  const s = normalizeStr(v);
+  if (s === 'A') return 'ACAO';
+  return s;
+};
+const normalizeOperacao = (v, categoria) => {
+  const s = normalizeStr(v);
+  if (s === 'COMPRA' || s === 'C') return 'COMPRA';
+  if (s === 'VENDA' || s === 'V') return 'VENDA';
+  return categoria === 'DIV' ? '' : (OPERACOES.includes(s) ? s : '');
+};
+const excelDateToISO = (serial) => {
+  const n = Number(serial);
+  if (Number.isNaN(n) || n < 1000) return null;
+  const utcDays = Math.floor(n - 25569);
+  const date = new Date(utcDays * 86400 * 1000);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().split('T')[0];
+};
+const normalizeDate = (v) => {
+  if (!v || v === '0') return '';
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.split('T')[0];
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) { const [d, m, y] = s.split('/'); return `${y}-${m}-${d}`; }
+  if (/^\d{4,5}$/.test(s)) { const iso = excelDateToISO(Number(s)); if (iso) return iso; }
+  if (/^\d{5}$/.test(s)) { const iso = excelDateToISO(Number(s)); if (iso) return iso; }
+  return s;
+};
 
 const num = (v) => {
   if (v == null || v === '') return null;
@@ -65,7 +94,8 @@ const validateRow = (r) => {
   if (!CATEGORIAS.includes(r.categoria)) return 'Categoria inválida';
   if (r.categoria === 'DIV') {
     if (num(r.quantidade) == null || num(r.quantidade) <= 0) return 'Quantidade inválida';
-    if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Valor por ação (preco_entrada) inválido';
+    const temTotal = num(r.resultado_valor) != null && num(r.resultado_valor) > 0;
+    if (!temTotal && (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0)) return 'Valor por ação ou resultado_total inválido';
     if (!r.data_fechamento) return 'Data de pagamento (data_fechamento) obrigatória';
     return null;
   }
@@ -74,6 +104,28 @@ const validateRow = (r) => {
   if (num(r.preco_entrada) == null || num(r.preco_entrada) <= 0) return 'Preço de entrada inválido';
   if (num(r.preco_fechamento) == null) return 'Preço de fechamento inválido';
   return null;
+};
+
+const normalizeRow = (r) => {
+  const categoria = normalizeCategoria(r.categoria);
+  const operacao = normalizeOperacao(r.operacao, categoria);
+  const rawAtivoBase = normalizeStr(r.ativo_base);
+  return {
+    identificador: r.identificador ? String(r.identificador).trim() : '',
+    ativo: normalizeStr(r.ativo),
+    ativo_base: (rawAtivoBase === '0' || rawAtivoBase === '') ? '' : rawAtivoBase,
+    categoria,
+    operacao,
+    quantidade: r.quantidade ?? '',
+    preco_entrada: r.preco_entrada ?? '',
+    preco_fechamento: r.preco_fechamento ?? '',
+    data_abertura: r.data_abertura ? normalizeDate(r.data_abertura) : '',
+    data_fechamento: r.data_fechamento ? normalizeDate(r.data_fechamento) : '',
+    strike: r.strike ?? '',
+    vencimento: r.vencimento ? normalizeDate(r.vencimento) : '',
+    resultado_valor: r.resultado_valor ?? '',
+    resultado_pct: r.resultado_pct ?? '',
+  };
 };
 
 export default function ImportarHistorico() {
@@ -106,22 +158,7 @@ export default function ImportarHistorico() {
       if (!rows.length) { setError('Nenhuma operação encontrada no arquivo.'); setProcessing(false); return; }
 
       const parsed = rows.map((r) => {
-        const row = {
-          identificador: r.identificador || '',
-          ativo: (r.ativo || '').toUpperCase(),
-          ativo_base: (r.ativo_base || '').toUpperCase(),
-          categoria: (r.categoria || 'ACAO').toUpperCase(),
-          operacao: (r.operacao || 'COMPRA').toUpperCase(),
-          quantidade: r.quantidade ?? '',
-          preco_entrada: r.preco_entrada ?? '',
-          preco_fechamento: r.preco_fechamento ?? '',
-          data_abertura: r.data_abertura || '',
-          data_fechamento: r.data_fechamento || '',
-          strike: r.strike ?? '',
-          vencimento: r.vencimento || '',
-          resultado_valor: r.resultado_valor ?? '',
-          resultado_pct: r.resultado_pct ?? '',
-        };
+        const row = normalizeRow(r);
         row._error = validateRow(row);
         return row;
       });
@@ -166,8 +203,12 @@ export default function ImportarHistorico() {
         const grupo = await ensureGroup(r.identificador);
         if (r.categoria === 'DIV') {
           const quantidade = num(r.quantidade);
-          const valorPorAcao = num(r.preco_entrada);
-          const valorTotal = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : quantidade * valorPorAcao;
+          let valorPorAcao = num(r.preco_entrada);
+          let valorTotal = r.resultado_valor !== '' && r.resultado_valor != null ? num(r.resultado_valor) : null;
+          if ((!valorPorAcao || valorPorAcao <= 0) && valorTotal && quantidade) {
+            valorPorAcao = valorTotal / quantidade;
+          }
+          if (valorTotal == null) valorTotal = quantidade * valorPorAcao;
           divRecords.push({
             grupo_id: grupo.id, grupo_nome: grupo.nome,
             ativo: r.ativo, data_pagamento: r.data_fechamento,
