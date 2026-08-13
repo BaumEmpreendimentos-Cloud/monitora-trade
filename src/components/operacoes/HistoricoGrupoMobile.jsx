@@ -1,19 +1,22 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Coins, Pencil, Trash2 } from 'lucide-react';
+import { Coins, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 
-export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit, onDelete }) {
+export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit, onDelete, collapsed, onToggle }) {
   return (
     <div className="md:hidden p-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-bold">{nome}</span>
+      <div className="flex items-center justify-between cursor-pointer" onClick={onToggle}>
+        <div className="flex items-center gap-1.5">
+          {collapsed ? <ChevronRight className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          <span className="font-bold">{nome}</span>
+        </div>
         <span className="text-sm">Total: <b className={color(total)}>{fmt(total)}</b></span>
       </div>
-      {lista.map((o) => (
+      {!collapsed && lista.map((o) => (
         <div key={o.id} className="border rounded-lg p-3 space-y-2">
           <div className="flex justify-between items-center">
             <span className="font-medium">{o.ativo}</span>
@@ -36,7 +39,7 @@ export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit,
           </div>
         </div>
       ))}
-      {divs.map((d) => (
+      {!collapsed && divs.map((d) => (
         <div key={`div-${d.id}`} className="border rounded-lg p-3 space-y-1 bg-amber-50/50">
           <div className="flex justify-between items-center">
             <span className="font-medium inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span>
