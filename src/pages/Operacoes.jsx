@@ -12,6 +12,7 @@ import AlertaForm from '@/components/operacoes/AlertaForm';
 import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
+import DashboardOperacoes from '@/components/operacoes/DashboardOperacoes';
 import PullToRefresh from '@/components/PullToRefresh';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
 import { isMarketOpen } from '@/lib/marketHours';
@@ -235,20 +236,7 @@ export default function Operacoes() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Op. Encerradas</p>
-            <p className={`text-xl font-bold ${color(totalEncerradas)}`}>{fmt(totalEncerradas)}</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Valor Total</p>
-            <p className={`text-xl font-bold ${color(totalTotal)}`}>{fmt(totalTotal)}</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Resultado do Dia</p>
-            <p className={`text-xl font-bold ${color(totalDia)}`}>{fmt(totalDia)}</p>
-          </CardContent></Card>
-        </div>
+        <DashboardOperacoes openOps={openOps} closedOps={closedOps} totalDia={totalDia} />
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
