@@ -29,7 +29,7 @@ export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expan
         </div>
       </div>
       <div className="space-y-1 text-sm">
-        <div>Encerradas: <b className={color(hist + divPago)}>{fmt(hist + divPago)}</b></div>
+        <div>Op. Encerradas: <b className={color(hist + divPago)}>{fmt(hist + divPago)}</b></div>
         <div>Total: <b className={color(hist + divPago + aberto + divPendente)}>{fmt(hist + divPago + aberto + divPendente)}</b></div>
         <div>Dia: <b className={color(dia)}>{fmt(dia)}</b></div>
       </div>

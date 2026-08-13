@@ -237,7 +237,7 @@ export default function Operacoes() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card><CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Resultado Op. Encerradas</p>
+            <p className="text-xs text-muted-foreground">Op. Encerradas</p>
             <p className={`text-xl font-bold ${color(totalEncerradas)}`}>{fmt(totalEncerradas)}</p>
           </CardContent></Card>
           <Card><CardContent className="p-4">
@@ -292,7 +292,7 @@ export default function Operacoes() {
                                 )}
                               </div>
                               <div className="flex gap-6 text-sm">
-                                <span>Resultado Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
+                                <span>Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
                                 <span>Valor Total: <b className={color(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}>{fmt(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
                               </div>
@@ -410,7 +410,7 @@ export default function Operacoes() {
         )}
       </div>
 
-      <OperacaoForm open={formOpen} onClose={() => setFormOpen(false)} grupos={grupos} onSubmit={handleCreate} />
+      <OperacaoForm open={formOpen} onClose={() => setFormOpen(false)} grupos={groupsWithOpen} onSubmit={handleCreate} />
       <EncerrarDialog operacao={encerrar} onClose={() => setEncerrar(null)} onConfirm={handleEncerrar} />
       <EditarOperacaoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditarOperacao} />
       <EditarIdentificadorDialog grupo={editarGrupo} onClose={() => setEditarGrupo(null)} onSubmit={handleEditarIdentificador} />
