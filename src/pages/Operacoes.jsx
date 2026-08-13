@@ -48,8 +48,8 @@ export default function Operacoes() {
     try {
       const [g, o, d, a] = await Promise.all([
         base44.entities.GrupoOperacao.list(),
-        base44.entities.Operacao.list('-created_date', 500),
-        base44.entities.Dividendo.list('-created_date', 500),
+        base44.entities.Operacao.list('-created_date', 5000),
+        base44.entities.Dividendo.list('-created_date', 5000),
         base44.entities.Alerta.filter({ status: 'ATIVO' }),
       ]);
       setGrupos(g || []); setOps(o || []); setDividendos(d || []); setAlertas(a || []);
