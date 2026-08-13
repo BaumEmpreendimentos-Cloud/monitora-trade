@@ -251,8 +251,19 @@ export default function ImportarHistorico() {
         return g;
       };
 
+      // Build dedup keys from existing records
+      const existingOps = await base44.entities.Operacao.filter({}, '-created_date', 5000);
+      const existingDivs = await base44.entities.Dividendo.filter({}, '-created_date', 5000);
+      const opKeys = new Set((existingOps || []).map((o) =>
+        `${o.grupo_id}|${o.ativo}|${o.operacao}|${o.quantidade}|${o.preco_entrada}|${o.data_abertura || ''}`
+      ));
+      const divKeys = new Set((existingDivs || []).map((d) =>
+        `${d.grupo_id}|${d.ativo}|${d.quantidade}|${d.valor_por_acao}|${d.data_pagamento || ''}`
+      ));
+
       const opRecords = [];
       const divRecords = [];
+      let skippedOps = 0, skippedDivs = 0;
       for (const r of valid) {
         const grupo = await ensureGroup(r.identificador);
         if (r.categoria === 'DIV') {
@@ -263,6 +274,9 @@ export default function ImportarHistorico() {
             valorPorAcao = valorTotal / quantidade;
           }
           if (valorTotal == null) valorTotal = quantidade * valorPorAcao;
+          const key = `${grupo.id}|${r.ativo}|${quantidade}|${valorPorAcao}|${r.data_fechamento || ''}`;
+          if (divKeys.has(key)) { skippedDivs++; continue; }
+          divKeys.add(key);
           divRecords.push({
             grupo_id: grupo.id, grupo_nome: grupo.nome,
             ativo: r.ativo, data_pagamento: r.data_fechamento,
@@ -276,6 +290,9 @@ export default function ImportarHistorico() {
           const isAberta = precoFechamento == null;
           const rv = !isAberta ? calcResultadoValor(operacao, quantidade, precoEntrada, precoFechamento) : null;
           const rp = !isAberta ? calcResultadoPct(operacao, precoEntrada, precoFechamento) : null;
+          const key = `${grupo.id}|${r.ativo}|${operacao}|${quantidade}|${precoEntrada}|${r.data_abertura || ''}`;
+          if (opKeys.has(key)) { skippedOps++; continue; }
+          opKeys.add(key);
           opRecords.push({
             grupo_id: grupo.id, grupo_nome: grupo.nome,
             ativo: r.ativo, ativo_base: r.ativo_base || null, categoria: r.categoria, operacao,
@@ -299,7 +316,7 @@ export default function ImportarHistorico() {
         const c = await base44.entities.Dividendo.bulkCreate(batch);
         createdDivs += c?.length || batch.length;
       }
-      setResult({ createdOps, createdDivs });
+      setResult({ createdOps, createdDivs, skippedOps, skippedDivs });
       setPreview(null);
       setFile(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
@@ -371,6 +388,9 @@ export default function ImportarHistorico() {
                 <p className="font-medium">Importação concluída</p>
                 <p className="text-emerald-600">{result.createdOps} operação(ões) importada(s) com sucesso.</p>
                 {result.createdDivs > 0 && <p className="text-emerald-600">{result.createdDivs} dividendo(s) importado(s) com sucesso.</p>}
+                {(result.skippedOps > 0 || result.skippedDivs > 0) && (
+                  <p className="text-muted-foreground">{result.skippedOps} operação(ões) e {result.skippedDivs} dividendo(s) duplicado(s) ignorado(s).</p>
+                )}
                 <Button variant="outline" size="sm" onClick={() => navigate('/historico')}>Ver histórico</Button>
               </div>
             )}
