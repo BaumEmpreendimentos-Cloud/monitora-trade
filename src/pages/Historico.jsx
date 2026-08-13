@@ -81,7 +81,11 @@ export default function Historico() {
           <p className="text-sm text-muted-foreground text-center py-10">Nenhuma operação encerrada.</p>
         ) : (
           nomes.map((nome) => {
-            const lista = grupos[nome] || [];
+            const lista = (grupos[nome] || []).slice().sort((a, b) => {
+              const da = a.data_fechamento ? new Date(a.data_fechamento).getTime() : 0;
+              const db = b.data_fechamento ? new Date(b.data_fechamento).getTime() : 0;
+              return db - da;
+            });
             const divs = divPorGrupo[nome] || [];
             const totalOps = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
             const totalDiv = divs.reduce((s, d) => s + (d.valor_total || 0), 0);
