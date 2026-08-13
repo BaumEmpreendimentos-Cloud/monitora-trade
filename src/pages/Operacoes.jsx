@@ -281,8 +281,8 @@ export default function Operacoes() {
                           <th colSpan={14} className="p-2.5 text-left font-normal normal-case">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div className="flex items-center gap-2">
-                                {expanded[g.id] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                                <span className="font-bold text-sm">{g.nome}</span>
+                                {expanded[g.id] ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+                                <span className="font-bold text-sm w-56 truncate" title={g.nome}>{g.nome}</span>
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
                                 <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
                                 <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
