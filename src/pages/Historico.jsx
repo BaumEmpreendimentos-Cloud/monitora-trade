@@ -21,8 +21,7 @@ export default function Historico() {
   const [editarOp, setEditarOp] = useState(null);
   const [toDelete, setToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [collapsed, setCollapsed] = useState({});
-  const [collapsedInit, setCollapsedInit] = useState(false);
+  const [expanded, setExpanded] = useState({});
 
   const loadData = async () => {
     setLoading(true); setError('');
@@ -38,15 +37,6 @@ export default function Historico() {
   };
 
   useEffect(() => { loadData(); }, []);
-
-  useEffect(() => {
-    if (!collapsedInit && !loading && nomes.length) {
-      const init = {};
-      nomes.forEach((n) => { init[n] = true; });
-      setCollapsed(init);
-      setCollapsedInit(true);
-    }
-  }, [loading, nomes, collapsedInit]);
 
   const handleEditar = async (id, dados) => {
     setSaving(true); setError('');
@@ -127,18 +117,18 @@ export default function Historico() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setCollapsed((p) => ({ ...p, [nome]: !p[nome] }))}>
+                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))}>
                         <td colSpan={11} className="p-2.5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              {collapsed[nome] ? <ChevronRight className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                              {expanded[nome] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                               <span className="font-bold">{nome}</span>
                             </div>
                             <span>Resultado Total: <b className={color(total)}>{fmt(total)}</b></span>
                           </div>
                         </td>
                       </tr>
-                      {!collapsed[nome] && lista.map((o) => (
+                      {expanded[nome] && lista.map((o) => (
                         <tr key={o.id} className="border-t">
                           <td className="p-2 font-medium">{o.ativo}</td>
                           <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
@@ -158,7 +148,7 @@ export default function Historico() {
                           </td>
                         </tr>
                       ))}
-                      {!collapsed[nome] && divs.map((d) => (
+                      {expanded[nome] && divs.map((d) => (
                         <tr key={`div-${d.id}`} className="border-t bg-amber-50/50">
                           <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
                           <td className="p-2 text-muted-foreground">—</td>
@@ -175,7 +165,7 @@ export default function Historico() {
                     </tbody>
                   </table>
                   </div>
-                  <HistoricoGrupoMobile nome={nome} lista={lista} divs={divs} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!!collapsed[nome]} onToggle={() => setCollapsed((p) => ({ ...p, [nome]: !p[nome] }))} />
+                  <HistoricoGrupoMobile nome={nome} lista={lista} divs={divs} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[nome]} onToggle={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))} />
                 </CardContent>
               </Card>
             );
