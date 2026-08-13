@@ -93,7 +93,7 @@ const num = (v) => {
   return Number.isNaN(n) ? null : n;
 };
 
-const splitCSVLine = (line) => {
+const splitCSVLine = (line, delim = ';') => {
   const result = [];
   let current = '';
   let inQuotes = false;
@@ -102,7 +102,7 @@ const splitCSVLine = (line) => {
     if (c === '"') {
       if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
       else { inQuotes = !inQuotes; }
-    } else if (c === ';' && !inQuotes) {
+    } else if (c === delim && !inQuotes) {
       result.push(current);
       current = '';
     } else {
@@ -114,14 +114,18 @@ const splitCSVLine = (line) => {
 };
 
 const parseCSV = (text) => {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim());
+  const clean = text.replace(/^\ufeff/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = clean.split('\n').filter((l) => l.trim());
   if (lines.length < 2) return [];
-  const headers = splitCSVLine(lines[0]).map((h) =>
-    h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  // Detect delimiter: ; , or tab
+  const firstLine = lines[0];
+  const delim = firstLine.includes(';') ? ';' : firstLine.includes('\t') ? '\t' : ',';
+  const headers = splitCSVLine(lines[0], delim).map((h) =>
+    h.trim().toLowerCase().replace(/^\ufeff/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   );
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = splitCSVLine(lines[i]);
+    const values = splitCSVLine(lines[i], delim);
     const row = {};
     headers.forEach((h, idx) => { row[h] = (values[idx] ?? '').trim(); });
     rows.push(row);
