@@ -66,7 +66,12 @@ export default function Historico() {
 
   const grupos = {};
   ops.forEach((o) => { (grupos[o.grupo_nome] ||= []).push(o); });
-  const nomes = [...new Set([...Object.keys(grupos), ...Object.keys(divPorGrupo)])];
+  const groupMaxDate = (nome) => {
+    const opsDates = (grupos[nome] || []).map((o) => o.data_fechamento ? new Date(o.data_fechamento).getTime() : 0);
+    const divDates = (divPorGrupo[nome] || []).map((d) => d.data_pagamento ? new Date(d.data_pagamento).getTime() : 0);
+    return Math.max(0, ...opsDates, ...divDates);
+  };
+  const nomes = [...new Set([...Object.keys(grupos), ...Object.keys(divPorGrupo)])].sort((a, b) => groupMaxDate(b) - groupMaxDate(a));
 
   return (
     <div className="p-4 md:p-8">
