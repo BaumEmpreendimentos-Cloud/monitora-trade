@@ -13,7 +13,7 @@ import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
 import PullToRefresh from '@/components/PullToRefresh';
-import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
+import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
 import { isMarketOpen } from '@/lib/marketHours';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -329,8 +329,9 @@ export default function Operacoes() {
                           const extr = isOption(o.categoria) ? calcExtrinseco(o.categoria, o.strike, atual, quotes[o.ativo_base]) : null;
                           const diasVenc = businessDaysUntil(o.vencimento);
                           const isSel = selectedOp?.id === o.id;
+                          const mnyClass = moneynessRowClass(o.categoria, o.strike, quotes[o.ativo_base]);
                           return (
-                            <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''}`} onClick={() => { setSelectedGroup(null); setSelectedOp(isSel ? null : o); }}>
+                            <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''} ${mnyClass}`} onClick={() => { setSelectedGroup(null); setSelectedOp(isSel ? null : o); }}>
                               <td className="p-2 font-medium">{o.ativo}</td>
                               <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>

@@ -52,6 +52,25 @@ export const businessDaysUntil = (dateStr) => {
   return count;
 };
 
+// Classificação de moneyness: 'ITM', 'ATM', 'OTM' ou null (não é opção / sem dados)
+export const calcMoneyness = (categoria, strike, underlying, tolerance = 0.02) => {
+  if ((categoria !== 'CALL' && categoria !== 'PUT') || strike == null || underlying == null || underlying === '') return null;
+  const s = Number(strike); const u = Number(underlying);
+  if (Number.isNaN(s) || Number.isNaN(u)) return null;
+  const diff = Math.abs(u - s) / s;
+  if (diff <= tolerance) return 'ATM';
+  if (categoria === 'CALL') return u > s ? 'ITM' : 'OTM';
+  return u < s ? 'ITM' : 'OTM';
+};
+
+// Classe de fundo para linha de opção conforme moneyness
+export const moneynessRowClass = (categoria, strike, underlying) => {
+  const m = calcMoneyness(categoria, strike, underlying);
+  if (m === 'ITM' || m === 'ATM') return 'bg-red-50/70 hover:bg-red-100/70';
+  if (m === 'OTM') return 'bg-blue-50/70 hover:bg-blue-100/70';
+  return '';
+};
+
 // Resultado de uma opção no vencimento dado o preço do ativo base (underlying)
 export const calcResultadoOpcaoUnderlying = (categoria, operacao, strike, precoEntrada, quantidade, underlying) => {
   if (underlying == null || underlying === '' || strike == null) return null;

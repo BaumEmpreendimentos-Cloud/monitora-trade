@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Coins, Pencil, Trash2, Bell, BellRing } from 'lucide-react';
-import { calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
+import { calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -41,8 +41,9 @@ export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expan
             const rp = calcResultadoPct(o.operacao, o.preco_entrada, atual);
             const diasVenc = businessDaysUntil(o.vencimento);
             const isSel = selectedOp?.id === o.id;
+            const mnyClass = moneynessRowClass(o.categoria, o.strike, quotes[o.ativo_base]);
             return (
-              <div key={o.id} className={`border rounded-lg p-3 space-y-2 cursor-pointer ${isSel ? 'border-primary bg-primary/5' : ''}`} onClick={() => onSelectOp(isSel ? null : o)}>
+              <div key={o.id} className={`border rounded-lg p-3 space-y-2 cursor-pointer ${isSel ? 'border-primary bg-primary/5' : ''} ${mnyClass}`} onClick={() => onSelectOp(isSel ? null : o)}>
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{o.ativo}</span>
                   <div className="flex gap-1 text-xs">
