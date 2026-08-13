@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import PullToRefresh from '@/components/PullToRefresh';
+import { isMarketOpen } from '@/lib/marketHours';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -91,7 +92,7 @@ export default function Cotacoes() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      if (trackedRef.current.length) refreshQuotes();
+      if (trackedRef.current.length && isMarketOpen()) refreshQuotes();
     }, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, [refreshQuotes]);

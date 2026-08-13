@@ -14,6 +14,7 @@ import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
 import PullToRefresh from '@/components/PullToRefresh';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil } from '@/lib/operacoes';
+import { isMarketOpen } from '@/lib/marketHours';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -91,7 +92,7 @@ export default function Operacoes() {
   useEffect(() => { if (ops.length) fetchQuotes(); }, [ops, fetchQuotes]);
   useEffect(() => {
     const id = setInterval(() => {
-      if (ops.some((x) => x.status === 'ABERTA')) fetchQuotes();
+      if (ops.some((x) => x.status === 'ABERTA') && isMarketOpen()) fetchQuotes();
     }, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, [fetchQuotes]);
