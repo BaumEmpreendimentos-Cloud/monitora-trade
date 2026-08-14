@@ -29,6 +29,7 @@ export default function DetalheOperacoesDialog({ apuracao, open, onClose }) {
               <th className="text-left p-2 whitespace-nowrap">Categoria</th>
               <th className="text-left p-2 whitespace-nowrap">Operação</th>
               <th className="text-right p-2 whitespace-nowrap">Qtd</th>
+              <th className="text-left p-2 whitespace-nowrap">Fechamento</th>
               <th className="text-right p-2 whitespace-nowrap">Preço Entrada</th>
               <th className="text-right p-2 whitespace-nowrap">Preço Fechamento</th>
               <th className="text-right p-2 whitespace-nowrap">Resultado</th>
@@ -42,6 +43,7 @@ export default function DetalheOperacoesDialog({ apuracao, open, onClose }) {
                 <td className="p-2 whitespace-nowrap">{CAT_LABELS[op.categoria] || op.categoria}</td>
                 <td className="p-2 whitespace-nowrap">{op.operacao}</td>
                 <td className="p-2 text-right">{op.quantidade}</td>
+                <td className="p-2 whitespace-nowrap">{op.data_fechamento ? new Date(op.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
                 <td className="p-2 text-right">{fmt(op.preco_entrada)}</td>
                 <td className="p-2 text-right">{fmt(op.preco_fechamento)}</td>
                 <td className={`p-2 text-right font-medium ${color(op.resultado_valor)}`}>{fmt(op.resultado_valor)}</td>
