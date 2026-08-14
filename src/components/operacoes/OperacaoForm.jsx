@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import MobileSelect from '@/components/MobileSelect';
 import { lookupOption } from '@/lib/oplab';
 
-const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR'];
+const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'FII'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 const isOption = (c) => c === 'CALL' || c === 'PUT';
 

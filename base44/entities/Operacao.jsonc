@@ -26,7 +26,8 @@
         "ACAO",
         "CALL",
         "PUT",
-        "DOLLAR"
+        "DOLLAR",
+        "FII"
       ],
       "default": "ACAO"
     },
@@ -81,6 +82,11 @@
     "data_fechamento": {
       "type": "string",
       "format": "date-time"
+    },
+    "irrf": {
+      "type": "number",
+      "default": 0,
+      "title": "IRRF retido na fonte"
     }
   },
   "required": [

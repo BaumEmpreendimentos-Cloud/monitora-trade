@@ -154,6 +154,7 @@ export const apurarImpostoRenda = (operacoes, config) => {
           categoria: cat,
           categoriaLabel: cfg.label,
           tipo: tipo === 'dayTrade' ? 'Day Trade' : 'Swing Trade',
+          tipoKey: tipo === 'dayTrade' ? 'DAY_TRADE' : 'SWING',
           operacoes: opsTipo.length,
           resultadoBruto,
           irrf,

@@ -1,30 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Receipt, Settings, AlertTriangle } from 'lucide-react';
+import { Receipt, Settings, AlertTriangle, FileDown, CheckCircle2, Undo2 } from 'lucide-react';
 import OnboardingFiscal from '@/components/irpf/OnboardingFiscal';
+import DarfDialog from '@/components/irpf/DarfDialog';
 import { apurarImpostoRenda, mesLabel } from '@/lib/imposto';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 
 export default function IRPF() {
+  const { user } = useAuth();
   const [config, setConfig] = useState(null);
   const [ops, setOps] = useState([]);
+  const [apuracoesSalvas, setApuracoesSalvas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [darfApuracao, setDarfApuracao] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [configs, operacoes] = await Promise.all([
+      const [configs, operacoes, salvas] = await Promise.all([
         base44.entities.ConfiguracaoFiscal.list('-created_date', 10),
         base44.entities.Operacao.list('-created_date', 5000),
+        base44.entities.ApuracaoMensal.list('-created_date', 5000),
       ]);
       const cfg = (configs && configs[0]) || null;
       setConfig(cfg);
       setOps(operacoes || []);
+      setApuracoesSalvas(salvas || []);
       if (!cfg || !cfg.onboarding_completo) setOnboardingOpen(true);
     } catch (e) { console.error('IRPF load error', e); }
     finally { setLoading(false); }
@@ -46,9 +53,64 @@ export default function IRPF() {
   };
 
   const apuracao = config?.onboarding_completo ? apurarImpostoRenda(ops, config) : [];
+  // Inverte a ordem: meses mais recentes no topo
+  const apuracaoOrdenada = [...apuracao].sort((a, b) => b.mes.localeCompare(a.mes));
   const totalAPagar = apuracao.reduce((s, a) => s + (a.impostoAPagar || 0), 0);
   const totalResultado = apuracao.reduce((s, a) => s + (a.resultadoBruto || 0), 0);
   const totalIRRF = apuracao.reduce((s, a) => s + (a.irrf || 0), 0);
+
+  // Mapa de apurações salvas (DARF gerada / paga) por mês+categoria+tipo
+  const darfMap = {};
+  apuracoesSalvas.forEach((r) => {
+    darfMap[`${r.mes}-${r.categoria}-${r.tipo}`] = r;
+  });
+
+  const handleDarfConfirm = async (apur) => {
+    const key = `${apur.mes}-${apur.categoria}-${apur.tipoKey}`;
+    const existing = darfMap[key];
+    const dados = {
+      mes: apur.mes,
+      categoria: apur.categoria,
+      tipo: apur.tipoKey,
+      resultado_bruto: apur.resultadoBruto,
+      irrf: apur.irrf,
+      prejuizo_compensado: apur.prejuizoCompensado,
+      prejuizo_acumulado_final: apur.prejuizoAcumuladoFinal,
+      aliquota: apur.aliquota,
+      imposto_devido: apur.impostoDevido,
+      imposto_pagar: apur.impostoAPagar,
+      darf_gerada: true,
+      data_geracao_darf: new Date().toISOString(),
+      aceite_responsabilidade: true,
+    };
+    try {
+      let saved;
+      if (existing?.id) {
+        saved = await base44.entities.ApuracaoMensal.update(existing.id, { ...dados, pago: existing.pago, data_pagamento: existing.data_pagamento });
+      } else {
+        saved = await base44.entities.ApuracaoMensal.create(dados);
+      }
+      setApuracoesSalvas((p) => {
+        const filtered = p.filter((r) => r.id !== saved.id);
+        return [saved, ...filtered];
+      });
+      setDarfApuracao(null);
+    } catch (e) { console.error('darf confirm error', e); }
+  };
+
+  const handleMarcarPago = async (apur) => {
+    const key = `${apur.mes}-${apur.categoria}-${apur.tipoKey}`;
+    const existing = darfMap[key];
+    if (!existing) return;
+    const novoPago = !existing.pago;
+    try {
+      const updated = await base44.entities.ApuracaoMensal.update(existing.id, {
+        pago: novoPago,
+        data_pagamento: novoPago ? new Date().toISOString() : null,
+      });
+      setApuracoesSalvas((p) => p.map((r) => (r.id === existing.id ? updated : r)));
+    } catch (e) { console.error('marcar pago error', e); }
+  };
 
   if (loading) {
     return <div className="p-4 md:p-8"><p className="text-sm text-muted-foreground">Carregando...</p></div>;
@@ -128,23 +190,45 @@ export default function IRPF() {
                           <th className="text-right p-2.5">Alíq.</th>
                           <th className="text-right p-2.5">IR Devido</th>
                           <th className="text-right p-2.5">IR a Pagar</th>
+                          <th className="text-center p-2.5">DARF</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {apuracao.map((a, i) => (
-                          <tr key={i} className="border-t hover:bg-accent/30">
-                            <td className="p-2.5 font-medium whitespace-nowrap">{mesLabel(a.mes)}</td>
-                            <td className="p-2.5">{a.categoriaLabel}</td>
-                            <td className="p-2.5 text-muted-foreground">{a.tipo}</td>
-                            <td className="p-2.5 text-right">{a.operacoes}</td>
-                            <td className={`p-2.5 text-right ${color(a.resultadoBruto)}`}>{fmt(a.resultadoBruto)}</td>
-                            <td className="p-2.5 text-right">{fmt(a.irrf)}</td>
-                            <td className="p-2.5 text-right">{fmt(a.prejuizoCompensado)}</td>
-                            <td className="p-2.5 text-right">{(a.aliquota * 100).toFixed(0)}%</td>
-                            <td className="p-2.5 text-right">{a.isento ? <span className="text-emerald-600 text-xs font-medium">Isento</span> : fmt(a.impostoDevido)}</td>
-                            <td className={`p-2.5 text-right font-medium ${a.impostoAPagar > 0 ? 'text-red-600' : ''}`}>{fmt(a.impostoAPagar)}</td>
-                          </tr>
-                        ))}
+                        {apuracaoOrdenada.map((a, i) => {
+                          const darf = darfMap[`${a.mes}-${a.categoria}-${a.tipoKey}`];
+                          const podeGerar = a.impostoAPagar > 0 && !darf;
+                          return (
+                            <tr key={i} className="border-t hover:bg-accent/30">
+                              <td className="p-2.5 font-medium whitespace-nowrap">{mesLabel(a.mes)}</td>
+                              <td className="p-2.5">{a.categoriaLabel}</td>
+                              <td className="p-2.5 text-muted-foreground">{a.tipo}</td>
+                              <td className="p-2.5 text-right">{a.operacoes}</td>
+                              <td className={`p-2.5 text-right ${color(a.resultadoBruto)}`}>{fmt(a.resultadoBruto)}</td>
+                              <td className="p-2.5 text-right">{fmt(a.irrf)}</td>
+                              <td className="p-2.5 text-right">{fmt(a.prejuizoCompensado)}</td>
+                              <td className="p-2.5 text-right">{(a.aliquota * 100).toFixed(0)}%</td>
+                              <td className="p-2.5 text-right">{a.isento ? <span className="text-emerald-600 text-xs font-medium">Isento</span> : fmt(a.impostoDevido)}</td>
+                              <td className={`p-2.5 text-right font-medium ${a.impostoAPagar > 0 ? 'text-red-600' : ''}`}>{fmt(a.impostoAPagar)}</td>
+                              <td className="p-2.5 text-center">
+                                {darf?.pago ? (
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium"><CheckCircle2 className="w-3.5 h-3.5" /> Pago</span>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleMarcarPago(a)} title="Desfazer"><Undo2 className="w-3.5 h-3.5" /></Button>
+                                  </div>
+                                ) : darf ? (
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => setDarfApuracao(a)} title="Reimprimir DARF"><FileDown className="w-3 h-3" /></Button>
+                                    <Button size="sm" variant="secondary" className="h-6 text-xs" onClick={() => handleMarcarPago(a)} title="Marcar como pago">Pago</Button>
+                                  </div>
+                                ) : podeGerar ? (
+                                  <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => setDarfApuracao(a)}>Gerar</Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -160,6 +244,13 @@ export default function IRPF() {
         onClose={() => setOnboardingOpen(false)}
         onSubmit={handleOnboardingSubmit}
         configExistente={config}
+      />
+      <DarfDialog
+        apuracao={darfApuracao}
+        userName={user?.full_name}
+        open={!!darfApuracao}
+        onClose={() => setDarfApuracao(null)}
+        onConfirm={handleDarfConfirm}
       />
     </div>
   );

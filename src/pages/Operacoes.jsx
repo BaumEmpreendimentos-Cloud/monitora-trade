@@ -150,13 +150,14 @@ export default function Operacoes() {
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
 
-  const handleEncerrar = async (preco) => {
+  const handleEncerrar = async (preco, irrf) => {
     const o = encerrar;
     if (!o) return;
     try {
       const updated = await base44.entities.Operacao.update(o.id, {
         status: 'FECHADA',
         preco_fechamento: preco,
+        irrf: irrf || 0,
         resultado_valor: calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, preco),
         resultado_pct: calcResultadoPct(o.operacao, o.preco_entrada, preco),
         data_fechamento: new Date().toISOString(),
