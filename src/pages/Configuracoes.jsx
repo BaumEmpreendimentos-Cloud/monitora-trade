@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 
 export default function Configuracoes() {
-  const { user, logout } = useAuth();
+  const { user, checkUserAuth, logout } = useAuth();
   const navigate = useNavigate();
   const [showDelete, setShowDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -25,6 +25,7 @@ export default function Configuracoes() {
     setSavingCpf(true);
     try {
       await base44.auth.updateMe({ cpf });
+      await checkUserAuth();
     } catch (e) {
       console.error('cpf save error', e);
     } finally {

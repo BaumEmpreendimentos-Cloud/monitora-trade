@@ -7,6 +7,7 @@ import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
+import CpfRequiredDialog from '@/components/CpfRequiredDialog';
 
 const linkClass = ({ isActive }) =>
   `px-3 py-1.5 rounded-md text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`;
@@ -56,13 +57,7 @@ export default function Layout() {
     }
   };
 
-  useEffect(() => {
-    if (user && !user.trial_start && !admin) {
-      base44.auth.updateMe({ trial_start: new Date().toISOString() })
-        .then(() => checkUserAuth && checkUserAuth())
-        .catch((e) => console.error('trial_start error', e));
-    }
-  }, [user, checkUserAuth, admin]);
+  // trial_start agora é definido no CpfRequiredDialog ao salvar o CPF (com verificação de trial por CPF)
 
   // Solicitar permissão de notificações push (web + nativo iOS/Android)
   useEffect(() => {
@@ -85,6 +80,10 @@ export default function Layout() {
         </div>
       </div>
     );
+  }
+
+  if (user && !user.cpf && !admin) {
+    return <CpfRequiredDialog user={user} onSaved={checkUserAuth} />;
   }
 
   if (user && !hasAccess(user) && location.pathname !== '/assinatura') {
