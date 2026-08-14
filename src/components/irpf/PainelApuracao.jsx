@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileDown, CheckCircle2, Undo2 } from 'lucide-react';
 import { mesLabel } from '@/lib/imposto';
+import DetalheOperacoesDialog from '@/components/irpf/DetalheOperacoesDialog';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const color = (v) => (v === null || v === undefined || v === 0 ? '' : v > 0 ? 'text-emerald-600' : 'text-red-600');
@@ -10,6 +11,7 @@ const color = (v) => (v === null || v === undefined || v === 0 ? '' : v > 0 ? 't
 const CAT_LABELS = { ACOES: 'Ações', OPCOES: 'Opções', FII: 'FII', FUTUROS: 'Futuros' };
 
 export default function PainelApuracao({ titulo, aliquota, itens, darfMap, onGerarDarf, onMarcarPago }) {
+  const [detalheApuracao, setDetalheApuracao] = useState(null);
   const ordenado = [...itens].sort((a, b) => b.mes.localeCompare(a.mes));
   const totalResultado = itens.reduce((s, a) => s + (a.resultadoBruto || 0), 0);
   const totalAPagar = itens.reduce((s, a) => s + (a.impostoAPagar || 0), 0);
@@ -51,7 +53,7 @@ export default function PainelApuracao({ titulo, aliquota, itens, darfMap, onGer
                 const podeGerar = a.impostoAPagar > 0 && !darf;
                 return (
                   <tr key={i} className="border-t hover:bg-accent/30">
-                    <td className="p-2 font-medium whitespace-nowrap">{mesLabel(a.mes)}</td>
+                    <td className="p-2 font-medium whitespace-nowrap cursor-pointer text-blue-600 hover:underline" onClick={() => setDetalheApuracao(a)}>{mesLabel(a.mes)}</td>
                     <td className="p-2 text-right text-red-600">{a.prejuizoAnterior > 0 ? fmt(-a.prejuizoAnterior) : '—'}</td>
                     {catsAtivas.map((cat) => (
                       <td key={cat} className={`p-2 text-right ${color(a.breakdown?.[cat])}`}>
@@ -85,6 +87,7 @@ export default function PainelApuracao({ titulo, aliquota, itens, darfMap, onGer
           </table>
         </div>
       </CardContent>
+      <DetalheOperacoesDialog apuracao={detalheApuracao} open={!!detalheApuracao} onClose={() => setDetalheApuracao(null)} />
     </Card>
   );
 }
