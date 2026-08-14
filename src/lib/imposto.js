@@ -1,5 +1,6 @@
 // Apuração de Imposto de Renda sobre operações de renda variável (Monitora Trade)
 // Base legal: IN RFB 1585/2015 e Lei 11.033/2004.
+// Modelo unificado: prejuízo compensado por tipo (swing/day trade), sem distinção de ativo.
 
 export const CATEGORIAS_FISCAIS = {
   ACOES: { label: 'Ações', aliquota: 0.15, aliquotaDayTrade: 0.20, isencaoLimite: 20000 },
@@ -45,24 +46,16 @@ export const mesLabel = (chave) => {
   return `${nomes[parseInt(mes, 10) - 1]}/${ano}`;
 };
 
-const PREJUIZO_FIELDS = {
-  ACOES: { swing: 'prejuizo_acumulado_acoes', dayTrade: 'prejuizo_dt_acoes' },
-  OPCOES: { swing: 'prejuizo_acumulado_opcoes', dayTrade: 'prejuizo_dt_opcoes' },
-  FII: { swing: 'prejuizo_acumulado_fii', dayTrade: 'prejuizo_dt_fii' },
-  FUTUROS: { swing: 'prejuizo_acumulado_futuros', dayTrade: 'prejuizo_dt_futuros' },
-};
+const ALIQUOTA_SWING = 0.15;
+const ALIQUOTA_DT = 0.20;
 
 /**
  * Apura IR mensal encadeado sobre operações fechadas.
- * Regras:
- * - Prejuízos acumulados compensam lucros futuros (mesmo tipo: swing↔swing, day trade↔day trade).
- * - Mês com lucro: abate prejuízo acumulado; se lucro > prejuízo, paga IR sobre o excedente e zera o prejuízo.
- * - Mês com prejuízo: acumula para o mês seguinte (o lucro não carrega, apenas o prejuízo).
- * - Ações (swing trade): isenção de IR se total de vendas ≤ R$ 20.000 no mês.
+ * Modelo unificado: prejuízo compensado por tipo (swing/day trade).
  *
  * @param {Array} operacoes - operações (status FECHADA com data_fechamento)
  * @param {Object} config - ConfiguracaoFiscal do usuário
- * @returns {Array} apurações por mês/categoria/tipo, ordenadas cronologicamente
+ * @returns {Array} apurações por mês/tipo, com breakdown por categoria
  */
 export const apurarImpostoRenda = (operacoes, config) => {
   if (!operacoes || !config || !config.mes_inicio) return [];
@@ -85,91 +78,90 @@ export const apurarImpostoRenda = (operacoes, config) => {
 
   const chavesMes = Object.keys(meses).sort();
 
-  // Estado de prejuízos acumulados por categoria + tipo
-  const prejuizo = {};
-  Object.keys(CATEGORIAS_FISCAIS).forEach((cat) => {
-    const f = PREJUIZO_FIELDS[cat];
-    prejuizo[cat] = {
-      swing: Math.abs(Number(config[f.swing] || 0)),
-      dayTrade: Math.abs(Number(config[f.dayTrade] || 0)),
-    };
-  });
+  // Pools unificados de prejuízo (swing trade e day trade)
+  let prejuizoSwing = Math.abs(Number(config.prejuizo_swing || 0));
+  if (prejuizoSwing === 0) {
+    // Backward compat: soma campos antigos por categoria
+    prejuizoSwing =
+      Math.abs(Number(config.prejuizo_acumulado_acoes || 0)) +
+      Math.abs(Number(config.prejuizo_acumulado_opcoes || 0)) +
+      Math.abs(Number(config.prejuizo_acumulado_fii || 0)) +
+      Math.abs(Number(config.prejuizo_acumulado_futuros || 0));
+  }
+
+  let prejuizoDt = Math.abs(Number(config.prejuizo_dt || 0));
+  if (prejuizoDt === 0) {
+    prejuizoDt =
+      Math.abs(Number(config.prejuizo_dt_acoes || 0)) +
+      Math.abs(Number(config.prejuizo_dt_opcoes || 0)) +
+      Math.abs(Number(config.prejuizo_dt_fii || 0)) +
+      Math.abs(Number(config.prejuizo_dt_futuros || 0));
+  }
 
   const resultados = [];
 
   chavesMes.forEach((chave) => {
     const opsDoMes = meses[chave];
 
-    Object.keys(CATEGORIAS_FISCAIS).forEach((cat) => {
-      const opsCat = opsDoMes.filter((o) => categoriaFiscal(o.categoria) === cat);
-      if (!opsCat.length) return;
+    ['swing', 'dayTrade'].forEach((tipo) => {
+      const opsTipo = opsDoMes.filter((o) =>
+        tipo === 'dayTrade' ? isDayTradeOp(o) : !isDayTradeOp(o)
+      );
+      if (!opsTipo.length) return;
 
-      const cfg = CATEGORIAS_FISCAIS[cat];
-
-      ['swing', 'dayTrade'].forEach((tipo) => {
-        const opsTipo = opsCat.filter((o) =>
-          tipo === 'dayTrade' ? isDayTradeOp(o) : !isDayTradeOp(o)
-        );
-        if (!opsTipo.length) return;
-
-        const resultadoBruto = opsTipo.reduce((s, o) => s + (Number(o.resultado_valor) || 0), 0);
-        const irrf = opsTipo.reduce((s, o) => s + (Number(o.irrf) || 0), 0);
-        const aliquota = tipo === 'dayTrade' ? cfg.aliquotaDayTrade : cfg.aliquota;
-
-        // Isenção para ações swing trade (vendas ≤ R$ 20.000 no mês)
-        let isento = false;
-        let baseCalculo = resultadoBruto;
-        if (tipo === 'swing' && cfg.isencaoLimite > 0 && resultadoBruto > 0) {
-          const totalVendas = opsTipo.reduce((s, o) => {
-            const preco = o.operacao === 'VENDA' ? Number(o.preco_entrada) : Number(o.preco_fechamento);
-            return s + (preco || 0) * (Number(o.quantidade) || 0);
-          }, 0);
-          if (totalVendas <= cfg.isencaoLimite) {
-            isento = true;
-            baseCalculo = 0;
-          }
+      // Breakdown por categoria (informativo)
+      const breakdown = {};
+      opsTipo.forEach((o) => {
+        const cat = categoriaFiscal(o.categoria);
+        if (cat) {
+          breakdown[cat] = (breakdown[cat] || 0) + (Number(o.resultado_valor) || 0);
         }
+      });
 
-        // Prejuízo acumulado no início do mês (antes da compensação)
-        const prejuizoAnterior = prejuizo[cat][tipo];
+      const resultadoBruto = opsTipo.reduce((s, o) => s + (Number(o.resultado_valor) || 0), 0);
+      const irrf = opsTipo.reduce((s, o) => s + (Number(o.irrf) || 0), 0);
+      const aliquota = tipo === 'dayTrade' ? ALIQUOTA_DT : ALIQUOTA_SWING;
 
-        // Compensa prejuízo acumulado (apenas se houver lucro e não for isento)
-        let prejuizoCompensado = 0;
-        if (resultadoBruto > 0 && !isento) {
-          prejuizoCompensado = Math.min(prejuizo[cat][tipo], resultadoBruto);
-          baseCalculo = resultadoBruto - prejuizoCompensado;
-        }
+      const prejuizoAnterior = tipo === 'dayTrade' ? prejuizoDt : prejuizoSwing;
 
-        const impostoDevido = baseCalculo > 0 ? baseCalculo * aliquota : 0;
-        const impostoAPagar = Math.max(0, impostoDevido - irrf);
+      // Compensa prejuízo acumulado
+      let prejuizoCompensado = 0;
+      let baseCalculo = resultadoBruto;
+      if (resultadoBruto > 0) {
+        prejuizoCompensado = Math.min(prejuizoAnterior, resultadoBruto);
+        baseCalculo = resultadoBruto - prejuizoCompensado;
+      }
 
-        // Atualiza prejuízo acumulado
-        if (resultadoBruto < 0) {
-          // Mês com prejuízo: acumula
-          prejuizo[cat][tipo] += Math.abs(resultadoBruto);
-        } else if (prejuizoCompensado > 0) {
-          // Mês com lucro: consome prejuízo (remainder permanece se prejuízo > lucro)
-          prejuizo[cat][tipo] = Math.max(0, prejuizo[cat][tipo] - prejuizoCompensado);
-        }
+      const impostoDevido = baseCalculo > 0 ? baseCalculo * aliquota : 0;
+      const impostoAPagar = Math.max(0, impostoDevido - irrf);
 
-        resultados.push({
-          mes: chave,
-          categoria: cat,
-          categoriaLabel: cfg.label,
-          tipo: tipo === 'dayTrade' ? 'Day Trade' : 'Swing Trade',
-          tipoKey: tipo === 'dayTrade' ? 'DAY_TRADE' : 'SWING',
-          operacoes: opsTipo.length,
-          resultadoBruto,
-          irrf,
-          isento,
-          prejuizoAnterior,
-          prejuizoCompensado,
-          prejuizoAcumuladoFinal: prejuizo[cat][tipo],
-          saldoFinal: baseCalculo > 0 ? baseCalculo : -prejuizo[cat][tipo],
-          aliquota,
-          impostoDevido,
-          impostoAPagar,
-        });
+      // Atualiza prejuízo acumulado
+      if (resultadoBruto < 0) {
+        if (tipo === 'dayTrade') prejuizoDt += Math.abs(resultadoBruto);
+        else prejuizoSwing += Math.abs(resultadoBruto);
+      } else if (prejuizoCompensado > 0) {
+        if (tipo === 'dayTrade') prejuizoDt = Math.max(0, prejuizoDt - prejuizoCompensado);
+        else prejuizoSwing = Math.max(0, prejuizoSwing - prejuizoCompensado);
+      }
+
+      const prejuizoAcumuladoFinal = tipo === 'dayTrade' ? prejuizoDt : prejuizoSwing;
+      const saldoFinal = baseCalculo > 0 ? baseCalculo : -prejuizoAcumuladoFinal;
+
+      resultados.push({
+        mes: chave,
+        tipo: tipo === 'dayTrade' ? 'Day Trade' : 'Swing Trade',
+        tipoKey: tipo === 'dayTrade' ? 'DAY_TRADE' : 'SWING',
+        operacoes: opsTipo.length,
+        breakdown,
+        resultadoBruto,
+        irrf,
+        prejuizoAnterior,
+        prejuizoCompensado,
+        prejuizoAcumuladoFinal,
+        saldoFinal,
+        aliquota,
+        impostoDevido,
+        impostoAPagar,
       });
     });
   });

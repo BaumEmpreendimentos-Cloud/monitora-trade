@@ -5,19 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import ResponsiveDialog from '@/components/ResponsiveDialog';
 
-const CATEGORIAS = [
-  { key: 'acoes', field: 'prejuizo_acumulado_acoes', dtField: 'prejuizo_dt_acoes', label: 'Ações' },
-  { key: 'opcoes', field: 'prejuizo_acumulado_opcoes', dtField: 'prejuizo_dt_opcoes', label: 'Opções' },
-  { key: 'fii', field: 'prejuizo_acumulado_fii', dtField: 'prejuizo_dt_fii', label: 'FIIs' },
-  { key: 'futuros', field: 'prejuizo_acumulado_futuros', dtField: 'prejuizo_dt_futuros', label: 'Futuros' },
-];
-
 export default function OnboardingFiscal({ open, onClose, onSubmit, configExistente }) {
   const [mesInicio, setMesInicio] = useState('');
   const [temPrejuizo, setTemPrejuizo] = useState(false);
-  const [temPrejuizoDT, setTemPrejuizoDT] = useState(false);
-  const [prejuizos, setPrejuizos] = useState({});
-  const [prejuizosDT, setPrejuizosDT] = useState({});
+  const [prejuizoSwing, setPrejuizoSwing] = useState('');
+  const [prejuizoDt, setPrejuizoDt] = useState('');
   const [impostosRecolhidos, setImpostosRecolhidos] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,18 +17,25 @@ export default function OnboardingFiscal({ open, onClose, onSubmit, configExiste
     if (!open) return;
     if (configExistente) {
       setMesInicio(configExistente.mes_inicio || '');
-      setTemPrejuizo(CATEGORIAS.some((c) => Number(configExistente[c.field]) > 0));
-      setTemPrejuizoDT(CATEGORIAS.some((c) => Number(configExistente[c.dtField]) > 0));
-      const pj = {}; const pjdt = {};
-      CATEGORIAS.forEach((c) => {
-        pj[c.key] = configExistente[c.field] || '';
-        pjdt[c.key] = configExistente[c.dtField] || '';
-      });
-      setPrejuizos(pj); setPrejuizosDT(pjdt);
+      // Backward compat: soma campos antigos se os novos não estiverem definidos
+      const swing = Number(configExistente.prejuizo_swing || 0) ||
+        (Math.abs(Number(configExistente.prejuizo_acumulado_acoes || 0)) +
+         Math.abs(Number(configExistente.prejuizo_acumulado_opcoes || 0)) +
+         Math.abs(Number(configExistente.prejuizo_acumulado_fii || 0)) +
+         Math.abs(Number(configExistente.prejuizo_acumulado_futuros || 0)));
+      const dt = Number(configExistente.prejuizo_dt || 0) ||
+        (Math.abs(Number(configExistente.prejuizo_dt_acoes || 0)) +
+         Math.abs(Number(configExistente.prejuizo_dt_opcoes || 0)) +
+         Math.abs(Number(configExistente.prejuizo_dt_fii || 0)) +
+         Math.abs(Number(configExistente.prejuizo_dt_futuros || 0)));
+      setTemPrejuizo(swing > 0 || dt > 0);
+      setPrejuizoSwing(swing > 0 ? String(swing) : '');
+      setPrejuizoDt(dt > 0 ? String(dt) : '');
       setImpostosRecolhidos(configExistente.impostos_anteriores_recolhidos || false);
     } else {
-      setMesInicio(''); setTemPrejuizo(false); setTemPrejuizoDT(false);
-      setPrejuizos({}); setPrejuizosDT({}); setImpostosRecolhidos(false);
+      setMesInicio(''); setTemPrejuizo(false);
+      setPrejuizoSwing(''); setPrejuizoDt('');
+      setImpostosRecolhidos(false);
     }
     setError('');
   }, [open, configExistente]);
@@ -49,11 +48,18 @@ export default function OnboardingFiscal({ open, onClose, onSubmit, configExiste
       mes_inicio: mesInicio,
       impostos_anteriores_recolhidos: impostosRecolhidos,
       onboarding_completo: true,
+      prejuizo_swing: temPrejuizo ? (Number(prejuizoSwing) || 0) : 0,
+      prejuizo_dt: temPrejuizo ? (Number(prejuizoDt) || 0) : 0,
+      // Zera campos antigos para evitar dupla contagem
+      prejuizo_acumulado_acoes: 0,
+      prejuizo_acumulado_opcoes: 0,
+      prejuizo_acumulado_fii: 0,
+      prejuizo_acumulado_futuros: 0,
+      prejuizo_dt_acoes: 0,
+      prejuizo_dt_opcoes: 0,
+      prejuizo_dt_fii: 0,
+      prejuizo_dt_futuros: 0,
     };
-    CATEGORIAS.forEach((c) => {
-      dados[c.field] = temPrejuizo ? (Number(prejuizos[c.key]) || 0) : 0;
-      dados[c.dtField] = temPrejuizoDT ? (Number(prejuizosDT[c.key]) || 0) : 0;
-    });
     onSubmit(dados);
   };
 
@@ -87,38 +93,20 @@ export default function OnboardingFiscal({ open, onClose, onSubmit, configExiste
           <div className="flex items-start gap-2">
             <Checkbox checked={temPrejuizo} onCheckedChange={setTemPrejuizo} id="prejuizo" className="mt-0.5" />
             <div>
-              <Label htmlFor="prejuizo" className="text-sm font-medium cursor-pointer">3. Possuo prejuízos acumulados (swing trade)</Label>
-              <p className="text-xs text-muted-foreground">Prejuízos não compensados de meses anteriores ao mês inicial.</p>
+              <Label htmlFor="prejuizo" className="text-sm font-medium cursor-pointer">3. Possuo prejuízos acumulados</Label>
+              <p className="text-xs text-muted-foreground">Prejuízos não compensados de meses anteriores ao mês inicial. O prejuízo de swing trade e day trade são tratados em pools separados.</p>
             </div>
           </div>
           {temPrejuizo && (
             <div className="grid grid-cols-2 gap-3 pl-6">
-              {CATEGORIAS.map((c) => (
-                <div key={c.key} className="space-y-1">
-                  <Label className="text-xs">{c.label}</Label>
-                  <Input type="number" step="0.01" placeholder="0,00" value={prejuizos[c.key] || ''} onChange={(e) => setPrejuizos((p) => ({ ...p, [c.key]: e.target.value }))} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-start gap-2">
-            <Checkbox checked={temPrejuizoDT} onCheckedChange={setTemPrejuizoDT} id="prejuizoDT" className="mt-0.5" />
-            <div>
-              <Label htmlFor="prejuizoDT" className="text-sm font-medium cursor-pointer">4. Possuo prejuízos acumulados de day trade</Label>
-              <p className="text-xs text-muted-foreground">Prejuízos de day trade só compensam lucros de day trade.</p>
-            </div>
-          </div>
-          {temPrejuizoDT && (
-            <div className="grid grid-cols-2 gap-3 pl-6">
-              {CATEGORIAS.map((c) => (
-                <div key={c.key} className="space-y-1">
-                  <Label className="text-xs">{c.label}</Label>
-                  <Input type="number" step="0.01" placeholder="0,00" value={prejuizosDT[c.key] || ''} onChange={(e) => setPrejuizosDT((p) => ({ ...p, [c.key]: e.target.value }))} />
-                </div>
-              ))}
+              <div className="space-y-1">
+                <Label className="text-xs">Swing Trade</Label>
+                <Input type="number" step="0.01" placeholder="0,00" value={prejuizoSwing} onChange={(e) => setPrejuizoSwing(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Day Trade</Label>
+                <Input type="number" step="0.01" placeholder="0,00" value={prejuizoDt} onChange={(e) => setPrejuizoDt(e.target.value)} />
+              </div>
             </div>
           )}
         </div>

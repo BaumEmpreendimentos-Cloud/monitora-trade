@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Receipt, Settings, AlertTriangle } from 'lucide-react';
 import OnboardingFiscal from '@/components/irpf/OnboardingFiscal';
 import DarfDialog from '@/components/irpf/DarfDialog';
-import PainelCategoria from '@/components/irpf/PainelCategoria';
-import { apurarImpostoRenda, mesLabel, CATEGORIAS_FISCAIS } from '@/lib/imposto';
+import PainelApuracao from '@/components/irpf/PainelApuracao';
+import { apurarImpostoRenda, mesLabel } from '@/lib/imposto';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
@@ -58,24 +58,20 @@ export default function IRPF() {
   const totalResultado = apuracao.reduce((s, a) => s + (a.resultadoBruto || 0), 0);
   const totalIRRF = apuracao.reduce((s, a) => s + (a.irrf || 0), 0);
 
-  // Agrupa por categoria
-  const apuracaoPorCategoria = {};
-  apuracao.forEach((a) => {
-    if (!apuracaoPorCategoria[a.categoria]) apuracaoPorCategoria[a.categoria] = [];
-    apuracaoPorCategoria[a.categoria].push(a);
-  });
+  const swingItems = apuracao.filter((a) => a.tipoKey === 'SWING');
+  const dtItems = apuracao.filter((a) => a.tipoKey === 'DAY_TRADE');
 
   const darfMap = {};
   apuracoesSalvas.forEach((r) => {
-    darfMap[`${r.mes}-${r.categoria}-${r.tipo}`] = r;
+    darfMap[`${r.mes}-${r.tipo}`] = r;
   });
 
   const handleDarfConfirm = async (apur) => {
-    const key = `${apur.mes}-${apur.categoria}-${apur.tipoKey}`;
+    const key = `${apur.mes}-${apur.tipoKey}`;
     const existing = darfMap[key];
     const dados = {
       mes: apur.mes,
-      categoria: apur.categoria,
+      categoria: 'GERAL',
       tipo: apur.tipoKey,
       resultado_bruto: apur.resultadoBruto,
       irrf: apur.irrf,
@@ -104,7 +100,7 @@ export default function IRPF() {
   };
 
   const handleMarcarPago = async (apur) => {
-    const key = `${apur.mes}-${apur.categoria}-${apur.tipoKey}`;
+    const key = `${apur.mes}-${apur.tipoKey}`;
     const existing = darfMap[key];
     if (!existing) return;
     const novoPago = !existing.pago;
@@ -180,18 +176,26 @@ export default function IRPF() {
               </CardContent></Card>
             ) : (
               <div className="space-y-6">
-                {Object.keys(CATEGORIAS_FISCAIS)
-                  .filter((cat) => apuracaoPorCategoria[cat]?.length)
-                  .map((cat) => (
-                    <PainelCategoria
-                      key={cat}
-                      titulo={CATEGORIAS_FISCAIS[cat].label}
-                      itens={apuracaoPorCategoria[cat]}
-                      darfMap={darfMap}
-                      onGerarDarf={setDarfApuracao}
-                      onMarcarPago={handleMarcarPago}
-                    />
-                  ))}
+                {swingItems.length > 0 && (
+                  <PainelApuracao
+                    titulo="Swing Trade"
+                    aliquota={0.15}
+                    itens={swingItems}
+                    darfMap={darfMap}
+                    onGerarDarf={setDarfApuracao}
+                    onMarcarPago={handleMarcarPago}
+                  />
+                )}
+                {dtItems.length > 0 && (
+                  <PainelApuracao
+                    titulo="Day Trade"
+                    aliquota={0.20}
+                    itens={dtItems}
+                    darfMap={darfMap}
+                    onGerarDarf={setDarfApuracao}
+                    onMarcarPago={handleMarcarPago}
+                  />
+                )}
               </div>
             )}
           </>

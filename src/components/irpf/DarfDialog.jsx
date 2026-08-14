@@ -44,7 +44,6 @@ const drawDarfBlock = (doc, startY, data) => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.text('DARF', x + 2, y + 21);
-  // Campo 02 no canto direito do cabeçalho
   doc.setLineWidth(0.3);
   doc.line(x + 130, y, x + 130, y + 24);
   doc.line(x + 130, y + 12, x + 200, y + 12);
@@ -157,13 +156,12 @@ export default function DarfDialog({ apuracao, userName, cpf, open, onClose, onC
 
     const doc = new jsPDF();
     let y = drawDarfBlock(doc, 10, data);
-    // Linha tracejada separando as duas vias
     doc.setLineDashPattern([2, 2], 0);
     doc.line(10, y + 3, 200, y + 3);
     doc.setLineDashPattern([], 0);
     drawDarfBlock(doc, y + 8, data);
 
-    doc.save(`DARF_${apuracao.mes}_${apuracao.categoria}_${apuracao.tipoKey}.pdf`);
+    doc.save(`DARF_${apuracao.mes}_${apuracao.tipoKey}.pdf`);
     onConfirm(apuracao);
   };
 
@@ -179,7 +177,7 @@ export default function DarfDialog({ apuracao, userName, cpf, open, onClose, onC
       <div className="space-y-4">
         <div className="rounded-lg border p-4 space-y-2 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Período</span><span className="font-medium">{mesLabel(apuracao.mes)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Categoria</span><span className="font-medium">{apuracao.categoriaLabel} — {apuracao.tipo}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span className="font-medium">{apuracao.tipo}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Código da Receita</span><span className="font-medium">6015</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Vencimento</span><span className="font-medium">{vencimento}</span></div>
           <div className="border-t pt-2 flex justify-between"><span className="text-muted-foreground">Imposto Devido</span><span>R$ {fmt(apuracao.impostoDevido)}</span></div>

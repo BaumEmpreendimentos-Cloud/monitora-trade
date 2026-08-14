@@ -12,8 +12,10 @@
         "ACOES",
         "OPCOES",
         "FII",
-        "FUTUROS"
+        "FUTUROS",
+        "GERAL"
       ],
+      "default": "GERAL",
       "title": "Categoria"
     },
     "tipo": {
@@ -86,7 +88,6 @@
   },
   "required": [
     "mes",
-    "categoria",
     "tipo"
   ],
   "rls": {

@@ -46,6 +46,16 @@
       "default": 0,
       "title": "Preju\u00edzo acumulado - Futuros (day trade)"
     },
+    "prejuizo_swing": {
+      "type": "number",
+      "default": 0,
+      "title": "Preju\u00edzo acumulado (swing trade)"
+    },
+    "prejuizo_dt": {
+      "type": "number",
+      "default": 0,
+      "title": "Preju\u00edzo acumulado (day trade)"
+    },
     "impostos_anteriores_recolhidos": {
       "type": "boolean",
       "default": false,
