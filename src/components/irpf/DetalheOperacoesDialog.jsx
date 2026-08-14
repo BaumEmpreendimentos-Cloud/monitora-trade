@@ -19,9 +19,9 @@ export default function DetalheOperacoesDialog({ apuracao, open, onClose }) {
       open={open}
       onOpenChange={(o) => !o && onClose()}
       title={`Operações — ${mesLabel(apuracao.mes)} (${apuracao.tipo})`}
-      className="max-w-3xl"
+      className="max-w-5xl"
     >
-      <div className="overflow-x-auto">
+      <div className="overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs text-muted-foreground uppercase">
