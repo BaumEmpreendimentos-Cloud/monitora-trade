@@ -90,8 +90,8 @@ export const apurarImpostoRenda = (operacoes, config) => {
   Object.keys(CATEGORIAS_FISCAIS).forEach((cat) => {
     const f = PREJUIZO_FIELDS[cat];
     prejuizo[cat] = {
-      swing: Number(config[f.swing] || 0),
-      dayTrade: Number(config[f.dayTrade] || 0),
+      swing: Math.abs(Number(config[f.swing] || 0)),
+      dayTrade: Math.abs(Number(config[f.dayTrade] || 0)),
     };
   });
 
@@ -130,6 +130,9 @@ export const apurarImpostoRenda = (operacoes, config) => {
           }
         }
 
+        // Prejuízo acumulado no início do mês (antes da compensação)
+        const prejuizoAnterior = prejuizo[cat][tipo];
+
         // Compensa prejuízo acumulado (apenas se houver lucro e não for isento)
         let prejuizoCompensado = 0;
         if (resultadoBruto > 0 && !isento) {
@@ -159,8 +162,10 @@ export const apurarImpostoRenda = (operacoes, config) => {
           resultadoBruto,
           irrf,
           isento,
+          prejuizoAnterior,
           prejuizoCompensado,
           prejuizoAcumuladoFinal: prejuizo[cat][tipo],
+          saldoFinal: baseCalculo > 0 ? baseCalculo : -prejuizo[cat][tipo],
           aliquota,
           impostoDevido,
           impostoAPagar,
