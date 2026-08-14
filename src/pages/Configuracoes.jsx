@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Trash2, User, Crown, Calendar, Bell } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 
@@ -16,6 +18,19 @@ export default function Configuracoes() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [savingNotif, setSavingNotif] = useState(false);
+  const [cpf, setCpf] = useState(user?.cpf || '');
+  const [savingCpf, setSavingCpf] = useState(false);
+
+  const handleSaveCpf = async () => {
+    setSavingCpf(true);
+    try {
+      await base44.auth.updateMe({ cpf });
+    } catch (e) {
+      console.error('cpf save error', e);
+    } finally {
+      setSavingCpf(false);
+    }
+  };
 
   const handleNotifToggle = async (field, value) => {
     setSavingNotif(true);
@@ -66,6 +81,14 @@ export default function Configuracoes() {
                 {isPremium(user) || isGestor(user) ? <Crown className="w-4 h-4 text-amber-500" /> : <Calendar className="w-4 h-4" />}
                 {planLabel}
               </p>
+            </div>
+            <div className="space-y-1.5 pt-3 border-t">
+              <Label htmlFor="cpf" className="text-xs text-muted-foreground">CPF</Label>
+              <div className="flex gap-2">
+                <Input id="cpf" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} className="max-w-[200px]" />
+                <Button size="sm" variant="secondary" onClick={handleSaveCpf} disabled={savingCpf || cpf === (user?.cpf || '')}>{savingCpf ? 'Salvando...' : 'Salvar'}</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Utilizado na geração da DARF do Imposto de Renda.</p>
             </div>
           </CardContent>
         </Card>

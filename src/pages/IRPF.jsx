@@ -207,6 +207,7 @@ export default function IRPF() {
       <DarfDialog
         apuracao={darfApuracao}
         userName={user?.full_name}
+        cpf={user?.cpf}
         open={!!darfApuracao}
         onClose={() => setDarfApuracao(null)}
         onConfirm={handleDarfConfirm}

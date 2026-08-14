@@ -130,7 +130,7 @@ const drawDarfBlock = (doc, startY, data) => {
   return y;
 };
 
-export default function DarfDialog({ apuracao, userName, open, onClose, onConfirm }) {
+export default function DarfDialog({ apuracao, userName, cpf, open, onClose, onConfirm }) {
   const [aceite, setAceite] = useState(false);
   const [err, setErr] = useState('');
 
@@ -148,7 +148,7 @@ export default function DarfDialog({ apuracao, userName, open, onClose, onConfir
 
     const data = {
       nome: userName || '',
-      cpf: '',
+      cpf: cpf || '',
       periodo,
       vencimento,
       valorPrincipal: fmt(apuracao.impostoAPagar),

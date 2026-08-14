@@ -71,6 +71,10 @@
       "type": "boolean",
       "title": "Notifica\u00e7\u00f5es no App",
       "default": true
+    },
+    "cpf": {
+      "type": "string",
+      "title": "CPF"
     }
   },
   "required": [
