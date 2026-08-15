@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LineChart, Crown, TrendingUp, Clock, BarChart3, ArrowRight } from 'lucide-react';
@@ -7,6 +7,10 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to="/operacoes" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-background">
