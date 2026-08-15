@@ -1,5 +1,5 @@
 {
-  "name": "monitoratrade",
+  "name": "com.monitoratrade",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",
