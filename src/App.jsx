@@ -25,6 +25,7 @@ const Mensagens = lazy(() => import('./pages/Mensagens'));
 const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const IRPF = lazy(() => import('./pages/IRPF'));
 const Rolagem = lazy(() => import('./pages/Rolagem'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 import Layout from './components/Layout';
 
 const PageLoader = () => (
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
           <Route path="/operacoes" element={<Operacoes />} />
