@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Search, TrendingUp } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
+import ExpirationBar from '@/components/rolagem/ExpirationBar';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtInt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 }));
@@ -23,6 +24,8 @@ export default function Rolagem() {
   const [tipo, setTipo] = useState('CALL');
   const [strikeMin, setStrikeMin] = useState('');
   const [strikeMax, setStrikeMax] = useState('');
+  const [expLeft, setExpLeft] = useState(null);
+  const [expRight, setExpRight] = useState(null);
 
   const loadUserOps = useCallback(async () => {
     try {
@@ -61,35 +64,85 @@ export default function Rolagem() {
     fetchChain(sym);
   };
 
-  // Derivar próximos 2 exercícios mensais
-  const { expiracoes, pares } = useMemo(() => {
-    if (!options.length) return { expiracoes: [], pares: [] };
+  // Lista de todos os exercícios disponíveis (com dias até vencimento)
+  const todasExpiracoes = useMemo(() => {
+    const filtered = options.filter((o) => o.type === tipo && o.due_date);
+    const map = {};
+    filtered.forEach((o) => {
+      if (!map[o.due_date]) map[o.due_date] = o.days_to_maturity;
+    });
+    return Object.entries(map)
+      .map(([date, days]) => ({ date, days }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [options, tipo]);
+
+  // Auto-selecionar os 2 primeiros exercícios quando dados carregarem
+  useEffect(() => {
+    if (todasExpiracoes.length >= 2 && !expLeft && !expRight) {
+      setExpLeft(todasExpiracoes[0].date);
+      setExpRight(todasExpiracoes[1].date);
+    }
+    if (todasExpiracoes.length === 1 && !expLeft) {
+      setExpLeft(todasExpiracoes[0].date);
+    }
+  }, [todasExpiracoes, expLeft, expRight]);
+
+  // Reset seleção ao trocar de ativo ou tipo
+  useEffect(() => {
+    setExpLeft(null);
+    setExpRight(null);
+  }, [ativoBuscado, tipo]);
+
+  const handleSelectExpiration = useCallback((date) => {
+    if (date === expLeft) {
+      // Deselecionar esquerda; promover direita
+      setExpLeft(expRight);
+      setExpRight(null);
+    } else if (date === expRight) {
+      // Deselecionar direita
+      setExpRight(null);
+    } else if (!expLeft) {
+      setExpLeft(date);
+    } else if (!expRight) {
+      // Garantir ordem cronológica
+      if (date < expLeft) {
+        setExpRight(expLeft);
+        setExpLeft(date);
+      } else {
+        setExpRight(date);
+      }
+    } else {
+      // Ambos preenchidos: substituir o mais antigo (esquerda)
+      setExpLeft(expRight);
+      setExpRight(date);
+    }
+  }, [expLeft, expRight]);
+
+  // Derivar pares de rolagem com base nos exercícios selecionados
+  const pares = useMemo(() => {
+    if (!options.length || !expLeft || !expRight) return [];
     const filtered = options.filter((o) => o.type === tipo && o.due_date && o.strike != null);
-    const expSet = [...new Set(filtered.map((o) => o.due_date))].sort((a, b) => a.localeCompare(b));
-    const exp2 = expSet.slice(0, 2);
-    if (exp2.length < 2) return { expiracoes: exp2, pares: [] };
 
     const byExpStrike = {};
     filtered.forEach((o) => {
-      if (exp2.includes(o.due_date)) {
-        const key = `${o.due_date}_${o.strike}`;
-        byExpStrike[key] = o;
-      }
+      const key = `${o.due_date}_${o.strike}`;
+      byExpStrike[key] = o;
     });
 
-    const strikes = [...new Set(filtered.filter((o) => exp2.includes(o.due_date)).map((o) => o.strike))].sort((a, b) => a - b);
+    const strikesLeft = new Set(filtered.filter((o) => o.due_date === expLeft).map((o) => o.strike));
+    const strikesRight = new Set(filtered.filter((o) => o.due_date === expRight).map((o) => o.strike));
+    const commonStrikes = [...strikesLeft].filter((s) => strikesRight.has(s)).sort((a, b) => a - b);
+
     const min = strikeMin !== '' ? Number(strikeMin) : null;
     const max = strikeMax !== '' ? Number(strikeMax) : null;
-    const strikeFiltered = strikes.filter((s) => (min === null || s >= min) && (max === null || s <= max));
+    const strikeFiltered = commonStrikes.filter((s) => (min === null || s >= min) && (max === null || s <= max));
 
-    const pares = strikeFiltered.map((strike) => {
-      const left = byExpStrike[`${exp2[0]}_${strike}`];
-      const right = byExpStrike[`${exp2[1]}_${strike}`];
-      return { strike, left, right };
-    }).filter((p) => p.left && p.right);
-
-    return { expiracoes: exp2, pares };
-  }, [options, tipo, strikeMin, strikeMax]);
+    return strikeFiltered.map((strike) => ({
+      strike,
+      left: byExpStrike[`${expLeft}_${strike}`],
+      right: byExpStrike[`${expRight}_${strike}`],
+    })).filter((p) => p.left && p.right);
+  }, [options, tipo, expLeft, expRight, strikeMin, strikeMax]);
 
   // Map de tickers que o usuário possui (com quantidade líquida por ticker)
   const ownedMap = useMemo(() => {
@@ -111,7 +164,7 @@ export default function Rolagem() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">Painel de Rolagem</h1>
-            <p className="text-sm text-muted-foreground">Cadeia de opções — próximos 2 vencimentos mensais</p>
+            <p className="text-sm text-muted-foreground">Cadeia de opções — selecione os vencimentos para comparar</p>
           </div>
           {lastUpdate && <span className="text-xs text-muted-foreground">Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}</span>}
         </div>
@@ -177,8 +230,34 @@ export default function Rolagem() {
               </Card>
             </div>
 
+            {!loading && todasExpiracoes.length > 0 && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">Selecione os vencimentos:</span>
+                    <span className="flex items-center gap-1 text-xs">
+                      <span className="inline-block w-3 h-3 rounded bg-primary" />
+                      <span className="text-muted-foreground">Venc 1</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-xs">
+                      <span className="inline-block w-3 h-3 rounded bg-teal-600" />
+                      <span className="text-muted-foreground">Venc 2</span>
+                    </span>
+                  </div>
+                  <ExpirationBar
+                    expiracoes={todasExpiracoes}
+                    expLeft={expLeft}
+                    expRight={expRight}
+                    onSelect={handleSelectExpiration}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {loading ? (
               <p className="text-sm text-muted-foreground text-center py-10">Carregando opções...</p>
+            ) : !expLeft || !expRight ? (
+              <p className="text-sm text-muted-foreground text-center py-10">Selecione dois vencimentos acima para comparar as rolagens.</p>
             ) : pares.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-10">Nenhuma opção encontrada para os filtros selecionados.</p>
             ) : (
@@ -189,10 +268,10 @@ export default function Rolagem() {
                       <thead>
                         <tr className="bg-muted text-xs text-muted-foreground uppercase">
                           <th colSpan={3} className="p-2 text-center border-r" style={{ borderColor: 'hsl(var(--border))' }}>
-                            Vencimento 1<br/>{new Date(expiracoes[0] + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            Vencimento 1<br/>{expLeft ? new Date(expLeft + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                           </th>
                           <th colSpan={3} className="p-2 text-center border-r" style={{ borderColor: 'hsl(var(--border))' }}>
-                            Vencimento 2<br/>{new Date(expiracoes[1] + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            Vencimento 2<br/>{expRight ? new Date(expRight + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                           </th>
                           <th colSpan={4} className="p-2 text-center">Rolagem</th>
                         </tr>
