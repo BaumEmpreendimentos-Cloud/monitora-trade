@@ -184,7 +184,7 @@ export default function Rolagem() {
     return map;
   }, [userOps]);
 
-  const isOwned = (ticker) => ticker && ownedMap[ticker] > 0;
+  const isOwned = (ticker) => ticker && ownedMap[ticker] !== undefined && ownedMap[ticker] !== 0;
   const ownedQty = (ticker) => (ticker ? (ownedMap[ticker] || 0) : 0);
 
   return (
@@ -292,9 +292,9 @@ export default function Rolagem() {
             ) : (
               <Card>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto max-h-[calc(100vh-22rem)]">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="sticky top-0 z-10">
                         <tr className="bg-muted text-xs text-muted-foreground uppercase">
                           <th colSpan={3} className="p-2 text-center border-r" style={{ borderColor: 'hsl(var(--border))' }}>
                             Vencimento 1<br/>{expLeft ? new Date(expLeft + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
@@ -331,10 +331,11 @@ export default function Rolagem() {
 
                           let qtdRedu = null;
                           let pctRedu = null;
-                          if (owned && qty > 0 && leftPrice != null && rightPrice != null && rightPrice > 0) {
-                            const newQty = Math.floor(qty * leftPrice / rightPrice);
-                            qtdRedu = qty - newQty;
-                            pctRedu = (qtdRedu / qty) * 100;
+                          if (owned && qty !== 0 && leftPrice != null && rightPrice != null && rightPrice > 0) {
+                            const absQty = Math.abs(qty);
+                            const newQty = Math.floor(absQty * leftPrice / rightPrice);
+                            qtdRedu = absQty - newQty;
+                            pctRedu = (qtdRedu / absQty) * 100;
                           }
 
                           return (
