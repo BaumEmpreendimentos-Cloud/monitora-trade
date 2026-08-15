@@ -338,15 +338,15 @@ export default function Rolagem() {
                           }
 
                           return (
-                            <tr key={p.strike} className={`border-t hover:bg-accent/30 ${owned ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
+                            <tr key={p.strike} className={`border-t hover:bg-accent/30 ${owned ? 'bg-amber-100 dark:bg-amber-900/40 ring-1 ring-inset ring-amber-400 dark:ring-amber-500' : ''}`}>
                               <td className="p-2 font-medium whitespace-nowrap">
-                                {ownedLeft && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" />}
+                                {ownedLeft && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold mr-1.5 align-middle">★</span>}
                                 {p.left?.symbol || '—'}
                               </td>
                               <td className="p-2 text-right">{fmt(leftPrice)}</td>
                               <td className="p-2 text-right border-r" style={{ borderColor: 'hsl(var(--border))' }}>{fmtInt(p.strike)}</td>
                               <td className="p-2 font-medium whitespace-nowrap">
-                                {ownedRight && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle" />}
+                                {ownedRight && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold mr-1.5 align-middle">★</span>}
                                 {p.right?.symbol || '—'}
                               </td>
                               <td className="p-2 text-right">{fmt(rightPrice)}</td>
@@ -366,7 +366,7 @@ export default function Rolagem() {
             )}
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">★</span>
               Opções que você possui neste ativo
             </div>
           </>
