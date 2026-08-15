@@ -53,7 +53,7 @@ export default async function(req) {
       return Response.json({ quotes: Array.isArray(data) ? data : [data] });
     }
 
-    return Response.json({ error: 'Ação inválida. Use "search" ou "quote".' }, { status: 400 });
+    return Response.json({ error: `Ação inválida: "${action}". Use "search", "optionChain" ou "quote".` }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
