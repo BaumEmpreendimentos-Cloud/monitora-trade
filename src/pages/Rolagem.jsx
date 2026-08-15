@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,20 +12,32 @@ const fmtInt = (v) => (v === null || v === undefined || v === '' ? '—' : Numbe
 const fmtPct = (v) => (v === null || v === undefined || v === '' || Number.isNaN(v) ? '—' : `${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 const color = (v) => (v === null || v === undefined || Number.isNaN(v) ? '' : v > 0 ? 'text-emerald-600' : v < 0 ? 'text-red-600' : '');
 
+const STORAGE_KEY = 'rolagem_state';
+
+const loadSaved = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+  return null;
+};
+
 export default function Rolagem() {
-  const [ativoBase, setAtivoBase] = useState('');
-  const [ativoBuscado, setAtivoBuscado] = useState('');
+  const saved = loadSaved();
+  const [ativoBase, setAtivoBase] = useState(saved?.ativoBase || '');
+  const [ativoBuscado, setAtivoBuscado] = useState(saved?.ativoBuscado || '');
   const [options, setOptions] = useState([]);
   const [spotPrice, setSpotPrice] = useState(null);
   const [userOps, setUserOps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [tipo, setTipo] = useState('CALL');
-  const [strikeMin, setStrikeMin] = useState('');
-  const [strikeMax, setStrikeMax] = useState('');
-  const [expLeft, setExpLeft] = useState(null);
-  const [expRight, setExpRight] = useState(null);
+  const [tipo, setTipo] = useState(saved?.tipo || 'CALL');
+  const [strikeMin, setStrikeMin] = useState(saved?.strikeMin ?? '');
+  const [strikeMax, setStrikeMax] = useState(saved?.strikeMax ?? '');
+  const [expLeft, setExpLeft] = useState(saved?.expLeft || null);
+  const [expRight, setExpRight] = useState(saved?.expRight || null);
+  const isInitialMount = useRef(true);
 
   const loadUserOps = useCallback(async () => {
     try {
@@ -35,6 +47,19 @@ export default function Rolagem() {
   }, []);
 
   useEffect(() => { loadUserOps(); }, [loadUserOps]);
+
+  // Auto-buscar cadeia ao montar se houver ativo salvo
+  useEffect(() => {
+    if (ativoBuscado) fetchChain(ativoBuscado);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persistir seleções no localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight }));
+    } catch (e) { /* ignore */ }
+  }, [ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight]);
 
   const fetchChain = useCallback(async (symbol) => {
     if (!symbol) return;
@@ -87,8 +112,12 @@ export default function Rolagem() {
     }
   }, [todasExpiracoes, expLeft, expRight]);
 
-  // Reset seleção ao trocar de ativo ou tipo
+  // Reset seleção ao trocar de ativo ou tipo (pula o mount inicial para preservar valores restaurados)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setExpLeft(null);
     setExpRight(null);
   }, [ativoBuscado, tipo]);
