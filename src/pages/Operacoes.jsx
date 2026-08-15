@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2, Bell, BellRing } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2, Bell, BellRing, Repeat } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
@@ -16,6 +16,7 @@ import DashboardOperacoes from '@/components/operacoes/DashboardOperacoes';
 import PullToRefresh from '@/components/PullToRefresh';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
 import { isMarketOpen } from '@/lib/marketHours';
+import { Link } from 'react-router-dom';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -232,6 +233,9 @@ export default function Operacoes() {
             {lastUpdate && <span className="text-xs text-muted-foreground">Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}</span>}
             <Button variant="outline" size="sm" onClick={fetchQuotes} disabled={loadingQuotes || !openOps.length}>
               <RefreshCw className={`w-4 h-4 mr-1 ${loadingQuotes ? 'animate-spin' : ''}`} /> Atualizar
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/rolagem"><Repeat className="w-4 h-4 mr-1" /> Rolagem</Link>
             </Button>
             <Button size="sm" onClick={() => setFormOpen(true)}><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
           </div>

@@ -24,6 +24,7 @@ const Painel = lazy(() => import('./pages/Painel'));
 const Mensagens = lazy(() => import('./pages/Mensagens'));
 const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const IRPF = lazy(() => import('./pages/IRPF'));
+const Rolagem = lazy(() => import('./pages/Rolagem'));
 import Layout from './components/Layout';
 
 const PageLoader = () => (
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
           <Route path="/painel" element={<Painel />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/irpf" element={<IRPF />} />
+          <Route path="/rolagem" element={<Rolagem />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

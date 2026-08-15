@@ -32,6 +32,16 @@ export default async function(req) {
       return Response.json({ results: text ? JSON.parse(text) : [] });
     }
 
+    if (action === 'optionChain') {
+      const symbol = (body.symbol || '').toString().trim().toUpperCase();
+      if (!symbol) return Response.json({ options: [] });
+      const res = await fetch(`${API_BASE}/market/options/${encodeURIComponent(symbol)}`, { headers });
+      const text = await res.text();
+      if (!res.ok) return Response.json({ error: `OpLab ${res.status}: ${text}` }, { status: res.status });
+      const data = text ? JSON.parse(text) : [];
+      return Response.json({ options: Array.isArray(data) ? data : [data] });
+    }
+
     if (action === 'quote') {
       const tickers = (body.tickers || '').toString().trim();
       if (!tickers) return Response.json({ quotes: [] });

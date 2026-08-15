@@ -37,6 +37,7 @@ const PAGE_TITLES = {
   '/assinatura': 'Premium',
   '/configuracoes': 'Configurações',
   '/irpf': 'Imposto de Renda',
+  '/rolagem': 'Painel de Rolagem',
 };
 
 const MAIN_TABS = ['/operacoes', '/historico', '/irpf', '/cotacoes', '/mensagens', '/configuracoes'];
