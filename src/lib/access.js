@@ -18,7 +18,9 @@ export function trialDaysLeft(user) {
 
 export function isTrialActive(user) {
   const left = trialDaysLeft(user);
-  return left !== null && left > 0;
+  // Reject trial_start set in the future (client-side tamper defense)
+  if (left === null || left > TRIAL_DAYS) return false;
+  return left > 0;
 }
 
 export function hasAccess(user) {

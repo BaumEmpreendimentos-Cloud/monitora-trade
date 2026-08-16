@@ -26,18 +26,8 @@ export default function CpfRequiredDialog({ user, onSaved }) {
     }
     setLoading(true);
     try {
-      const updates = { cpf };
-
-      // Se o usuário ainda não tem trial_start, verificar se o CPF já usou trial
-      if (!user.trial_start) {
-        const checkRes = await base44.functions.invoke('verificarCpfTrial', { cpf: digits });
-        const trialBloqueado = checkRes.data?.trial_bloqueado;
-        updates.trial_start = trialBloqueado
-          ? new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString() // trial expirado
-          : new Date().toISOString(); // inicia trial agora
-      }
-
-      await base44.auth.updateMe(updates);
+      // CPF + trial_start are set server-side to prevent client-side bypass
+      await base44.functions.invoke('salvarCpf', { cpf: digits });
       await onSaved();
     } catch (e) {
       setError('Erro ao salvar CPF. Tente novamente.');

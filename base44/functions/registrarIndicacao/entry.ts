@@ -15,17 +15,15 @@ export default async function(req) {
     const existing = await base44.asServiceRole.entities.Indicacao.filter({ user_id: user.id });
     if (existing.length) return Response.json({ ok: true, message: 'Indicação já registrada.' });
 
-    // Look up referrer
-    let referrer;
+    // Validate referrer exists without exposing their email to the indicado
     try {
-      referrer = await base44.asServiceRole.entities.User.get(refId);
+      await base44.asServiceRole.entities.User.get(refId);
     } catch {
       return Response.json({ error: 'Indicador não encontrado.' }, { status: 400 });
     }
 
     await base44.entities.Indicacao.create({
       indicado_por_id: refId,
-      indicado_por_email: referrer.email,
       user_id: user.id,
       user_email: user.email,
       status: 'pendente',
