@@ -9,7 +9,6 @@ import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
 import EditarIdentificadorDialog from '@/components/operacoes/EditarIdentificadorDialog';
 import DividendoForm from '@/components/operacoes/DividendoForm';
 import AlertaForm from '@/components/operacoes/AlertaForm';
-import MapaCalor from '@/components/operacoes/MapaCalor';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
 import DashboardOperacoes from '@/components/operacoes/DashboardOperacoes';
@@ -392,10 +391,7 @@ export default function Operacoes() {
                      alertas={alertas}
                      summary={{ hist, dia, divPago: groupDivPago(g.id), aberto: groupAberto(g.id), divPendente: groupDivPendente(g.id) }}
                     />
-                    {selectedInGroup && (
-                      <MapaCalor operation={selectedOp} currentPrice={quotes[isOption(selectedOp.categoria) ? selectedOp.ativo_base : selectedOp.ativo]} />
-                    )}
-                    {!selectedInGroup && selectedGroup === g.id && (
+                    {selectedGroup === g.id && (
                       <MapaCalorGrupo operacoes={gOpen} quotes={quotes} />
                     )}
                   </CardContent>
