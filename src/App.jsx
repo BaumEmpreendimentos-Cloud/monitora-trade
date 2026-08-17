@@ -25,6 +25,7 @@ const Mensagens = lazy(() => import('./pages/Mensagens'));
 const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const IRPF = lazy(() => import('./pages/IRPF'));
 const Rolagem = lazy(() => import('./pages/Rolagem'));
+const Instagram = lazy(() => import('./pages/Instagram'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 import Layout from './components/Layout';
 
@@ -72,6 +73,7 @@ const AuthenticatedApp = () => {
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/irpf" element={<IRPF />} />
           <Route path="/rolagem" element={<Rolagem />} />
+          <Route path="/instagram" element={<Instagram />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
