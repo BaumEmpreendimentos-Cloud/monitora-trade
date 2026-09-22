@@ -52,7 +52,3 @@ const getAppParams = () => {
 export const appParams = {
 	...getAppParams()
 }
-
-// TEMPORÁRIO — remover após conferir os valores no console
-console.log('[Base44] VITE_BASE44_APP_ID:', import.meta.env.VITE_BASE44_APP_ID);
-console.log('[Base44] VITE_BASE44_APP_BASE_URL:', import.meta.env.VITE_BASE44_APP_BASE_URL);
