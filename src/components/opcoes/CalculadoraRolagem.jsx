@@ -28,7 +28,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
   const [showWeekly, setShowWeekly] = useState(false);
 
   const getExercises = useCallback((tipo) => {
-    const all = getExercises(tipo);
+    const all = groupExercises(chain, tipo);
     return showWeekly ? all : all.filter((ex) => !ex.week);
   }, [chain, showWeekly]);
 
