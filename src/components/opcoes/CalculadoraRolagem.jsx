@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Layers, Plus, Trash2, Scale } from 'lucide-react';
+import { RefreshCw, Layers, Plus, Trash2, Scale, Calendar } from 'lucide-react';
 import {
   groupExercises, findOptionInExercise, findNextExercise, exerciseLabel,
   calcRollFlow, calcOpenFlow, classifyRollResult,
@@ -25,6 +25,12 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
   const [lastUpdate, setLastUpdate] = useState(null);
   const [legConfigs, setLegConfigs] = useState({});
   const [newLegs, setNewLegs] = useState([]);
+  const [showWeekly, setShowWeekly] = useState(false);
+
+  const getExercises = useCallback((tipo) => {
+    const all = getExercises(tipo);
+    return showWeekly ? all : all.filter((ex) => !ex.week);
+  }, [chain, showWeekly]);
 
   const fetchData = useCallback(async () => {
     if (!ativoBase) return;
@@ -53,7 +59,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
       const next = { ...prev };
       optionLegs.forEach((leg) => {
         const existing = next[leg.id] || {};
-        const exercises = groupExercises(chain, leg.categoria);
+        const exercises = getExercises(leg.categoria);
         let targetDueDate = existing.targetDueDate;
         if (!targetDueDate && exercises.length) {
           const nextEx = findNextExercise(exercises, leg.vencimento);
@@ -76,7 +82,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
     setLegConfigs((prev) => {
       const leg = optionLegs.find((l) => l.id === legId);
       if (!leg) return prev;
-      const exercises = groupExercises(chain, leg.categoria);
+      const exercises = getExercises(leg.categoria);
       const match = findOptionInExercise(exercises, leg.strike, leg.categoria, newDueDate);
       return { ...prev, [legId]: { ...prev[legId], targetDueDate: newDueDate, newPremium: match?.close ?? '' } };
     });
@@ -87,7 +93,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
   };
 
   const addNewLeg = () => {
-    const exercises = groupExercises(chain, 'CALL');
+    const exercises = getExercises('CALL');
     const firstEx = exercises[0];
     const newLeg = { id: `new_${Date.now()}`, categoria: 'CALL', dueDate: firstEx?.due_date || '', strike: '', operacao: 'VENDA', quantidade: 100, premium: '' };
     setNewLegs((prev) => [...prev, newLeg]);
@@ -98,7 +104,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
       if (l.id !== id) return l;
       const updated = { ...l, [field]: value };
       if (field === 'dueDate' || field === 'categoria') {
-        const exercises = groupExercises(chain, updated.categoria);
+        const exercises = getExercises(updated.categoria);
         const ex = exercises.find((e) => e.due_date === updated.dueDate);
         if (ex && ex.options.length) {
           const atm = ex.options.reduce((c, o) => Math.abs((o.strike || 0) - (spotPrice || 0)) < Math.abs((c.strike || 0) - (spotPrice || 0)) ? o : c, ex.options[0]);
@@ -107,7 +113,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
         } else { updated.strike = ''; updated.premium = ''; }
       }
       if (field === 'strike') {
-        const exercises = groupExercises(chain, updated.categoria);
+        const exercises = getExercises(updated.categoria);
         const match = findOptionInExercise(exercises, Number(updated.strike), updated.categoria, updated.dueDate);
         updated.premium = match?.close ?? '';
       }
@@ -119,7 +125,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
 
   const legFlows = useMemo(() => optionLegs.map((leg) => {
     const cfg = legConfigs[leg.id] || {};
-    const exercises = groupExercises(chain, leg.categoria);
+    const exercises = getExercises(leg.categoria);
     const match = findOptionInExercise(exercises, leg.strike, leg.categoria, cfg.targetDueDate);
     const flow = calcRollFlow(leg.operacao, cfg.newQty ?? leg.quantidade, cfg.closePrice, cfg.newPremium);
     return { leg, cfg, match, exercises, ...flow };
@@ -149,7 +155,10 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
           <h3 className="text-sm font-bold flex items-center gap-2"><Layers className="w-4 h-4 text-primary" /> Calculadora Tática de Rolagem B3</h3>
           <p className="text-xs text-muted-foreground mt-0.5">{optionLegs.length} perna(s) em {ativoBase || '—'}{lastUpdate && ` — Atualizado: ${lastUpdate.toLocaleTimeString('pt-BR')}`}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}><RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar</Button>
+        <div className="flex items-center gap-2">
+          <Button variant={showWeekly ? 'default' : 'outline'} size="sm" onClick={() => setShowWeekly(!showWeekly)}><Calendar className="w-4 h-4 mr-1" /> Semanais: {showWeekly ? 'Sim' : 'Não'}</Button>
+          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}><RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar</Button>
+        </div>
       </div>
 
       {/* Pernas existentes */}
@@ -183,7 +192,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
                 {/* Nova série */}
                 <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">2. Nova Série & Rebalanceamento ({isSell ? 'Venda Nova' : 'Compra Nova'})</div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div><Label className="text-[11px]">Série (Mês)</Label>
                       <select value={cfg.targetDueDate || ''} onChange={(e) => onExerciseChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
                         {exercises.length === 0 && <option value="">Sem séries</option>}
@@ -225,7 +234,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
 
       {/* Novas pernas */}
       {newLegFlows.map(({ leg, openFlow }) => {
-        const exercises = groupExercises(chain, leg.categoria);
+        const exercises = getExercises(leg.categoria);
         const ex = exercises.find((e) => e.due_date === leg.dueDate);
         const strikes = ex ? [...new Set(ex.options.map((o) => o.strike))].sort((a, b) => a - b) : [];
         return (
