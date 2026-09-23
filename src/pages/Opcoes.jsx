@@ -11,6 +11,7 @@ import { analyzePositionProactively, calcUnrealizedPnL } from '@/lib/proactiveEn
 import PayoffChart from '@/components/opcoes/PayoffChart';
 import PainelGreeks from '@/components/opcoes/PainelGreeks';
 import RolagemProativa from '@/components/opcoes/RolagemProativa';
+import CalculadoraRolagem from '@/components/opcoes/CalculadoraRolagem';
 import AnaliseCenarios from '@/components/opcoes/AnaliseCenarios';
 
 const INTEREST_RATE = 0.1325;
@@ -44,6 +45,11 @@ export default function Opcoes() {
       }
     })();
   }, []);
+
+  // Apenas grupos com operações ativas (mesma regra da tela Operações)
+  const gruposAtivos = useMemo(() => {
+    return grupos.filter((g) => operacoes.some((o) => o.grupo_id === g.id));
+  }, [grupos, operacoes]);
 
   const grupoOps = useMemo(() => {
     if (!selectedGrupoId) return [];
@@ -102,7 +108,7 @@ export default function Opcoes() {
 
   const tabs = [
     { id: 'payoff', label: 'Payoff', icon: LineChartIcon },
-    { id: 'rolagem', label: 'Rolagem Proativa', icon: Target },
+    { id: 'rolagem', label: 'Rolagem', icon: Target },
     { id: 'cenarios', label: 'Cenários', icon: Cpu },
   ];
 
@@ -118,11 +124,11 @@ export default function Opcoes() {
         </div>
 
         {/* Seletor de grupo */}
-        {grupos.length === 0 ? (
+        {gruposAtivos.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-sm text-muted-foreground">
-                Nenhum grupo de operação encontrado. Crie operações na aba Operações para usar as ferramentas de análise.
+                Nenhum grupo com operações ativas encontrado. Abra operações na aba Operações para usar as ferramentas de análise.
               </p>
             </CardContent>
           </Card>
@@ -131,7 +137,7 @@ export default function Opcoes() {
             <div>
               <Label className="text-xs text-muted-foreground uppercase mb-2 block">Selecione um Grupo</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {grupos.map((g) => {
+                {gruposAtivos.map((g) => {
                   const count = operacoes.filter((o) => o.grupo_id === g.id).length;
                   return (
                     <button
@@ -239,39 +245,42 @@ export default function Opcoes() {
                 )}
 
                 {tab === 'rolagem' && (
-                  <div className="space-y-4">
-                    {/* Inputs de meta/stop */}
-                    <Card>
-                      <CardContent className="p-4 space-y-3">
-                        <h3 className="text-sm font-semibold">Configuração de Monitoramento</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="target" className="text-xs">Meta de Lucro (R$)</Label>
-                            <Input
-                              id="target"
-                              type="number"
-                              value={targetProfit}
-                              onChange={(e) => setTargetProfit(e.target.value)}
-                              placeholder="Ex: 500"
-                            />
+                  <div className="space-y-6">
+                    <CalculadoraRolagem operacoes={grupoOps} ativoBase={ativoBase} spotPrice={spotPrice} />
+
+                    <div className="border-t pt-4 space-y-4">
+                      <Card>
+                        <CardContent className="p-4 space-y-3">
+                          <h3 className="text-sm font-semibold">Configuração de Monitoramento Proativo</h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label htmlFor="target" className="text-xs">Meta de Lucro (R$)</Label>
+                              <Input
+                                id="target"
+                                type="number"
+                                value={targetProfit}
+                                onChange={(e) => setTargetProfit(e.target.value)}
+                                placeholder="Ex: 500"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor="stop" className="text-xs">Stop Loss (R$)</Label>
+                              <Input
+                                id="stop"
+                                type="number"
+                                value={stopLoss}
+                                onChange={(e) => setStopLoss(e.target.value)}
+                                placeholder="Ex: 300"
+                              />
+                            </div>
                           </div>
-                          <div className="space-y-1.5">
-                            <Label htmlFor="stop" className="text-xs">Stop Loss (R$)</Label>
-                            <Input
-                              id="stop"
-                              type="number"
-                              value={stopLoss}
-                              onChange={(e) => setStopLoss(e.target.value)}
-                              placeholder="Ex: 300"
-                            />
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Defina metas e stops para ativar sugestões automáticas de encerramento e rolagem.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <RolagemProativa diagnostico={diagnostico} />
+                          <p className="text-xs text-muted-foreground">
+                            Defina metas e stops para ativar sugestões automáticas de encerramento e rolagem.
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <RolagemProativa diagnostico={diagnostico} />
+                    </div>
                   </div>
                 )}
 
