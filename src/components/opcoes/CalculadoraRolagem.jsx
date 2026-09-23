@@ -207,21 +207,20 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
                   </div>
 
                   {/* Controles de quantidade */}
-                  <div className="border rounded-md p-2 space-y-2">
+                  <div className="border rounded-md p-2 space-y-1.5">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground"><Scale className="w-3 h-3" /> Quantidade no Novo Strike</div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Input type="number" value={curQty} onChange={(e) => setLegField(leg.id, 'newQty', Number(e.target.value))} className="h-8 text-sm w-24" />
-                      <span className="text-xs text-muted-foreground">un</span>
-                      <div className="flex gap-1 ml-auto flex-wrap">
+                      <div className="flex gap-1 flex-wrap">
                         <button onClick={() => setLegField(leg.id, 'newQty', leg.quantidade)} className={`px-2 py-1 text-xs rounded border ${curQty === leg.quantidade ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'}`}>1:1</button>
                         <button onClick={() => setLegField(leg.id, 'newQty', Math.max(0, curQty - 100))} className="px-2 py-1 text-xs rounded border border-border hover:bg-accent">-100</button>
                         <button onClick={() => setLegField(leg.id, 'newQty', curQty + 100)} className="px-2 py-1 text-xs rounded border border-border hover:bg-accent">+100</button>
                         <button onClick={() => setLegField(leg.id, 'newQty', Math.floor(curQty / 2))} className="px-2 py-1 text-xs rounded border border-border hover:bg-accent">-50%</button>
                         <button onClick={() => setLegField(leg.id, 'newQty', curQty * 2)} className="px-2 py-1 text-xs rounded border border-border hover:bg-accent">2x</button>
                       </div>
+                      <div className={`ml-auto text-sm font-semibold ${openFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{curQty} un × R$ {Number(cfg.newPremium || 0).toFixed(2)} = {openFlow >= 0 ? '+' : ''}{fmt(openFlow)}</div>
                     </div>
                   </div>
-                  <div className={`text-right text-sm font-semibold ${openFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{curQty} un × R$ {Number(cfg.newPremium || 0).toFixed(2)} = {openFlow >= 0 ? '+' : ''}{fmt(openFlow)}</div>
                 </div>
               </div>
             </CardContent>
