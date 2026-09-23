@@ -57,12 +57,15 @@ export function exerciseLabel(ex) {
 }
 
 // Fluxo financeiro de uma rolagem (fechamento + abertura)
-export function calcRollFlow(operacao, qty, closePrice, newPremium) {
-  const q = Number(qty) || 0;
+// closeQty = quantidade da perna atual (fixa, vem da operação ativa)
+// openQty = quantidade da nova série (pode ser ajustada pelo usuário)
+export function calcRollFlow(operacao, closeQty, openQty, closePrice, newPremium) {
+  const cq = Number(closeQty) || 0;
+  const oq = Number(openQty) || 0;
   const cp = Number(closePrice) || 0;
   const np = Number(newPremium) || 0;
-  const closeFlow = operacao === 'COMPRA' ? cp * q : -cp * q;
-  const openFlow = operacao === 'COMPRA' ? -np * q : np * q;
+  const closeFlow = operacao === 'COMPRA' ? cp * cq : -cp * cq;
+  const openFlow = operacao === 'COMPRA' ? -np * oq : np * oq;
   return { closeFlow, openFlow, netFlow: closeFlow + openFlow };
 }
 

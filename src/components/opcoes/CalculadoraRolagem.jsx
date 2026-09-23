@@ -129,7 +129,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
     const cfg = legConfigs[leg.id] || {};
     const exercises = getExercises(leg.categoria);
     const match = findOptionInExercise(exercises, leg.strike, leg.categoria, cfg.targetDueDate);
-    const flow = calcRollFlow(leg.operacao, cfg.newQty ?? leg.quantidade, cfg.closePrice, cfg.newPremium);
+    const flow = calcRollFlow(leg.operacao, leg.quantidade, cfg.newQty ?? leg.quantidade, cfg.closePrice, cfg.newPremium);
     return { leg, cfg, match, exercises, ...flow };
   }), [optionLegs, legConfigs, chain]);
 
@@ -215,7 +215,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                   <div><Label className="text-[11px]">Preço de Fechamento (R$)</Label>
                     <Input type="number" step="0.01" value={cfg.closePrice ?? ''} onChange={(e) => setLegField(leg.id, 'closePrice', e.target.value)} className="h-8 text-sm" />
                   </div>
-                  <div className={`text-right text-sm font-semibold ${closeFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{curQty} un × R$ {Number(cfg.closePrice || 0).toFixed(2)} = {closeFlow >= 0 ? '+' : ''}{fmt(closeFlow)}</div>
+                  <div className={`text-right text-sm font-semibold ${closeFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{leg.quantidade} un × R$ {Number(cfg.closePrice || 0).toFixed(2)} = {closeFlow >= 0 ? '+' : ''}{fmt(closeFlow)}</div>
                 </div>
 
                 {/* Nova série */}
