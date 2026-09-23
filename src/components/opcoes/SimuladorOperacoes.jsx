@@ -172,7 +172,12 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     setSearching(true);
     try {
       const res = await base44.functions.invoke('oplabMarket', { action: 'search', expr: term, type: 'STOCK,OPTION', limit: 10 });
-      setSearchResults(res.data?.results || []);
+      const results = res.data?.results || [];
+      if (results.length === 1) {
+        handleSelectResult(results[0]);
+      } else {
+        setSearchResults(results);
+      }
     } catch (e) {
       setSearchResults([]);
     } finally {
