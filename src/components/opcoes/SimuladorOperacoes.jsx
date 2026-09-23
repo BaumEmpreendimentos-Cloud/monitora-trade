@@ -180,54 +180,39 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     }
   };
 
-  const handleSelectResult = async (item) => {
-    try {
-      let strike = 0, premium = 0, dueDate = null, type = 'STOCK', daysToExpiry = 999;
-      const symbol = item.symbol || item.ticker || searchTerm;
+  const handleSelectResult = (item) => {
+    if (!item) return;
+    const symbol = item.symbol || item.ticker || searchTerm;
+    const type = (item.type === 'CALL' || item.type === 'PUT') ? item.type : 'STOCK';
 
-      // OpLab retorna type/close diretamente; strike e vencimento vêm na description
-      type = item.type || item.add_info?.category || item.add_info?.type || 'STOCK';
-      if (type !== 'CALL' && type !== 'PUT') type = 'STOCK';
-
-      // Parse strike e vencimento da description: "ISHARES BOVACI, R$ 171.00, 16-10-2026"
-      const desc = item.description || '';
-      const strikeMatch = desc.match(/R\$\s*([\d.]+(?:,\d+)?)(?=,|$)/);
-      if (strikeMatch) {
-        let s = strikeMatch[1];
-        if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-        else if (s.includes(',')) s = s.replace(',', '.');
-        strike = parseFloat(s) || 0;
-      }
-      const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
-      if (dateMatch) dueDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
-      if (!strike) strike = item.add_info?.strike || 0;
-      if (!dueDate) dueDate = item.add_info?.due_date || item.add_info?.dueDate || null;
-      daysToExpiry = dueDate ? businessDaysUntil(dueDate) ?? 0 : 30;
-
-      // Usa o close já retornado pela busca (evita chamada async extra que pode falhar/travar)
-      premium = item.close || item.add_info?.close || 0;
-      if (type === 'STOCK' && premium) setSpotPrice(premium);
-
-      const newLeg = {
-        id: `sim-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        type,
-        side: searchSide,
-        quantity: searchQty,
-        strike,
-        premium,
-        ticker: symbol,
-        dueDate,
-        daysToExpiry,
-      };
-      setLegs((p) => [...p, newLeg]);
-      setSearchTerm('');
-      setSearchResults([]);
-    } catch (e) {
-      // Fallback: adiciona perna genérica
-      handleAddLeg('CALL', searchSide);
-      setSearchTerm('');
-      setSearchResults([]);
+    const desc = item.description || '';
+    const strikeMatch = desc.match(/R\$\s*([\d.]+(?:,\d+)?)(?=,|$)/);
+    let strike = 0;
+    if (strikeMatch) {
+      let s = strikeMatch[1];
+      if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.includes(',')) s = s.replace(',', '.');
+      strike = parseFloat(s) || 0;
     }
+    const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
+    const dueDate = dateMatch ? `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}` : null;
+    const daysToExpiry = dueDate ? (businessDaysUntil(dueDate) ?? 0) : (type === 'STOCK' ? 999 : 30);
+    const premium = item.close || 0;
+    if (type === 'STOCK' && premium) setSpotPrice(premium);
+
+    setLegs((p) => [...p, {
+      id: `sim-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      type,
+      side: searchSide,
+      quantity: searchQty,
+      strike,
+      premium,
+      ticker: symbol,
+      dueDate,
+      daysToExpiry,
+    }]);
+    setSearchTerm('');
+    setSearchResults([]);
   };
 
   return (
@@ -315,10 +300,10 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
               <Search className={`w-4 h-4 ${searching ? 'animate-spin' : ''}`} />
             </button>
             {searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-2xl z-30 max-h-48 overflow-y-auto">
-                {searchResults.map((item, idx) => (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto">
+                {searchResults.map((item) => (
                   <button
-                    key={idx}
+                    key={item.symbol || item.ticker}
                     onClick={() => handleSelectResult(item)}
                     className="w-full px-3 py-2 text-left hover:bg-accent text-xs font-mono flex items-center justify-between border-b last:border-0"
                   >
