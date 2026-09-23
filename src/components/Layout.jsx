@@ -113,7 +113,7 @@ export default function Layout() {
         </div>
       </header>
       <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
             <LineChart className="w-5 h-5 text-primary" /> Monitora Trade
           </div>

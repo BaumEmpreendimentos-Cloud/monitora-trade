@@ -241,7 +241,7 @@ export default function Operacoes() {
   return (
     <PullToRefresh onRefresh={fetchQuotes}>
     <div className="p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">Operações</h1>
@@ -298,8 +298,8 @@ export default function Operacoes() {
                       <thead>
                         <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}>
                           <th colSpan={14} className="p-2.5 text-left font-normal normal-case">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-1.5">
                                 {expanded[g.id] ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
                                 <div className="flex flex-col">
                                   <span className="font-bold text-sm w-[9.5rem] truncate" title={g.nome}>{g.nome}</span>
@@ -316,7 +316,7 @@ export default function Operacoes() {
                                   <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDeleteGrupoSimulado(g); }} title="Excluir operações simuladas"><Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir Sim.</Button>
                                 )}
                               </div>
-                              <div className="flex gap-6 text-sm">
+                              <div className="flex gap-4 text-sm shrink-0">
                                 <span>Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
                                 <span>Valor Total: <b className={color(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}>{fmt(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
