@@ -27,6 +27,7 @@ const IRPF = lazy(() => import('./pages/IRPF'));
 const Rolagem = lazy(() => import('./pages/Rolagem'));
 const Instagram = lazy(() => import('./pages/Instagram'));
 const Opcoes = lazy(() => import('./pages/Opcoes'));
+const Estrategias = lazy(() => import('./pages/Estrategias'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 import Layout from './components/Layout';
 
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
           <Route path="/irpf" element={<IRPF />} />
           <Route path="/rolagem" element={<Rolagem />} />
           <Route path="/opcoes" element={<Opcoes />} />
+          <Route path="/estrategias" element={<Estrategias />} />
           <Route path="/instagram" element={<Instagram />} />
         </Route>
       </Route>

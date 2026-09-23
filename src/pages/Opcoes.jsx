@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart as LineChartIcon, Target, Cpu, RefreshCw, TrendingUp } from 'lucide-react';
+import { LineChart as LineChartIcon, Target, Cpu, RefreshCw, TrendingUp, Layers } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { operacoesToLegs } from '@/lib/opcoesAdapter';
+import SimuladorOperacoes from '@/components/opcoes/SimuladorOperacoes';
 import { calculatePortfolioGreeks } from '@/lib/blackScholes';
 import { analyzePositionProactively, calcUnrealizedPnL } from '@/lib/proactiveEngine';
 import PayoffChart from '@/components/opcoes/PayoffChart';
@@ -29,6 +31,10 @@ export default function Opcoes() {
   const [targetProfit, setTargetProfit] = useState('');
   const [stopLoss, setStopLoss] = useState('');
   const [simulatedLegs, setSimulatedLegs] = useState(null);
+  const [mode, setMode] = useState('posicao');
+  const [simInitialLegs, setSimInitialLegs] = useState(null);
+  const [simSpotPrice, setSimSpotPrice] = useState(null);
+  const location = useLocation();
 
   // Carregar grupos e operações abertas
   useEffect(() => {
@@ -47,6 +53,15 @@ export default function Opcoes() {
       }
     })();
   }, []);
+
+  // Receber template da página de Estratégias e alternar para Simulador
+  useEffect(() => {
+    if (location.state?.mode === 'simulador') {
+      setMode('simulador');
+      setSimInitialLegs(location.state.template?.legs || null);
+      setSimSpotPrice(location.state.spotPrice || null);
+    }
+  }, [location.state]);
 
   // Apenas grupos com operações ativas (mesma regra da tela Operações)
   const gruposAtivos = useMemo(() => {
@@ -130,6 +145,20 @@ export default function Opcoes() {
           </p>
         </div>
 
+        {/* Mode toggle */}
+        <div className="flex gap-2 border-b">
+          <button onClick={() => setMode('posicao')} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${mode === 'posicao' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <LineChartIcon className="w-4 h-4" /> Análise de Posição
+          </button>
+          <button onClick={() => setMode('simulador')} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${mode === 'simulador' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <Layers className="w-4 h-4" /> Simulador Livre
+          </button>
+        </div>
+
+        {mode === 'simulador' ? (
+          <SimuladorOperacoes initialLegs={simInitialLegs} initialSpotPrice={simSpotPrice} iv={iv} />
+        ) : (
+        <>
         {/* Seletor de grupo */}
         {gruposAtivos.length === 0 ? (
           <Card>
@@ -328,6 +357,8 @@ export default function Opcoes() {
               </Card>
             )}
           </>
+        )}
+        </>
         )}
       </div>
     </div>

@@ -25,8 +25,10 @@ const loadSaved = () => {
 
 export default function Rolagem() {
   const saved = loadSaved();
-  const [ativoBase, setAtivoBase] = useState(saved?.ativoBase || '');
-  const [ativoBuscado, setAtivoBuscado] = useState(saved?.ativoBuscado || '');
+  const urlParams = new URLSearchParams(window.location.search);
+  const ativoFromUrl = urlParams.get('ativo');
+  const [ativoBase, setAtivoBase] = useState(ativoFromUrl || saved?.ativoBase || '');
+  const [ativoBuscado, setAtivoBuscado] = useState(ativoFromUrl || saved?.ativoBuscado || '');
   const [options, setOptions] = useState([]);
   const [spotPrice, setSpotPrice] = useState(null);
   const [userOps, setUserOps] = useState([]);
