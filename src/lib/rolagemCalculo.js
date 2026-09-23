@@ -1,70 +1,77 @@
-// Cálculo de rolagem multi-pernas (mesmo strike, próximo exercício)
-// Adaptado de APP-Opções — RollManager.tsx
+// Helpers para rolagem de opções B3 — usa dados reais da cadeia OpLab
 
 const CALL_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 const PUT_LETTERS = ['M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'];
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-// Retorna a letra do próximo exercício mensal B3 para o tipo (CALL/PUT)
-export function getNextB3Letter(currentLetter, categoria) {
-  const letters = categoria === 'PUT' ? PUT_LETTERS : CALL_LETTERS;
-  const idx = letters.indexOf((currentLetter || '').toUpperCase());
-  if (idx === -1) return letters[0];
-  return letters[(idx + 1) % letters.length];
+// Extrai a letra da série B3 do símbolo (ex: BOVAJ17 -> J)
+export function extractOptionLetter(symbol) {
+  const m = (symbol || '').toUpperCase().match(/^([A-Z]+)([A-X])(\d+)$/);
+  return m ? m[2] : '';
 }
 
-/**
- * Monta a linha de rolagem para uma opção, mantendo o mesmo strike.
- * @param op Registro de Operacao (ativo, ativo_base, categoria, operacao, quantidade, strike)
- */
-export function buildRollRow(op) {
-  const ativoBase = (op.ativo_base || '').toUpperCase();
-  const ticker = (op.ativo || '').toUpperCase();
-  const suffix = ticker.startsWith(ativoBase) ? ticker.slice(ativoBase.length) : ticker.slice(-4);
-  const currentLetter = suffix.charAt(0) || (op.categoria === 'PUT' ? 'V' : 'J');
-  const strikeSuffix = suffix.slice(1);
-  const nextLetter = getNextB3Letter(currentLetter, op.categoria);
-  const newTicker = ativoBase && strikeSuffix ? `${ativoBase}${nextLetter}${strikeSuffix}` : '';
-
-  return {
-    id: op.id,
-    ticker,
-    newTicker,
-    categoria: op.categoria,
-    operacao: op.operacao, // COMPRA | VENDA
-    quantidade: op.quantidade,
-    strike: op.strike,
-    currentLetter,
-    nextLetter,
-  };
+export function letterToMonthName(letter, tipo) {
+  const l = (letter || '').toUpperCase();
+  const letters = tipo === 'PUT' ? PUT_LETTERS : CALL_LETTERS;
+  const idx = letters.indexOf(l);
+  return idx >= 0 ? MONTH_NAMES[idx] : '';
 }
 
-/**
- * Calcula o fluxo financeiro de fechamento e abertura de uma perna
- * @param row Linha de rolagem (buildRollRow)
- * @param closePrice Preço para fechar a posição atual
- * @param newPremium Prêmio da nova série
- */
-export function calcRollFlow(row, closePrice, newPremium) {
-  const qty = Number(row.quantidade) || 0;
+// Agrupa opções por exercício, com letra e nome do mês
+export function groupExercises(options, tipo) {
+  const filtered = (options || []).filter((o) => o.type === tipo && o.due_date);
+  const map = {};
+  filtered.forEach((o) => {
+    if (!map[o.due_date]) {
+      const letter = extractOptionLetter(o.symbol);
+      map[o.due_date] = { due_date: o.due_date, letter, monthName: letterToMonthName(letter, tipo), options: [] };
+    }
+    map[o.due_date].options.push(o);
+  });
+  return Object.values(map).sort((a, b) => a.due_date.localeCompare(b.due_date));
+}
+
+// Encontra opção na série por strike
+export function findOptionInExercise(exercises, strike, type, dueDate) {
+  const ex = exercises.find((e) => e.due_date === dueDate);
+  if (!ex) return null;
+  return ex.options.find((o) => o.type === type && Math.abs((o.strike || 0) - (strike || 0)) < 0.001);
+}
+
+// Próximo exercício após o vencimento atual
+export function findNextExercise(exercises, currentVencimento) {
+  if (!exercises.length) return null;
+  if (!currentVencimento) return exercises[0];
+  const next = exercises.find((e) => e.due_date > currentVencimento);
+  return next || exercises[0];
+}
+
+export function exerciseLabel(ex) {
+  if (!ex) return '—';
+  const year = new Date(ex.due_date + 'T00:00:00').getFullYear();
+  return `${ex.letter} (${ex.monthName} ${year})`;
+}
+
+// Fluxo financeiro de uma rolagem (fechamento + abertura)
+export function calcRollFlow(operacao, qty, closePrice, newPremium) {
+  const q = Number(qty) || 0;
   const cp = Number(closePrice) || 0;
   const np = Number(newPremium) || 0;
-
-  // Fechamento: posição COMPRADA fecha vendendo (+); posição VENDIDA fecha recomprando (-)
-  const closeFlow = row.operacao === 'COMPRA' ? cp * qty : -cp * qty;
-  // Abertura na nova série mantendo o mesmo lado: COMPRA paga (-); VENDA recebe (+)
-  const openFlow = row.operacao === 'COMPRA' ? -np * qty : np * qty;
-
+  const closeFlow = operacao === 'COMPRA' ? cp * q : -cp * q;
+  const openFlow = operacao === 'COMPRA' ? -np * q : np * q;
   return { closeFlow, openFlow, netFlow: closeFlow + openFlow };
 }
 
-// Classifica o resultado consolidado da rolagem
+// Fluxo de abertura para nova perna
+export function calcOpenFlow(operacao, qty, premium) {
+  const q = Number(qty) || 0;
+  const p = Number(premium) || 0;
+  return operacao === 'COMPRA' ? -p * q : p * q;
+}
+
 export function classifyRollResult(netFlow, totalQty) {
   const perUnit = totalQty > 0 ? netFlow / totalQty : 0;
-  if (netFlow >= 0) {
-    return { label: 'EXCELENTE (CRÉDITO LÍQUIDO)', tone: 'good', desc: 'A rolagem gera crédito líquido consolidado no caixa, postergando o risco e remunerando o capital.' };
-  }
-  if (Math.abs(perUnit) < 0.4) {
-    return { label: 'MODERADA (PEQUENO DÉBITO)', tone: 'warn', desc: 'Rolagem a pequeno débito, aceitável se o ajuste de série melhorar a posição.' };
-  }
+  if (netFlow >= 0) return { label: 'EXCELENTE (CRÉDITO LÍQUIDO)', tone: 'good', desc: 'A rolagem gera crédito líquido consolidado no caixa, postergando o risco e remunerando o capital.' };
+  if (Math.abs(perUnit) < 0.4) return { label: 'MODERADA (PEQUENO DÉBITO)', tone: 'warn', desc: 'Rolagem a pequeno débito, aceitável se o ajuste de série melhorar a posição.' };
   return { label: 'DESACONSELHADA (DÉBITO ELEVADO)', tone: 'bad', desc: 'Pagar débito líquido expressivo consome capital sem garantia estatística.' };
 }
