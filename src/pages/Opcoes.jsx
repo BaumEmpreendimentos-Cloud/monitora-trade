@@ -54,12 +54,16 @@ export default function Opcoes() {
     })();
   }, []);
 
-  // Receber template da página de Estratégias e alternar para Simulador
+  // Receber template da página de Estratégias ou grupo selecionado da tela de Operações
   useEffect(() => {
     if (location.state?.mode === 'simulador') {
       setMode('simulador');
       setSimInitialLegs(location.state.template?.legs || null);
       setSimSpotPrice(location.state.spotPrice || null);
+    } else if (location.state?.selectedGrupoId) {
+      setMode('posicao');
+      setSelectedGrupoId(location.state.selectedGrupoId);
+      if (location.state.tab) setTab(location.state.tab);
     }
   }, [location.state]);
 
