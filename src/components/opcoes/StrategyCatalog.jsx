@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Search, Layers, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Search, Layers, Sparkles, ChevronDown, ChevronUp, Lightbulb, Shield, Gauge } from 'lucide-react';
 import { strategyTemplates } from '@/lib/strategyTemplates';
+
+const difficultyColors = {
+  'Iniciante': 'text-emerald-600 bg-emerald-50 border-emerald-200',
+  'Intermediário': 'text-amber-600 bg-amber-50 border-amber-200',
+  'Avançado': 'text-orange-600 bg-orange-50 border-orange-200',
+  'Profissional': 'text-red-600 bg-red-50 border-red-200',
+};
 
 export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase }) {
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
 
   const filteredTemplates = strategyTemplates.filter((tpl) => {
     const matchesCategory =
@@ -86,51 +94,111 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredTemplates.map((template) => (
-          <div
-            key={template.id}
-            className="p-4 rounded-xl border bg-card hover:border-primary/50 transition flex flex-col justify-between group"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg border bg-background">
-                    {getSentimentIcon(template.sentiment)}
+        {filteredTemplates.map((template) => {
+          const isExpanded = expandedId === template.id;
+          const diffColor = difficultyColors[template.difficulty] || 'text-muted-foreground bg-muted border-border';
+          return (
+            <div
+              key={template.id}
+              className="p-4 rounded-xl border bg-card hover:border-primary/50 transition flex flex-col justify-between group"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg border bg-background">
+                      {getSentimentIcon(template.sentiment)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm group-hover:text-primary transition">{template.name}</h3>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">{template.category}</span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm group-hover:text-primary transition">{template.name}</h3>
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase">{template.category}</span>
+                  {template.difficulty && (
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold whitespace-nowrap ${diffColor}`}>
+                      {template.difficulty}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed min-h-[48px]">{template.description}</p>
+                <div className="p-3 rounded-lg border bg-muted/50 space-y-1.5 text-[11px]">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-muted-foreground font-medium">Lucro Máx:</span>
+                    <span className="text-emerald-600 font-semibold text-right">{template.maxProfit}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-muted-foreground font-medium">Prejuízo Máx:</span>
+                    <span className="text-red-600 font-semibold text-right">{template.maxLoss}</span>
+                  </div>
+                  {template.breakEvenDescription && (
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-muted-foreground font-medium">Break-Even:</span>
+                      <span className="text-foreground font-medium text-right">{template.breakEvenDescription}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-1 border-t">
+                    <div className="flex items-center gap-3">
+                      {template.idealIV && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Gauge className="w-3 h-3" /> IV: {template.idealIV}
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">Pernas: <span className="font-mono font-bold text-foreground">{template.legs.length}</span></span>
+                    </div>
                   </div>
                 </div>
+
+                {isExpanded && template.detailedDescription && (
+                  <div className="space-y-2.5 text-[11px] border-t pt-2">
+                    <p className="text-muted-foreground leading-relaxed">{template.detailedDescription}</p>
+                    {template.marginRequirementB3 && (
+                      <div className="flex items-start gap-1.5 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                        <Shield className="w-3 h-3 text-blue-500 mt-0.5 shrink-0" />
+                        <span className="text-blue-900 leading-relaxed">{template.marginRequirementB3}</span>
+                      </div>
+                    )}
+                    {template.b3PracticalTips && template.b3PracticalTips.length > 0 && (
+                      <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 space-y-1">
+                        <div className="flex items-center gap-1 text-amber-700 font-bold">
+                          <Lightbulb className="w-3 h-3" /> Dicas Práticas B3
+                        </div>
+                        {template.b3PracticalTips.map((tip, i) => (
+                          <div key={i} className="flex items-start gap-1 text-amber-900 leading-relaxed pl-4">
+                            <span className="text-amber-500">•</span>
+                            <span>{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed min-h-[48px]">{template.description}</p>
-              <div className="p-3 rounded-lg border bg-muted/50 space-y-1.5 text-[11px]">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-muted-foreground font-medium">Lucro Máx:</span>
-                  <span className="text-emerald-600 font-semibold text-right">{template.maxProfit}</span>
-                </div>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-muted-foreground font-medium">Prejuízo Máx:</span>
-                  <span className="text-red-600 font-semibold text-right">{template.maxLoss}</span>
-                </div>
-                <div className="flex items-center justify-between pt-1 border-t">
-                  <span className="text-muted-foreground">Pernas:</span>
-                  <span className="font-mono font-bold">{template.legs.length} {template.legs.length === 1 ? 'perna' : 'pernas'}</span>
-                </div>
+
+              <div className="pt-3 mt-2 space-y-2">
+                {template.detailedDescription && (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : template.id)}
+                    className="w-full flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition cursor-pointer"
+                  >
+                    {isExpanded ? (
+                      <><ChevronUp className="w-3 h-3" /> Ocultar detalhes</>
+                    ) : (
+                      <><ChevronDown className="w-3 h-3" /> Ver detalhes e dicas</>
+                    )}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onSelectTemplate(template)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-primary text-foreground hover:text-primary-foreground font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Simular no Payoff</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-            <div className="pt-3 mt-2">
-              <button
-                type="button"
-                onClick={() => onSelectTemplate(template)}
-                className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-primary text-foreground hover:text-primary-foreground font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Simular no Payoff</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
