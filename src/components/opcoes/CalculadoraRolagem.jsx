@@ -239,7 +239,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                 {/* Nova série */}
                 <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">2. Nova Série & Rebalanceamento ({isSell ? 'Venda Nova' : 'Compra Nova'})</div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     <div><Label className="text-[11px]">Série (Mês)</Label>
                       <select value={cfg.targetDueDate || ''} onChange={(e) => onExerciseChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
                         {exercises.length === 0 && <option value="">Sem séries</option>}
