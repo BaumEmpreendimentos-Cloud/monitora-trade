@@ -127,8 +127,13 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       let dueDate = match?.add_info?.due_date || match?.add_info?.dueDate || null;
       const desc = match?.description || '';
       if (!strike) {
-        const strikeMatch = desc.match(/R\$\s*([\d.,]+)/);
-        if (strikeMatch) strike = parseFloat(strikeMatch[1].replace(/\./g, '').replace(',', '.'));
+        const strikeMatch = desc.match(/R\$\s*([\d.]+(?:,\d+)?)(?=,|$)/);
+        if (strikeMatch) {
+          let s = strikeMatch[1];
+          if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+          else if (s.includes(',')) s = s.replace(',', '.');
+          strike = parseFloat(s) || 0;
+        }
       }
       if (!dueDate) {
         const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
@@ -186,8 +191,13 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
 
       // Parse strike e vencimento da description: "ISHARES BOVACI, R$ 171.00, 16-10-2026"
       const desc = item.description || '';
-      const strikeMatch = desc.match(/R\$\s*([\d.,]+)/);
-      if (strikeMatch) strike = parseFloat(strikeMatch[1].replace(/\./g, '').replace(',', '.'));
+      const strikeMatch = desc.match(/R\$\s*([\d.]+(?:,\d+)?)(?=,|$)/);
+      if (strikeMatch) {
+        let s = strikeMatch[1];
+        if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+        else if (s.includes(',')) s = s.replace(',', '.');
+        strike = parseFloat(s) || 0;
+      }
       const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
       if (dateMatch) dueDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
       if (!strike) strike = item.add_info?.strike || 0;
