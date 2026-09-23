@@ -257,10 +257,10 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                       </select>
                     </div>
                     <div><Label className="text-[11px]">Novo Ticker</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.symbol || '—'}</div></div>
+                    <div><Label className="text-[11px]">Dias Úteis</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.days_to_maturity ?? '—'}</div></div>
                     <div><Label className="text-[11px]">Prêmio Novo (R$)</Label>
                       <Input type="number" step="0.01" value={cfg.newPremium ?? ''} onChange={(e) => setLegField(leg.id, 'newPremium', e.target.value)} className="h-8 text-sm" />
                     </div>
-                    <div><Label className="text-[11px]">Dias Úteis</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.days_to_maturity ?? '—'}</div></div>
                   </div>
 
                   {/* Controles de quantidade */}
