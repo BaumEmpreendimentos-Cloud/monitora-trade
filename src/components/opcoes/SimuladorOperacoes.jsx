@@ -91,6 +91,35 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     setLegs((p) => p.filter((_, i) => i !== index));
   };
 
+  // Auto-buscar cotação ao alterar o ticker de uma perna
+  const [fetchingTicker, setFetchingTicker] = useState(null);
+  const handleTickerBlur = async (index, ticker) => {
+    const symbol = (ticker || '').trim().toUpperCase();
+    if (!symbol || fetchingTicker === index) return;
+    setFetchingTicker(index);
+    try {
+      const qRes = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol });
+      const quote = qRes.data?.quotes?.[0];
+      if (quote?.close) {
+        setLegs((p) => {
+          const next = [...p];
+          const leg = next[index];
+          if (leg.type === 'STOCK') {
+            next[index] = { ...leg, premium: quote.close };
+            setSpotPrice(quote.close);
+          } else {
+            next[index] = { ...leg, premium: quote.close };
+          }
+          return next;
+        });
+      }
+    } catch (e) {
+      /* ignore */
+    } finally {
+      setFetchingTicker(null);
+    }
+  };
+
   // Busca de instrumentos na B3
   const handleSearch = async () => {
     const term = searchTerm.trim().toUpperCase();
@@ -290,7 +319,8 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                         type="text"
                         value={leg.ticker}
                         onChange={(e) => handleUpdateLeg(index, { ticker: e.target.value.toUpperCase() })}
-                        className="w-28 px-2 py-1 bg-background border rounded font-bold focus:outline-none focus:border-primary"
+                        onBlur={(e) => handleTickerBlur(index, e.target.value)}
+                        className={`w-28 px-2 py-1 bg-background border rounded font-bold focus:outline-none focus:border-primary ${fetchingTicker === index ? 'opacity-50' : ''}`}
                       />
                     </td>
                     <td className="px-3 py-2 text-right">
