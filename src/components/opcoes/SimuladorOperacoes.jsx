@@ -115,7 +115,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
         base44.functions.invoke('oplabMarket', { action: 'search', expr: symbol, type: 'STOCK,OPTION', limit: 5 }),
       ]);
       const quote = qRes.data?.quotes?.[0];
-      const results = sRes.results || [];
+      const results = sRes.data?.results || [];
       const match = results.find((r) => (r.symbol || r.ticker || '') === symbol) || results[0];
 
       // OpLab retorna type/close diretamente no objeto; strike e vencimento vêm na description
@@ -172,7 +172,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     setSearching(true);
     try {
       const res = await base44.functions.invoke('oplabMarket', { action: 'search', expr: term, type: 'STOCK,OPTION', limit: 10 });
-      setSearchResults(res.results || []);
+      setSearchResults(res.data?.results || []);
     } catch (e) {
       setSearchResults([]);
     } finally {
