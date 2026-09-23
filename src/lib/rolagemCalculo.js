@@ -4,10 +4,13 @@ const CALL_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'
 const PUT_LETTERS = ['M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'];
 const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-// Extrai a letra da série B3 do símbolo (ex: BOVAJ17 -> J)
-export function extractOptionLetter(symbol) {
-  const m = (symbol || '').toUpperCase().match(/^([A-Z]+)([A-X])(\d+)$/);
-  return m ? m[2] : '';
+// Extrai letra da série e semana (se semanal) do símbolo B3
+// Mensal: BOVAJ17 -> { letter: 'J', week: '' }
+// Semanal: BOVAJ170W4 -> { letter: 'J', week: 'W4' }
+export function extractOptionInfo(symbol) {
+  const m = (symbol || '').toUpperCase().match(/^([A-Z]+)([A-X])(\d+)(W\d+)?$/);
+  if (!m) return { letter: '', week: '' };
+  return { letter: m[2], week: m[4] || '' };
 }
 
 export function letterToMonthName(letter, tipo) {
@@ -23,8 +26,8 @@ export function groupExercises(options, tipo) {
   const map = {};
   filtered.forEach((o) => {
     if (!map[o.due_date]) {
-      const letter = extractOptionLetter(o.symbol);
-      map[o.due_date] = { due_date: o.due_date, letter, monthName: letterToMonthName(letter, tipo), options: [] };
+      const info = extractOptionInfo(o.symbol);
+      map[o.due_date] = { due_date: o.due_date, letter: info.letter, week: info.week, monthName: letterToMonthName(info.letter, tipo), options: [] };
     }
     map[o.due_date].options.push(o);
   });
@@ -49,7 +52,8 @@ export function findNextExercise(exercises, currentVencimento) {
 export function exerciseLabel(ex) {
   if (!ex) return '—';
   const year = new Date(ex.due_date + 'T00:00:00').getFullYear();
-  return `${ex.letter} (${ex.monthName} ${year})`;
+  const prefix = ex.week ? `${ex.letter}${ex.week}` : ex.letter;
+  return `${prefix} ${ex.monthName} ${year}`;
 }
 
 // Fluxo financeiro de uma rolagem (fechamento + abertura)

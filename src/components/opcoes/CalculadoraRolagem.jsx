@@ -35,8 +35,10 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
         base44.functions.invoke('oplabMarket', { action: 'optionChain', symbol: ativoBase }),
         tickers.length ? base44.functions.invoke('oplabMarket', { action: 'quote', tickers: tickers.join(',') }) : Promise.resolve({ data: { quotes: [] } }),
       ]);
-      setChain(chainRes.data?.options || []);
+      const chainOptions = chainRes.data?.options || [];
+      setChain(chainOptions);
       const qMap = {};
+      chainOptions.forEach((o) => { if (o.symbol) qMap[o.symbol] = o.close; });
       (quoteRes.data?.quotes || []).forEach((q) => { qMap[q.symbol] = q.close; });
       setQuotes(qMap);
       setLastUpdate(new Date());
@@ -45,23 +47,25 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Inicializar configs das pernas quando chain/quotes carregarem
+  // Inicializar/atualizar configs das pernas quando chain/quotes carregarem
   useEffect(() => {
     setLegConfigs((prev) => {
       const next = { ...prev };
       optionLegs.forEach((leg) => {
-        const existing = next[leg.id];
-        if (!existing || (chain.length && !existing.targetDueDate)) {
-          const exercises = groupExercises(chain, leg.categoria);
+        const existing = next[leg.id] || {};
+        const exercises = groupExercises(chain, leg.categoria);
+        let targetDueDate = existing.targetDueDate;
+        if (!targetDueDate && exercises.length) {
           const nextEx = findNextExercise(exercises, leg.vencimento);
-          const match = findOptionInExercise(exercises, leg.strike, leg.categoria, nextEx?.due_date);
-          next[leg.id] = {
-            targetDueDate: nextEx?.due_date || '',
-            newQty: existing?.newQty ?? leg.quantidade,
-            closePrice: existing?.closePrice ?? quotes[leg.ativo] ?? '',
-            newPremium: existing?.newPremium ?? match?.close ?? '',
-          };
+          targetDueDate = nextEx?.due_date || '';
         }
+        const match = targetDueDate ? findOptionInExercise(exercises, leg.strike, leg.categoria, targetDueDate) : null;
+        next[leg.id] = {
+          targetDueDate: targetDueDate || '',
+          newQty: existing.newQty != null ? existing.newQty : leg.quantidade,
+          closePrice: existing.closePrice !== '' && existing.closePrice != null ? existing.closePrice : (quotes[leg.ativo] ?? ''),
+          newPremium: existing.newPremium !== '' && existing.newPremium != null ? existing.newPremium : (match?.close ?? ''),
+        };
       });
       Object.keys(next).forEach((id) => { if (!optionLegs.find((l) => l.id === id)) delete next[id]; });
       return next;
@@ -154,7 +158,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
         const curQty = cfg.newQty ?? leg.quantidade;
         return (
           <Card key={leg.id}>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm font-semibold flex-wrap">
                   <span className={isSell ? 'text-red-600' : 'text-emerald-600'}>{isSell ? 'VENDIDA' : 'COMPRADA'}</span>
@@ -166,9 +170,9 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
                 <span className={`text-xs font-bold px-2 py-1 rounded ${legNet >= 0 ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'text-red-600 bg-red-50 dark:bg-red-950/30'}`}>{legNet >= 0 ? '+ CRÉDITO' : '- DÉBITO'} {fmt(Math.abs(legNet))}</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {/* Fechamento */}
-                <div className="border rounded-lg p-3 space-y-2">
+                <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">1. Fechamento Atual ({isSell ? 'Recompra' : 'Venda Liq.'})</div>
                   <div><Label className="text-[11px]">Preço de Fechamento (R$)</Label>
                     <Input type="number" step="0.01" value={cfg.closePrice ?? ''} onChange={(e) => setLegField(leg.id, 'closePrice', e.target.value)} className="h-8 text-sm" />
@@ -177,7 +181,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
                 </div>
 
                 {/* Nova série */}
-                <div className="border rounded-lg p-3 space-y-2">
+                <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">2. Nova Série & Rebalanceamento ({isSell ? 'Venda Nova' : 'Compra Nova'})</div>
                   <div className="grid grid-cols-2 gap-2">
                     <div><Label className="text-[11px]">Série (Mês)</Label>
@@ -226,7 +230,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
         const strikes = ex ? [...new Set(ex.options.map((o) => o.strike))].sort((a, b) => a - b) : [];
         return (
           <Card key={leg.id} className="border-dashed border-primary/40">
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-primary">Nova Perna</h4>
                 <button onClick={() => removeNewLeg(leg.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
@@ -266,7 +270,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
 
       {/* Balanço consolidado */}
       <Card className={toneClass[resultado.tone]}>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-sm font-bold">Balanço Financeiro Consolidado</h4>
             <span className="text-xs font-bold px-2 py-1 rounded bg-card border">{resultado.label}</span>

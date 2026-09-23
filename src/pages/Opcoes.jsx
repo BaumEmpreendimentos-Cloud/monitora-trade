@@ -114,7 +114,7 @@ export default function Opcoes() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl md:text-3xl font-heading font-bold">Análise de Opções</h1>
