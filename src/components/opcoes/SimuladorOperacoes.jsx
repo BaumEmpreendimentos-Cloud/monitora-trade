@@ -91,28 +91,44 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     setLegs((p) => p.filter((_, i) => i !== index));
   };
 
-  // Auto-buscar cotação ao alterar o ticker de uma perna
+  // Auto-buscar cotação e dados do instrumento ao alterar o ticker de uma perna
   const [fetchingTicker, setFetchingTicker] = useState(null);
   const handleTickerBlur = async (index, ticker) => {
     const symbol = (ticker || '').trim().toUpperCase();
     if (!symbol || fetchingTicker === index) return;
     setFetchingTicker(index);
     try {
-      const qRes = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol });
+      const [qRes, sRes] = await Promise.all([
+        base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol }),
+        base44.functions.invoke('oplabMarket', { action: 'search', expr: symbol, type: 'STOCK,OPTION', limit: 5 }),
+      ]);
       const quote = qRes.data?.quotes?.[0];
-      if (quote?.close) {
-        setLegs((p) => {
-          const next = [...p];
-          const leg = next[index];
-          if (leg.type === 'STOCK') {
-            next[index] = { ...leg, premium: quote.close };
-            setSpotPrice(quote.close);
-          } else {
-            next[index] = { ...leg, premium: quote.close };
+      const results = sRes.results || [];
+      const match = results.find((r) => (r.symbol || r.ticker || '') === symbol) || results[0];
+      const info = match?.add_info || match?.info || {};
+      const premium = quote?.close || info.close || info.bid || 0;
+
+      setLegs((p) => {
+        const next = [...p];
+        const leg = next[index];
+        const isStock = leg.type === 'STOCK';
+        let updates = { premium };
+        if (!isStock) {
+          if (info.strike) updates.strike = info.strike;
+          const dueDate = info.due_date || info.dueDate || null;
+          if (dueDate) {
+            updates.dueDate = dueDate;
+            updates.daysToExpiry = businessDaysUntil(dueDate) ?? 0;
           }
-          return next;
-        });
-      }
+          if (info.category === 'CALL' || info.category === 'PUT' || info.type === 'CALL' || info.type === 'PUT') {
+            updates.type = info.category || info.type;
+          }
+        } else if (premium) {
+          setSpotPrice(premium);
+        }
+        next[index] = { ...leg, ...updates };
+        return next;
+      });
     } catch (e) {
       /* ignore */
     } finally {
