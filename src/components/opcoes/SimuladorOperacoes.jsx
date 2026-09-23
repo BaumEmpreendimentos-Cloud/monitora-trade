@@ -105,24 +105,36 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       const quote = qRes.data?.quotes?.[0];
       const results = sRes.results || [];
       const match = results.find((r) => (r.symbol || r.ticker || '') === symbol) || results[0];
-      const info = match?.add_info || match?.info || {};
-      const premium = quote?.close || info.close || info.bid || 0;
+
+      // OpLab retorna type/close diretamente no objeto; strike e vencimento vêm na description
+      const optType = match?.type || match?.add_info?.category || match?.add_info?.type || '';
+      const premium = quote?.close || match?.close || match?.add_info?.close || 0;
+
+      // Parse strike e vencimento da description: "ISHARES BOVACI, R$ 171.00, 16-10-2026"
+      let strike = match?.add_info?.strike || 0;
+      let dueDate = match?.add_info?.due_date || match?.add_info?.dueDate || null;
+      const desc = match?.description || '';
+      if (!strike) {
+        const strikeMatch = desc.match(/R\$\s*([\d.,]+)/);
+        if (strikeMatch) strike = parseFloat(strikeMatch[1].replace(/\./g, '').replace(',', '.'));
+      }
+      if (!dueDate) {
+        const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
+        if (dateMatch) dueDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      }
 
       setLegs((p) => {
         const next = [...p];
         const leg = next[index];
-        const isStock = leg.type === 'STOCK';
+        const isStock = leg.type === 'STOCK' || optType === 'STOCK';
         let updates = { premium };
         if (!isStock) {
-          if (info.strike) updates.strike = info.strike;
-          const dueDate = info.due_date || info.dueDate || null;
+          if (strike) updates.strike = strike;
           if (dueDate) {
             updates.dueDate = dueDate;
             updates.daysToExpiry = businessDaysUntil(dueDate) ?? 0;
           }
-          if (info.category === 'CALL' || info.category === 'PUT' || info.type === 'CALL' || info.type === 'PUT') {
-            updates.type = info.category || info.type;
-          }
+          if (optType === 'CALL' || optType === 'PUT') updates.type = optType;
         } else if (premium) {
           setSpotPrice(premium);
         }
@@ -156,24 +168,24 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       let strike = 0, premium = 0, dueDate = null, type = 'STOCK', daysToExpiry = 999;
       const symbol = item.symbol || item.ticker || searchTerm;
 
-      // Tenta extrair dados do add_info
-      const info = item.add_info || item.info || {};
-      if (info.category === 'CALL' || info.category === 'PUT') {
-        type = info.category;
-        strike = info.strike || 0;
-        dueDate = info.due_date || info.dueDate || null;
-        daysToExpiry = dueDate ? businessDaysUntil(dueDate) ?? 0 : 30;
-      } else if (info.type === 'CALL' || info.type === 'PUT') {
-        type = info.type;
-        strike = info.strike || 0;
-        dueDate = info.due_date || info.dueDate || null;
-        daysToExpiry = dueDate ? businessDaysUntil(dueDate) ?? 0 : 30;
-      }
+      // OpLab retorna type/close diretamente; strike e vencimento vêm na description
+      type = item.type || item.add_info?.category || item.add_info?.type || 'STOCK';
+      if (type !== 'CALL' && type !== 'PUT') type = 'STOCK';
+
+      // Parse strike e vencimento da description: "ISHARES BOVACI, R$ 171.00, 16-10-2026"
+      const desc = item.description || '';
+      const strikeMatch = desc.match(/R\$\s*([\d.,]+)/);
+      if (strikeMatch) strike = parseFloat(strikeMatch[1].replace(/\./g, '').replace(',', '.'));
+      const dateMatch = desc.match(/(\d{2})-(\d{2})-(\d{4})/);
+      if (dateMatch) dueDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      if (!strike) strike = item.add_info?.strike || 0;
+      if (!dueDate) dueDate = item.add_info?.due_date || item.add_info?.dueDate || null;
+      daysToExpiry = dueDate ? businessDaysUntil(dueDate) ?? 0 : 30;
 
       // Busca cotação para preencher prêmio
       const qRes = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol });
       const quote = qRes.data?.quotes?.[0];
-      premium = quote?.close || info.close || info.bid || 0;
+      premium = quote?.close || item.close || item.add_info?.close || 0;
       if (type === 'STOCK' && premium) setSpotPrice(premium);
 
       const newLeg = {
