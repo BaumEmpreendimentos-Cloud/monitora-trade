@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search, BarChart3 } from 'lucide-react';
 import ExpirationBar from '@/components/rolagem/ExpirationBar';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -24,8 +25,10 @@ const loadSaved = () => {
 
 export default function Rolagem() {
   const saved = loadSaved();
-  const [ativoBase, setAtivoBase] = useState(saved?.ativoBase || '');
-  const [ativoBuscado, setAtivoBuscado] = useState(saved?.ativoBuscado || '');
+  const urlParams = new URLSearchParams(window.location.search);
+  const ativoFromUrl = urlParams.get('ativo');
+  const [ativoBase, setAtivoBase] = useState(ativoFromUrl || saved?.ativoBase || '');
+  const [ativoBuscado, setAtivoBuscado] = useState(ativoFromUrl || saved?.ativoBuscado || '');
   const [options, setOptions] = useState([]);
   const [spotPrice, setSpotPrice] = useState(null);
   const [userOps, setUserOps] = useState([]);
@@ -189,13 +192,16 @@ export default function Rolagem() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">Painel de Rolagem</h1>
             <p className="text-sm text-muted-foreground">Cadeia de opções — selecione os vencimentos para comparar</p>
           </div>
-          {lastUpdate && <span className="text-xs text-muted-foreground">Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}</span>}
+          <div className="flex items-center gap-3">
+            {lastUpdate && <span className="text-xs text-muted-foreground">Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}</span>}
+            <Link to="/opcoes"><Button variant="outline" size="sm"><BarChart3 className="w-4 h-4 mr-1" /> Análise de Opções</Button></Link>
+          </div>
         </div>
 
         <Card>

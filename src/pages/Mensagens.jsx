@@ -72,7 +72,7 @@ export default function Mensagens() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-[1200px] mx-auto space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center gap-2">
             <MessageSquare className="w-6 h-6" /> Mensagens

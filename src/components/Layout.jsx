@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -38,10 +38,12 @@ const PAGE_TITLES = {
   '/configuracoes': 'Configurações',
   '/irpf': 'Imposto de Renda',
   '/rolagem': 'Painel de Rolagem',
+  '/opcoes': 'Simulador',
+  '/estrategias': 'Estratégias',
   '/instagram': 'Instagram',
 };
 
-const MAIN_TABS = ['/operacoes', '/historico', '/irpf', '/cotacoes', '/mensagens', '/instagram', '/configuracoes'];
+const MAIN_TABS = ['/operacoes', '/estrategias', '/mensagens', '/instagram', '/configuracoes'];
 
 export default function Layout() {
   const { user, checkUserAuth, logout } = useAuth();
@@ -111,16 +113,14 @@ export default function Layout() {
         </div>
       </header>
       <header className="border-b bg-card sticky top-0 z-10 hidden md:block">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 font-heading font-bold">
             <LineChart className="w-5 h-5 text-primary" /> Monitora Trade
           </div>
           <nav className="flex gap-1 items-center">
             <NavLink to="/operacoes" className={linkClass}>Operações</NavLink>
-            <NavLink to="/historico" className={linkClass}>Histórico</NavLink>
-            <NavLink to="/irpf" className={linkClass}><Receipt className="w-4 h-4 inline -mt-0.5" /> IR</NavLink>
-            <NavLink to="/cotacoes" className={linkClass}>Cotações</NavLink>
             <NavLink to="/mensagens" className={linkClass}><MessageSquare className="w-4 h-4 inline -mt-0.5" /> Mensagens</NavLink>
+            <NavLink to="/estrategias" className={linkClass}><Layers className="w-4 h-4 inline -mt-0.5" /> Estratégias</NavLink>
             <NavLink to="/instagram" className={linkClass}><InstagramIcon className="w-4 h-4 inline -mt-0.5" /> Instagram</NavLink>
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
@@ -153,9 +153,7 @@ export default function Layout() {
       <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t bg-card no-select" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around h-14">
           <NavLink to="/operacoes" className={mobileLinkClass} end onClick={(e) => handleTabClick(e, '/operacoes')}><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
-          <NavLink to="/historico" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/historico')}><History className="w-5 h-5" /><span className="text-[10px]">Histórico</span></NavLink>
-          <NavLink to="/irpf" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/irpf')}><Receipt className="w-5 h-5" /><span className="text-[10px]">IR</span></NavLink>
-          <NavLink to="/cotacoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/cotacoes')}><TrendingUp className="w-5 h-5" /><span className="text-[10px]">Cotações</span></NavLink>
+          <NavLink to="/estrategias" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/estrategias')}><Layers className="w-5 h-5" /><span className="text-[10px]">Estratégias</span></NavLink>
           <NavLink to="/mensagens" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/mensagens')}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
           <NavLink to="/instagram" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/instagram')}><InstagramIcon className="w-5 h-5" /><span className="text-[10px]">Instagram</span></NavLink>
           <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>

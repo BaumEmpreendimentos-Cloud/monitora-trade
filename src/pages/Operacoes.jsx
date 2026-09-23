@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2, Bell, BellRing, Repeat } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, ChevronDown, ChevronRight, Coins, Trash2, Bell, BellRing, Repeat, History, Receipt, Layers, TrendingUp } from 'lucide-react';
 import OperacaoForm from '@/components/operacoes/OperacaoForm';
 import EncerrarDialog from '@/components/operacoes/EncerrarDialog';
 import EditarOperacaoDialog from '@/components/operacoes/EditarOperacaoDialog';
@@ -211,6 +211,25 @@ export default function Operacoes() {
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
 
+  const handleDeleteSimulada = async (op) => {
+    if (!confirm(`Excluir a operação simulada ${op.ativo}?`)) return;
+    setError('');
+    try {
+      await base44.entities.Operacao.delete(op.id);
+      setOps((p) => p.filter((x) => x.id !== op.id));
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
+  const handleDeleteGrupoSimulado = async (g) => {
+    const gOps = ops.filter((o) => o.grupo_id === g.id && o.status === 'ABERTA' && o.simulada);
+    if (!confirm(`Excluir todas as ${gOps.length} operações simuladas do grupo "${g.nome}"?`)) return;
+    setError('');
+    try {
+      await base44.entities.Operacao.deleteMany({ grupo_id: g.id, status: 'ABERTA', simulada: true });
+      setOps((p) => p.filter((x) => !(x.grupo_id === g.id && x.status === 'ABERTA' && x.simulada)));
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+  };
+
   const handleDeleteDividendo = async (id) => {
     setError('');
     try {
@@ -222,7 +241,7 @@ export default function Operacoes() {
   return (
     <PullToRefresh onRefresh={fetchQuotes}>
     <div className="p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">Operações</h1>
@@ -238,6 +257,14 @@ export default function Operacoes() {
             </Button>
             <Button size="sm" onClick={() => setFormOpen(true)}><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild><Link to="/historico"><History className="w-4 h-4 mr-1" /> Histórico</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/irpf"><Receipt className="w-4 h-4 mr-1" /> IR</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/opcoes"><Layers className="w-4 h-4 mr-1" /> Simulador</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/cotacoes"><TrendingUp className="w-4 h-4 mr-1" /> Cotações</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/estrategias"><Layers className="w-4 h-4 mr-1" /> Estratégias</Link></Button>
         </div>
 
         <DashboardOperacoes openOps={openOps} closedOps={closedOps} totalDia={totalDia} />
@@ -271,8 +298,8 @@ export default function Operacoes() {
                       <thead>
                         <tr className={`bg-primary/5 cursor-pointer hover:bg-primary/10 ${selectedGroup === g.id ? 'bg-primary/10' : ''}`} onClick={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}>
                           <th colSpan={14} className="p-2.5 text-left font-normal normal-case">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-1.5">
                                 {expanded[g.id] ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
                                 <div className="flex flex-col">
                                   <span className="font-bold text-sm w-[9.5rem] truncate" title={g.nome}>{g.nome}</span>
@@ -284,8 +311,12 @@ export default function Operacoes() {
                                 <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
                                 <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
                                 <Button size="sm" variant="outline" className={`text-xs ${hasAlertaGrupo(g.id) ? 'text-amber-600 border-amber-400' : ''}`} onClick={(e) => { e.stopPropagation(); setAlertaGrupo(g); }} title="Criar alerta de resultado">{hasAlertaGrupo(g.id) ? <BellRing className="w-3.5 h-3.5 mr-1" /> : <Bell className="w-3.5 h-3.5 mr-1" />} Alerta</Button>
+                                <Button size="sm" variant="outline" className="text-xs" asChild onClick={(e) => e.stopPropagation()} title="Ir para Análise de Opções"><Link to="/opcoes" state={{ selectedGrupoId: g.id, tab: 'rolagem', mode: 'posicao' }}><Repeat className="w-3.5 h-3.5 mr-1" /> Rolagem</Link></Button>
+                                {gOpen.some((o) => o.simulada) && (
+                                  <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDeleteGrupoSimulado(g); }} title="Excluir operações simuladas"><Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir Sim.</Button>
+                                )}
                               </div>
-                              <div className="flex gap-6 text-sm">
+                              <div className="flex gap-4 text-sm shrink-0">
                                 <span>Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
                                 <span>Valor Total: <b className={color(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}>{fmt(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
@@ -324,7 +355,10 @@ export default function Operacoes() {
                           const mnyClass = moneynessRowClass(o.categoria, o.strike, quotes[o.ativo_base]);
                           return (
                             <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''} ${mnyClass}`} onClick={() => { setSelectedGroup(null); setSelectedOp(isSel ? null : o); }}>
-                              <td className="p-2 font-medium">{o.ativo}</td>
+                              <td className="p-2 font-medium">
+                                {o.ativo}
+                                {o.simulada && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400" title="Operação simulada">SIM</span>}
+                              </td>
                               <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>
                               <td className="p-2">{o.operacao}</td>
@@ -341,6 +375,9 @@ export default function Operacoes() {
                                 <div className="flex gap-1">
                                   <Button size="icon" variant="ghost" className={`h-7 w-7 ${hasAlertaOp(o.id) ? 'text-amber-600' : ''}`} onClick={() => setAlertaOp(o)} title="Criar alerta de preço">{hasAlertaOp(o.id) ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}</Button>
                                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
+                                  {o.simulada && (
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteSimulada(o)} title="Excluir simulação"><Trash2 className="w-3.5 h-3.5" /></Button>
+                                  )}
                                   <Button size="sm" variant="outline" onClick={() => setEncerrar(o)}>Encerrar</Button>
                                 </div>
                               </td>
