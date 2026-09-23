@@ -3,7 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Search, TrendingUp, Layers } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, Layers, Save, Lightbulb, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import SalvarOperacaoDialog from '@/components/opcoes/SalvarOperacaoDialog';
 import { businessDaysUntil } from '@/lib/operacoes';
 import { calculatePortfolioGreeks } from '@/lib/blackScholes';
 import PayoffChart from '@/components/opcoes/PayoffChart';
@@ -31,8 +33,10 @@ function templateLegsToSimLegs(legs, spotPrice) {
   });
 }
 
-export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv = 0.30, onSpotChange }) {
+export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv = 0.30, onSpotChange, strategyInfo, ativoBase }) {
+  const navigate = useNavigate();
   const [legs, setLegs] = useState(() => templateLegsToSimLegs(initialLegs, initialSpotPrice));
+  const [saveOpen, setSaveOpen] = useState(false);
   const [spotPrice, setSpotPrice] = useState(initialSpotPrice || '');
   const [ivState, setIvState] = useState(iv);
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,6 +93,14 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
 
   const handleRemoveLeg = (index) => {
     setLegs((p) => p.filter((_, i) => i !== index));
+  };
+
+  const handleQtyChange = (index, delta) => {
+    setLegs((p) => {
+      const next = [...p];
+      next[index] = { ...next[index], quantity: Math.max(0, (next[index].quantity || 0) + delta) };
+      return next;
+    });
   };
 
   // Auto-buscar cotação e dados do instrumento ao alterar o ticker de uma perna
@@ -216,10 +228,10 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-xl border bg-card">
         <div>
           <h2 className="text-base font-bold flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" /> Simulador Livre de Operações
+            <TrendingUp className="w-5 h-5 text-primary" /> {strategyInfo?.name || 'Simulador Livre de Operações'}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Monte uma estrutura e verifique payoff, gregas, margem e risco antes de abrir a operação.
+            {strategyInfo ? `Estratégia selecionada do catálogo` : 'Monte uma estrutura e verifique payoff, gregas, margem e risco antes de abrir a operação.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -246,6 +258,33 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
           </div>
         </div>
       </div>
+
+      {/* Dicas da estratégia */}
+      {strategyInfo?.b3PracticalTips?.length > 0 && (
+        <div className="p-4 rounded-xl border bg-amber-50/50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900 space-y-2">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-amber-500" />
+            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">Dicas Práticas — {strategyInfo.name}</span>
+          </div>
+          {strategyInfo.detailedDescription && (
+            <p className="text-xs text-muted-foreground leading-relaxed">{strategyInfo.detailedDescription}</p>
+          )}
+          <div className="space-y-1">
+            {strategyInfo.b3PracticalTips.map((tip, i) => (
+              <div key={i} className="flex items-start gap-1.5 text-xs text-foreground leading-relaxed">
+                <span className="text-amber-500 mt-0.5">•</span>
+                <span>{tip}</span>
+              </div>
+            ))}
+          </div>
+          {strategyInfo.marginRequirementB3 && (
+            <div className="flex items-start gap-1.5 mt-1 p-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/20 dark:border-blue-900">
+              <Shield className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+              <span className="text-xs text-blue-900 dark:text-blue-300 leading-relaxed">{strategyInfo.marginRequirementB3}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Busca & Adicionar */}
       <div className="p-4 rounded-xl border bg-card space-y-3">
@@ -360,7 +399,15 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                       <input type="number" step="0.01" value={leg.premium} onChange={(e) => handleUpdateLeg(index, { premium: parseFloat(e.target.value) || 0 })} className="w-20 px-2 py-1 bg-background border rounded text-right text-emerald-600 font-bold focus:outline-none focus:border-primary" />
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <input type="number" step="100" value={leg.quantity} onChange={(e) => handleUpdateLeg(index, { quantity: parseInt(e.target.value) || 0 })} className="w-20 px-2 py-1 bg-background border rounded text-right focus:outline-none focus:border-primary" />
+                      <div className="flex flex-col items-end gap-1">
+                        <input type="number" step="100" value={leg.quantity} onChange={(e) => handleUpdateLeg(index, { quantity: parseInt(e.target.value) || 0 })} className="w-20 px-2 py-1 bg-background border rounded text-right focus:outline-none focus:border-primary" />
+                        <div className="flex gap-0.5">
+                          <button onClick={() => handleQtyChange(index, -1000)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-1.000">-1k</button>
+                          <button onClick={() => handleQtyChange(index, -100)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-100">-100</button>
+                          <button onClick={() => handleQtyChange(index, 100)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+100">+100</button>
+                          <button onClick={() => handleQtyChange(index, 1000)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+1.000">+1k</button>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-right">
                       {isStock ? <span className="text-muted-foreground">À Vista</span> : (
@@ -406,6 +453,24 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       {legs.length > 0 && spot === 0 && (
         <p className="text-sm text-amber-600 text-center py-4">Informe o preço spot (Spot) para calcular payoff e margem.</p>
       )}
+
+      {/* Salvar como Operação */}
+      {legs.length > 0 && (
+        <div className="flex justify-end">
+          <Button onClick={() => setSaveOpen(true)} className="gap-2">
+            <Save className="w-4 h-4" /> Salvar como Operação
+          </Button>
+        </div>
+      )}
+
+      <SalvarOperacaoDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        legs={legs}
+        ativoBase={ativoBase || ''}
+        defaultName={strategyInfo?.name || ''}
+        onSaved={() => navigate('/operacoes')}
+      />
     </div>
   );
 }

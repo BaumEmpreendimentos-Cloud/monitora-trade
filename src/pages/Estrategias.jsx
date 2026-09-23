@@ -41,7 +41,18 @@ export default function Estrategias() {
         ticker: leg.ticker,
       };
     });
-    navigate('/opcoes', { state: { mode: 'simulador', template: { ...template, legs: scaledLegs }, spotPrice: spotPrice || refPrice } });
+    navigate('/opcoes', { state: {
+      mode: 'simulador',
+      template: { ...template, legs: scaledLegs },
+      spotPrice: spotPrice || refPrice,
+      ativoBase,
+      strategyInfo: {
+        name: template.name,
+        detailedDescription: template.detailedDescription,
+        b3PracticalTips: template.b3PracticalTips,
+        marginRequirementB3: template.marginRequirementB3,
+      },
+    } });
   };
 
   return (

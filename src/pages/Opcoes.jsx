@@ -34,6 +34,8 @@ export default function Opcoes() {
   const [mode, setMode] = useState('posicao');
   const [simInitialLegs, setSimInitialLegs] = useState(null);
   const [simSpotPrice, setSimSpotPrice] = useState(null);
+  const [simStrategyInfo, setSimStrategyInfo] = useState(null);
+  const [simAtivoBase, setSimAtivoBase] = useState('');
   const location = useLocation();
 
   // Carregar grupos e operações abertas
@@ -60,6 +62,8 @@ export default function Opcoes() {
       setMode('simulador');
       setSimInitialLegs(location.state.template?.legs || null);
       setSimSpotPrice(location.state.spotPrice || null);
+      setSimStrategyInfo(location.state.strategyInfo || null);
+      setSimAtivoBase(location.state.ativoBase || '');
     } else if (location.state?.selectedGrupoId) {
       setMode('posicao');
       setSelectedGrupoId(location.state.selectedGrupoId);
@@ -160,7 +164,7 @@ export default function Opcoes() {
         </div>
 
         {mode === 'simulador' ? (
-          <SimuladorOperacoes initialLegs={simInitialLegs} initialSpotPrice={simSpotPrice} iv={iv} />
+          <SimuladorOperacoes initialLegs={simInitialLegs} initialSpotPrice={simSpotPrice} iv={iv} strategyInfo={simStrategyInfo} ativoBase={simAtivoBase} />
         ) : (
         <>
         {/* Seletor de grupo */}
