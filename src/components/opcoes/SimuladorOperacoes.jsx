@@ -204,10 +204,8 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       if (!dueDate) dueDate = item.add_info?.due_date || item.add_info?.dueDate || null;
       daysToExpiry = dueDate ? businessDaysUntil(dueDate) ?? 0 : 30;
 
-      // Busca cotação para preencher prêmio
-      const qRes = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol });
-      const quote = qRes.data?.quotes?.[0];
-      premium = quote?.close || item.close || item.add_info?.close || 0;
+      // Usa o close já retornado pela busca (evita chamada async extra que pode falhar/travar)
+      premium = item.close || item.add_info?.close || 0;
       if (type === 'STOCK' && premium) setSpotPrice(premium);
 
       const newLeg = {
