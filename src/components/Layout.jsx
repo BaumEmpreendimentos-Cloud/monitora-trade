@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -38,6 +38,7 @@ const PAGE_TITLES = {
   '/configuracoes': 'Configurações',
   '/irpf': 'Imposto de Renda',
   '/rolagem': 'Painel de Rolagem',
+  '/opcoes': 'Análise de Opções',
   '/instagram': 'Instagram',
 };
 
@@ -121,6 +122,7 @@ export default function Layout() {
             <NavLink to="/irpf" className={linkClass}><Receipt className="w-4 h-4 inline -mt-0.5" /> IR</NavLink>
             <NavLink to="/cotacoes" className={linkClass}>Cotações</NavLink>
             <NavLink to="/mensagens" className={linkClass}><MessageSquare className="w-4 h-4 inline -mt-0.5" /> Mensagens</NavLink>
+            <NavLink to="/opcoes" className={linkClass}><Layers className="w-4 h-4 inline -mt-0.5" /> Opções</NavLink>
             <NavLink to="/instagram" className={linkClass}><InstagramIcon className="w-4 h-4 inline -mt-0.5" /> Instagram</NavLink>
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
