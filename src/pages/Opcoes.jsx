@@ -10,6 +10,7 @@ import { calculatePortfolioGreeks } from '@/lib/blackScholes';
 import { analyzePositionProactively, calcUnrealizedPnL } from '@/lib/proactiveEngine';
 import PayoffChart from '@/components/opcoes/PayoffChart';
 import PainelGreeks from '@/components/opcoes/PainelGreeks';
+import PainelRiscoMargem from '@/components/opcoes/PainelRiscoMargem';
 import RolagemProativa from '@/components/opcoes/RolagemProativa';
 import CalculadoraRolagem from '@/components/opcoes/CalculadoraRolagem';
 import AnaliseCenarios from '@/components/opcoes/AnaliseCenarios';
@@ -27,6 +28,7 @@ export default function Opcoes() {
   const [refreshing, setRefreshing] = useState(false);
   const [targetProfit, setTargetProfit] = useState('');
   const [stopLoss, setStopLoss] = useState('');
+  const [simulatedLegs, setSimulatedLegs] = useState(null);
 
   // Carregar grupos e operações abertas
   useEffect(() => {
@@ -64,6 +66,11 @@ export default function Opcoes() {
 
   const selectedGrupo = useMemo(() => grupos.find((g) => g.id === selectedGrupoId), [grupos, selectedGrupoId]);
 
+  // Ao trocar de grupo, limpa qualquer simulação de rolagem pendente
+  useEffect(() => { setSimulatedLegs(null); }, [selectedGrupoId]);
+
+  const displayLegs = simulatedLegs || legs;
+
   const fetchSpot = useCallback(async () => {
     if (!ativoBase) { setSpotPrice(null); return; }
     setRefreshing(true);
@@ -80,9 +87,9 @@ export default function Opcoes() {
   useEffect(() => { fetchSpot(); }, [fetchSpot]);
 
   const greeks = useMemo(() => {
-    if (!legs.length || !spotPrice) return null;
-    return calculatePortfolioGreeks(legs, spotPrice, iv, INTEREST_RATE);
-  }, [legs, spotPrice, iv]);
+    if (!displayLegs.length || !spotPrice) return null;
+    return calculatePortfolioGreeks(displayLegs, spotPrice, iv, INTEREST_RATE);
+  }, [displayLegs, spotPrice, iv]);
 
   const unrealizedPnL = useMemo(() => {
     return calcUnrealizedPnL(legs, spotPrice, iv, INTEREST_RATE);
@@ -230,8 +237,14 @@ export default function Opcoes() {
                 {/* Tab content */}
                 {tab === 'payoff' && (
                   <div className="space-y-4">
+                    {simulatedLegs && (
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-primary/40 bg-primary/5 text-sm">
+                        <span>Exibindo <strong>simulação pós-rolagem</strong> — payoff, gregas e margem refletem a posição resultante.</span>
+                        <Button variant="outline" size="sm" onClick={() => setSimulatedLegs(null)}>Voltar à posição atual</Button>
+                      </div>
+                    )}
                     <PayoffChart
-                      legs={legs}
+                      legs={displayLegs}
                       spotPrice={spotPrice}
                       iv={iv}
                       interestRate={INTEREST_RATE}
@@ -241,12 +254,18 @@ export default function Opcoes() {
                       <h3 className="text-sm font-semibold mb-2">Gregas do Portfólio</h3>
                       <PainelGreeks greeks={greeks} />
                     </div>
+                    <PainelRiscoMargem legs={displayLegs} spotPrice={spotPrice} />
                   </div>
                 )}
 
                 {tab === 'rolagem' && (
                   <div className="space-y-6">
-                    <CalculadoraRolagem operacoes={grupoOps} ativoBase={ativoBase} spotPrice={spotPrice} />
+                    <CalculadoraRolagem
+                      operacoes={grupoOps}
+                      ativoBase={ativoBase}
+                      spotPrice={spotPrice}
+                      onSimulate={(simLegs) => { setSimulatedLegs(simLegs); setTab('payoff'); }}
+                    />
 
                     <div className="border-t pt-4 space-y-4">
                       <Card>

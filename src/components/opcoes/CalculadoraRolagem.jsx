@@ -9,6 +9,8 @@ import {
   groupExercises, findOptionInExercise, findNextExercise, exerciseLabel,
   calcRollFlow, calcOpenFlow, classifyRollResult,
 } from '@/lib/rolagemCalculo';
+import { operacoesToLegs } from '@/lib/opcoesAdapter';
+import { ShieldAlert } from 'lucide-react';
 
 const fmt = (v) => `R$ ${Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const toneClass = {
@@ -17,7 +19,7 @@ const toneClass = {
   bad: 'text-red-600 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900',
 };
 
-export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) {
+export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, onSimulate }) {
   const optionLegs = useMemo(() => (operacoes || []).filter((o) => o.categoria === 'CALL' || o.categoria === 'PUT'), [operacoes]);
   const [chain, setChain] = useState([]);
   const [quotes, setQuotes] = useState({});
@@ -138,6 +140,33 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
   const netFlow = totalClose + totalOpen;
   const totalQty = legFlows.reduce((s, f) => s + (Number(f.cfg.newQty) || 0), 0) + newLegs.reduce((s, l) => s + (Number(l.quantidade) || 0), 0);
   const resultado = classifyRollResult(netFlow, totalQty);
+
+  const simularNoPayoff = () => {
+    const outrasOps = (operacoes || []).filter((o) => o.categoria !== 'CALL' && o.categoria !== 'PUT');
+    const opsRoladas = legFlows.map(({ leg, cfg, match }) => ({
+      id: `${leg.id}_rolada`,
+      categoria: leg.categoria,
+      operacao: leg.operacao,
+      ativo: match?.symbol || leg.ativo,
+      strike: match?.strike ?? leg.strike,
+      preco_entrada: Number(cfg.newPremium) || 0,
+      quantidade: Number(cfg.newQty ?? leg.quantidade) || 0,
+      vencimento: cfg.targetDueDate || leg.vencimento,
+      ativo_base: ativoBase,
+    })).filter((o) => o.quantidade > 0);
+    const opsAdicionadas = newLegs.map((l) => ({
+      id: `${l.id}_nova`,
+      categoria: l.categoria,
+      operacao: l.operacao,
+      ativo: l.ticker || `${ativoBase}_NOVA`,
+      strike: Number(l.strike) || 0,
+      preco_entrada: Number(l.premium) || 0,
+      quantidade: Number(l.quantidade) || 0,
+      vencimento: l.dueDate,
+      ativo_base: ativoBase,
+    })).filter((o) => o.quantidade > 0);
+    onSimulate?.(operacoesToLegs([...outrasOps, ...opsRoladas, ...opsAdicionadas]));
+  };
 
   if (!optionLegs.length && !newLegs.length) {
     return (
@@ -291,6 +320,12 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice }) 
           <p className="text-xs">{resultado.desc}</p>
         </CardContent>
       </Card>
+
+      {onSimulate && (
+        <Button onClick={simularNoPayoff} className="w-full">
+          <ShieldAlert className="w-4 h-4 mr-1" /> Simular Risco e Margem Pós-Rolagem
+        </Button>
+      )}
     </div>
   );
 }
