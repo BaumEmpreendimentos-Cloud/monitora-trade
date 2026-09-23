@@ -114,7 +114,7 @@ export default function Opcoes() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="max-w-[1600px] mx-auto space-y-6">
+      <div className="max-w-[1400px] mx-auto space-y-4">
         {/* Header */}
         <div>
           <h1 className="text-2xl md:text-3xl font-heading font-bold">Análise de Opções</h1>
@@ -136,21 +136,21 @@ export default function Opcoes() {
           <>
             <div>
               <Label className="text-xs text-muted-foreground uppercase mb-2 block">Selecione um Grupo</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5">
                 {gruposAtivos.map((g) => {
                   const count = operacoes.filter((o) => o.grupo_id === g.id).length;
                   return (
                     <button
                       key={g.id}
                       onClick={() => { setSelectedGrupoId(g.id); setTargetProfit(''); setStopLoss(''); }}
-                      className={`p-3 rounded-lg border text-left transition ${
+                      className={`px-2.5 py-2 rounded-lg border text-left transition ${
                         selectedGrupoId === g.id
                           ? 'border-primary bg-primary/5 ring-1 ring-primary'
                           : 'border-border hover:bg-accent'
                       }`}
                     >
-                      <div className="text-sm font-medium truncate">{g.nome}</div>
-                      <div className="text-xs text-muted-foreground">{count} operações</div>
+                      <div className="text-xs font-medium truncate">{g.nome}</div>
+                      <div className="text-[10px] text-muted-foreground">{count} op.</div>
                     </button>
                   );
                 })}
