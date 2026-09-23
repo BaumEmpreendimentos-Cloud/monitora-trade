@@ -67,9 +67,10 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
           const nextEx = findNextExercise(exercises, leg.vencimento);
           targetDueDate = nextEx?.due_date || '';
         }
-        const match = targetDueDate ? findOptionInExercise(exercises, leg.strike, leg.categoria, targetDueDate) : null;
+        const match = targetDueDate ? findOptionInExercise(exercises, existing.targetStrike != null && existing.targetStrike !== '' ? Number(existing.targetStrike) : leg.strike, leg.categoria, targetDueDate) : null;
         next[leg.id] = {
           targetDueDate: targetDueDate || '',
+          targetStrike: existing.targetStrike != null && existing.targetStrike !== '' ? existing.targetStrike : leg.strike,
           newQty: existing.newQty != null ? existing.newQty : leg.quantidade,
           closePrice: existing.closePrice !== '' && existing.closePrice != null ? existing.closePrice : (quotes[leg.ativo] ?? ''),
           newPremium: existing.newPremium !== '' && existing.newPremium != null ? existing.newPremium : (match?.close ?? ''),
@@ -85,8 +86,24 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
       const leg = optionLegs.find((l) => l.id === legId);
       if (!leg) return prev;
       const exercises = getExercises(leg.categoria);
-      const match = findOptionInExercise(exercises, leg.strike, leg.categoria, newDueDate);
-      return { ...prev, [legId]: { ...prev[legId], targetDueDate: newDueDate, newPremium: match?.close ?? '' } };
+      const curStrike = prev[legId]?.targetStrike != null && prev[legId]?.targetStrike !== '' ? Number(prev[legId].targetStrike) : leg.strike;
+      const match = findOptionInExercise(exercises, curStrike, leg.categoria, newDueDate);
+      const ex = exercises.find((e) => e.due_date === newDueDate);
+      const strikes = ex ? [...new Set(ex.options.map((o) => o.strike))].sort((a, b) => a - b) : [];
+      const strikeExists = strikes.some((s) => Math.abs((s || 0) - (curStrike || 0)) < 0.001);
+      const finalStrike = strikeExists ? curStrike : (strikes.length ? strikes.reduce((c, s) => Math.abs((s || 0) - (leg.strike || 0)) < Math.abs((c || 0) - (leg.strike || 0)) ? s : c, strikes[0]) : curStrike);
+      const finalMatch = findOptionInExercise(exercises, finalStrike, leg.categoria, newDueDate);
+      return { ...prev, [legId]: { ...prev[legId], targetDueDate: newDueDate, targetStrike: finalStrike ?? '', newPremium: finalMatch?.close ?? '' } };
+    });
+  };
+
+  const onStrikeChange = (legId, newStrike) => {
+    setLegConfigs((prev) => {
+      const leg = optionLegs.find((l) => l.id === legId);
+      if (!leg) return prev;
+      const exercises = getExercises(leg.categoria);
+      const match = findOptionInExercise(exercises, Number(newStrike), leg.categoria, prev[legId]?.targetDueDate);
+      return { ...prev, [legId]: { ...prev[legId], targetStrike: newStrike, newPremium: match?.close ?? '' } };
     });
   };
 
@@ -128,7 +145,8 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
   const legFlows = useMemo(() => optionLegs.map((leg) => {
     const cfg = legConfigs[leg.id] || {};
     const exercises = getExercises(leg.categoria);
-    const match = findOptionInExercise(exercises, leg.strike, leg.categoria, cfg.targetDueDate);
+    const curStrike = cfg.targetStrike != null && cfg.targetStrike !== '' ? Number(cfg.targetStrike) : leg.strike;
+    const match = findOptionInExercise(exercises, curStrike, leg.categoria, cfg.targetDueDate);
     const flow = calcRollFlow(leg.operacao, leg.quantidade, cfg.newQty ?? leg.quantidade, cfg.closePrice, cfg.newPremium);
     return { leg, cfg, match, exercises, ...flow };
   }), [optionLegs, legConfigs, chain]);
@@ -148,7 +166,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
       categoria: leg.categoria,
       operacao: leg.operacao,
       ativo: match?.symbol || leg.ativo,
-      strike: match?.strike ?? leg.strike,
+      strike: match?.strike ?? (cfg.targetStrike != null && cfg.targetStrike !== '' ? Number(cfg.targetStrike) : leg.strike),
       preco_entrada: Number(cfg.newPremium) || 0,
       quantidade: Number(cfg.newQty ?? leg.quantidade) || 0,
       vencimento: cfg.targetDueDate || leg.vencimento,
@@ -226,6 +244,16 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                       <select value={cfg.targetDueDate || ''} onChange={(e) => onExerciseChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
                         {exercises.length === 0 && <option value="">Sem séries</option>}
                         {exercises.map((ex) => <option key={ex.due_date} value={ex.due_date}>{exerciseLabel(ex)}</option>)}
+                      </select>
+                    </div>
+                    <div><Label className="text-[11px]">Novo Strike (R$)</Label>
+                      <select value={cfg.targetStrike ?? ''} onChange={(e) => onStrikeChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
+                        {(() => {
+                          const ex = exercises.find((e) => e.due_date === cfg.targetDueDate);
+                          const strikes = ex ? [...new Set(ex.options.map((o) => o.strike))].sort((a, b) => a - b) : [];
+                          if (!strikes.length) return <option value="">Sem strikes</option>;
+                          return strikes.map((s) => <option key={s} value={s}>{Number(s).toFixed(2)}</option>);
+                        })()}
                       </select>
                     </div>
                     <div><Label className="text-[11px]">Novo Ticker</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.symbol || '—'}</div></div>
