@@ -11,6 +11,7 @@ import { calculatePortfolioGreeks } from '@/lib/blackScholes';
 import PayoffChart from '@/components/opcoes/PayoffChart';
 import PainelGreeks from '@/components/opcoes/PainelGreeks';
 import PainelRiscoMargem from '@/components/opcoes/PainelRiscoMargem';
+import { useToast } from '@/components/ui/use-toast';
 
 const INTEREST_RATE = 0.1325;
 
@@ -35,6 +36,7 @@ function templateLegsToSimLegs(legs, spotPrice) {
 
 export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv = 0.30, onSpotChange, strategyInfo, ativoBase }) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [legs, setLegs] = useState(() => templateLegsToSimLegs(initialLegs, initialSpotPrice));
   const [saveOpen, setSaveOpen] = useState(false);
   const [spotPrice, setSpotPrice] = useState(initialSpotPrice || '');
@@ -173,10 +175,10 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     try {
       const res = await base44.functions.invoke('oplabMarket', { action: 'search', expr: term, type: 'STOCK,OPTION', limit: 10 });
       const results = res.data?.results || [];
-      if (results.length === 1) {
+      if (results.length > 0) {
         handleSelectResult(results[0]);
       } else {
-        setSearchResults(results);
+        toast({ title: 'Código não encontrado', description: `O código "${term}" não existe ou está incorreto.`, variant: 'destructive' });
       }
     } catch (e) {
       setSearchResults([]);
