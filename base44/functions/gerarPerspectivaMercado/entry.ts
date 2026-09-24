@@ -43,7 +43,7 @@ export default async function(req) {
         if (await base44.auth.isAuthenticated()) authorized = true;
       } catch (e) { /* não autenticado — chamada interna */ }
     }
-    if (!authorized && hasUser) return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    if (!authorized) return Response.json({ error: 'Unauthorized' }, { status: 403 });
 
     const hoje = new Date().toISOString().split('T')[0];
 
