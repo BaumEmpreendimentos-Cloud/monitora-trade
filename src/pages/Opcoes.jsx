@@ -146,7 +146,7 @@ export default function Opcoes() {
     <div className="p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-4">
         {/* Header */}
-        <div>
+        <div data-tour="opcoes-header">
           <h1 className="text-2xl md:text-3xl font-heading font-bold">Análise de Opções</h1>
           <p className="text-sm text-muted-foreground">
             Simulador de Payoff, Rolagem Proativa e Análise de Cenários com IA
@@ -154,7 +154,7 @@ export default function Opcoes() {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2 border-b">
+        <div className="flex gap-2 border-b" data-tour="opcoes-mode">
           <button onClick={() => setMode('posicao')} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${mode === 'posicao' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <LineChartIcon className="w-4 h-4" /> Análise de Posição
           </button>
@@ -178,7 +178,7 @@ export default function Opcoes() {
           </Card>
         ) : (
           <>
-            <div>
+            <div data-tour="opcoes-grupos">
               <Label className="text-xs text-muted-foreground uppercase mb-2 block">Selecione um Grupo</Label>
               <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5">
                 {gruposAtivos.map((g) => {
@@ -203,7 +203,7 @@ export default function Opcoes() {
 
             {/* Painel de controle: spot, IV, refresh */}
             {selectedGrupoId && (
-              <Card>
+              <Card data-tour="opcoes-spot">
                 <CardContent className="p-4 space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
@@ -251,7 +251,7 @@ export default function Opcoes() {
             {/* Tabs */}
             {selectedGrupoId && legs.length > 0 && spotPrice != null && (
               <>
-                <div className="flex gap-1 border-b overflow-x-auto">
+                <div className="flex gap-1 border-b overflow-x-auto" data-tour="opcoes-tabs">
                   {tabs.map((t) => {
                     const Icon = t.icon;
                     return (

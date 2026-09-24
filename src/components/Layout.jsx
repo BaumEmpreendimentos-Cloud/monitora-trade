@@ -8,6 +8,9 @@ import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import CpfRequiredDialog from '@/components/CpfRequiredDialog';
+import { TourProvider } from '@/lib/TourContext';
+import GuidedTour from '@/components/GuidedTour';
+import TourButton from '@/components/TourButton';
 
 const linkClass = ({ isActive }) =>
   `px-3 py-1.5 rounded-md text-sm ${isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`;
@@ -98,6 +101,7 @@ export default function Layout() {
   const premium = isPremium(user);
 
   return (
+    <TourProvider>
     <div className="min-h-screen bg-background pb-safe">
       <header className="md:hidden sticky top-0 z-20 bg-card border-b" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="h-12 flex items-center justify-center px-3 relative">
@@ -107,7 +111,8 @@ export default function Layout() {
             </button>
           )}
           <span className="font-heading font-bold text-sm">{pageTitle}</span>
-          <div className="absolute right-1">
+          <div className="absolute right-1 flex items-center gap-1">
+            <TourButton className="p-2 text-muted-foreground hover:text-foreground" />
             <ThemeToggle />
           </div>
         </div>
@@ -125,6 +130,7 @@ export default function Layout() {
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
             <NavLink to="/configuracoes" className={linkClass}><Settings className="w-4 h-4 inline -mt-0.5" /> Config</NavLink>
+            <TourButton className="px-2 py-1.5 rounded-md text-sm hover:bg-accent text-muted-foreground inline-flex items-center" />
             <ThemeToggle />
             <button onClick={() => logout()} className="px-2 py-1.5 rounded-md text-sm hover:bg-accent text-muted-foreground inline-flex items-center">
               <LogOut className="w-4 h-4" />
@@ -159,6 +165,8 @@ export default function Layout() {
           <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>
         </div>
       </nav>
+      <GuidedTour />
     </div>
+    </TourProvider>
   );
 }

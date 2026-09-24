@@ -287,7 +287,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       )}
 
       {/* Busca & Adicionar */}
-      <div className="p-4 rounded-xl border bg-card space-y-3">
+      <div className="p-4 rounded-xl border bg-card space-y-3" data-tour="sim-busca">
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-muted-foreground" />
           <span className="text-xs font-semibold text-muted-foreground uppercase">Buscar Opção na B3</span>
@@ -437,11 +437,11 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       {/* Payoff + Gregas + Risco/Margem */}
       {legs.length > 0 && spot > 0 && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl border bg-card">
+          <div className="p-4 rounded-xl border bg-card" data-tour="sim-payoff">
             <PayoffChart legs={legs} spotPrice={spot} iv={ivState} interestRate={INTEREST_RATE} ticker={legs[0]?.ticker || ''} />
           </div>
           {greeks && (
-            <div>
+            <div data-tour="sim-gregas">
               <h3 className="text-sm font-semibold mb-2">Gregas do Portfólio</h3>
               <PainelGreeks greeks={greeks} />
             </div>
@@ -457,7 +457,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       {/* Salvar como Operação */}
       {legs.length > 0 && (
         <div className="flex justify-end">
-          <Button onClick={() => setSaveOpen(true)} className="gap-2">
+          <Button onClick={() => setSaveOpen(true)} className="gap-2" data-tour="sim-salvar">
             <Save className="w-4 h-4" /> Salvar como Operação
           </Button>
         </div>

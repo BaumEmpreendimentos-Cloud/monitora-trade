@@ -242,7 +242,7 @@ export default function Operacoes() {
     <PullToRefresh onRefresh={fetchQuotes}>
     <div className="p-4 md:p-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3" data-tour="ops-header">
           <div>
             <h1 className="text-2xl md:text-3xl font-heading font-bold">Operações</h1>
             <p className="text-sm text-muted-foreground">Acompanhamento de operações abertas</p>
@@ -255,11 +255,11 @@ export default function Operacoes() {
             <Button size="sm" variant="outline" asChild>
               <Link to="/rolagem"><Repeat className="w-4 h-4 mr-1" /> Rolagem</Link>
             </Button>
-            <Button size="sm" onClick={() => setFormOpen(true)}><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
+            <Button size="sm" onClick={() => setFormOpen(true)} data-tour="ops-nova"><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" data-tour="ops-quick-links">
           <Button variant="outline" size="sm" asChild><Link to="/historico"><History className="w-4 h-4 mr-1" /> Histórico</Link></Button>
           <Button variant="outline" size="sm" asChild><Link to="/irpf"><Receipt className="w-4 h-4 mr-1" /> IR</Link></Button>
           <Button variant="outline" size="sm" asChild><Link to="/opcoes"><Layers className="w-4 h-4 mr-1" /> Simulador</Link></Button>
@@ -267,7 +267,7 @@ export default function Operacoes() {
           <Button variant="outline" size="sm" asChild><Link to="/estrategias"><Layers className="w-4 h-4 mr-1" /> Estratégias</Link></Button>
         </div>
 
-        <DashboardOperacoes openOps={openOps} closedOps={closedOps} totalDia={totalDia} />
+        <div data-tour="ops-dashboard"><DashboardOperacoes openOps={openOps} closedOps={closedOps} totalDia={totalDia} /></div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -291,7 +291,7 @@ export default function Operacoes() {
               const ativosBaseGrupo = [...new Set(gOpen.map((o) => o.ativo_base || o.ativo))];
               const gDivPendente = dividendos.filter((d) => d.grupo_id === g.id && isDivPendente(d));
               return (
-                <Card key={g.id}>
+                <Card key={g.id} data-tour="ops-grupo">
                   <CardContent className="p-0">
                     <div className="overflow-x-auto hidden md:block">
                     <table className="w-full text-sm">
@@ -308,9 +308,9 @@ export default function Operacoes() {
                                   )}
                                 </div>
                                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditarGrupo(g); }} title="Editar identificador"><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo">Mapa de Calor</Button>
+                                <Button size="sm" variant="secondary" className="bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500 text-white border-0 hover:opacity-90 text-xs" onClick={(e) => { e.stopPropagation(); setSelectedOp(null); setSelectedGroup((p) => (p === g.id ? null : g.id)); }} title="Mapa de calor do grupo" data-tour="ops-mapa-calor">Mapa de Calor</Button>
                                 <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
-                                <Button size="sm" variant="outline" className={`text-xs ${hasAlertaGrupo(g.id) ? 'text-amber-600 border-amber-400' : ''}`} onClick={(e) => { e.stopPropagation(); setAlertaGrupo(g); }} title="Criar alerta de resultado">{hasAlertaGrupo(g.id) ? <BellRing className="w-3.5 h-3.5 mr-1" /> : <Bell className="w-3.5 h-3.5 mr-1" />} Alerta</Button>
+                                <Button size="sm" variant="outline" className={`text-xs ${hasAlertaGrupo(g.id) ? 'text-amber-600 border-amber-400' : ''}`} onClick={(e) => { e.stopPropagation(); setAlertaGrupo(g); }} title="Criar alerta de resultado" data-tour="ops-alerta">{hasAlertaGrupo(g.id) ? <BellRing className="w-3.5 h-3.5 mr-1" /> : <Bell className="w-3.5 h-3.5 mr-1" />} Alerta</Button>
                                 <Button size="sm" variant="outline" className="text-xs" asChild onClick={(e) => e.stopPropagation()} title="Ir para Análise de Opções"><Link to="/opcoes" state={{ selectedGrupoId: g.id, tab: 'rolagem', mode: 'posicao' }}><Repeat className="w-3.5 h-3.5 mr-1" /> Rolagem</Link></Button>
                                 {gOpen.some((o) => o.simulada) && (
                                   <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDeleteGrupoSimulado(g); }} title="Excluir operações simuladas"><Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir Sim.</Button>
