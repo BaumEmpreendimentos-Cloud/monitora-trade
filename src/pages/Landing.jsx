@@ -40,7 +40,7 @@ export default function Landing() {
         </div>
       </header>
 
-      <QuotesCarousel />
+      <QuotesCarousel cotacoes={perspectiva?.cotacoes} />
 
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-6">

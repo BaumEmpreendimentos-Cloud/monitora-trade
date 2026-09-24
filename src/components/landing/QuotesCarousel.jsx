@@ -1,33 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState, useEffect, useRef } from 'react';
 import { TrendingUp, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 
-const TICKERS = ['PETR4', 'VALE3', 'ITUB4', 'BBAS3', 'WEGE3', 'B3SA3', 'ABEV3', 'BOVA11'];
-
-export default function QuotesCarousel() {
-  const [quotes, setQuotes] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function QuotesCarousel({ cotacoes }) {
   const [autoScroll, setAutoScroll] = useState(true);
   const scrollRef = useRef(null);
 
-  const fetchQuotes = useCallback(async () => {
-    try {
-      const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: TICKERS.join(',') });
-      const arr = res.data?.quotes || [];
-      const list = TICKERS.map((t) => {
-        const q = arr.find((x) => (x.symbol || x.ticker) === t);
-        if (!q) return null;
-        return { symbol: t, price: q.close, change: q.variation ?? 0 };
-      }).filter(Boolean);
-      setQuotes(list);
-    } catch (e) { /* mercado indisponível — carrossel oculto */ }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
-
   useEffect(() => {
-    if (!autoScroll || !quotes.length) return;
+    if (!autoScroll || !cotacoes?.length) return;
     const interval = setInterval(() => {
       const el = scrollRef.current;
       if (!el) return;
@@ -38,13 +17,13 @@ export default function QuotesCarousel() {
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [autoScroll, quotes.length]);
+  }, [autoScroll, cotacoes]);
 
   const handleScroll = (dir) => {
     scrollRef.current?.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
   };
 
-  if (loading || !quotes.length) return null;
+  if (!cotacoes?.length) return null;
 
   return (
     <div className="w-full bg-card border-y">
@@ -68,7 +47,7 @@ export default function QuotesCarousel() {
           className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-2 scroll-smooth"
           style={{ scrollbarWidth: 'none' }}
         >
-          {quotes.map((q) => {
+          {cotacoes.map((q) => {
             const positive = q.change >= 0;
             return (
               <div key={q.symbol} className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-background text-xs font-mono">
