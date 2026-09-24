@@ -14,34 +14,6 @@ const TEMPLATE_ROWS = [
   ['Exemplo', 'PETR4', '', 'DIV', '', '100', '0,80', '2026-01-15', '', '', '', '', '', '2026-02-15'],
 ];
 
-const SCHEMA = {
-  type: 'object',
-  properties: {
-    rows: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          identificador: { type: 'string' },
-          ativo: { type: 'string' },
-          ativo_base: { type: 'string' },
-          categoria: { type: 'string' },
-          operacao: { type: 'string' },
-          quantidade: { type: 'string' },
-          preco_entrada: { type: 'string' },
-          data_abertura: { type: 'string' },
-          strike: { type: 'string' },
-          vencimento: { type: 'string' },
-          preco_fechamento: { type: 'string' },
-          resultado_valor: { type: 'string' },
-          resultado_pct: { type: 'string' },
-          data_fechamento: { type: 'string' },
-        },
-      },
-    },
-  },
-};
-
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'DIV'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 
@@ -209,9 +181,9 @@ export default function ImportarHistorico() {
         const text = await file.text();
         rows = parseCSV(text);
       } else {
-        const up = await base44.integrations.Core.UploadFile({ file });
-        const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: up.file_url, json_schema: SCHEMA });
-        rows = (res.output && res.output.rows) || (Array.isArray(res.output) ? res.output : []);
+        const up = await base44.integrations.Core.UploadPublicFile({ file });
+        const res = await base44.functions.invoke('extrairHistorico', { file_url: up.file_url });
+        rows = res.data.rows || [];
       }
       if (!rows.length) { setError('Nenhuma operação encontrada no arquivo.'); setProcessing(false); return; }
 

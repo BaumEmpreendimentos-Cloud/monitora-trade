@@ -136,7 +136,7 @@ export default async function(req) {
       // E-mail
       if (notifEmail && userRec?.email) {
         try {
-          await base44.integrations.Core.SendEmail({ to: userRec.email, subject: 'Alerta — Monitora Trade', body: texto });
+          await base44.asServiceRole.integrations.Core.SendEmail({ to: userRec.email, subject: 'Alerta — Monitora Trade', body: texto });
         } catch (e) { console.error('Email send failed:', e.message); }
       }
       // Push notification nativa (iOS/Android)

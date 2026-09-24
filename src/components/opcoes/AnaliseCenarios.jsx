@@ -66,40 +66,17 @@ export default function AnaliseCenarios({ legs, spotPrice, iv = 0.28, interestRa
         `${l.side === 'BUY' ? 'Compra' : 'Venda'} ${l.quantity}x ${l.type} ${l.ticker || ''} strike ${l.strike} prêmio R$ ${l.premium}`
       ).join('; ');
 
-      const effectiveIv = ((iv + ivShock / 100) * 100).toFixed(1);
-
-      const prompt = `Você é um analista quantitativo de opções da B3 (bolsa brasileira). Analise o seguinte cenário de stress-test para uma posição em ${ticker}:
-
-ATIVO: ${ticker}
-PREÇO ATUAL: R$ ${spotPrice.toFixed(2)}
-IV EFETIVA: ${effectiveIv}%
-TAXA SELIC: ${(interestRate * 100).toFixed(2)}%
-
-POSIÇÃO (pernas):
-${legsDesc}
-
-CENÁRIO SIMULADO: ${scenarioText || 'Análise geral de risco da posição sob o choque de IV atual'}
-
-Forneça uma análise técnica e concisa em JSON com:
-- executiveSummary: resumo executivo do perfil de risco da posição (1-2 frases)
-- estimatedPnLImpact: estimativa de impacto no P&L sob o cenário simulado
-- b3MarginRisk: avaliação de risco de margem na B3
-- recommendedActions: array de 3 a 5 ações recomendadas para o operador`;
-
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            executiveSummary: { type: 'string' },
-            estimatedPnLImpact: { type: 'string' },
-            b3MarginRisk: { type: 'string' },
-            recommendedActions: { type: 'array', items: { type: 'string' } },
-          },
-        },
+      const response = await base44.functions.invoke('analiseCenarios', {
+        ticker,
+        spotPrice,
+        iv,
+        ivShock,
+        interestRate,
+        legsDesc,
+        scenarioText: scenarioText || '',
       });
 
-      setAiAnalysis(res);
+      setAiAnalysis(response.data);
     } catch (err) {
       setAiError(err.message || 'Erro ao processar análise com IA.');
     } finally {
