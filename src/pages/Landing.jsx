@@ -42,14 +42,14 @@ export default function Landing() {
 
       <QuotesCarousel cotacoes={perspectiva?.cotacoes} />
 
-      <section className="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-6">
+      <section className="max-w-6xl mx-auto px-4 py-8 md:py-12 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-3">
           <Clock className="w-3.5 h-3.5" /> 15 dias grátis para testar
         </div>
-        <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight mb-4">
+        <h1 className="text-3xl md:text-5xl font-heading font-bold tracking-tight mb-2">
           Controle total das suas operações na B3
         </h1>
-        <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto mb-8">
+        <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto mb-5">
           Registre abertura e encerramento de operações, acompanhe cotações em tempo real
           e analise sua performance com cálculos automáticos.
         </p>
@@ -81,7 +81,7 @@ export default function Landing() {
 
       {perspectiva && (
         <section className="max-w-6xl mx-auto px-4 pb-16 space-y-5">
-          <h2 className="text-xl md:text-2xl font-heading font-bold text-center mb-2">Radar de Mercado B3, compilado por IA</h2>
+          <h2 className="text-xl md:text-2xl font-heading font-bold text-center mb-2">Radar de Mercado B3</h2>
           <PainelPerspectivasIA perspectiva={perspectiva} />
           <TermometroRiscoEleitoral perspectiva={perspectiva} />
           <RadarTransmissaoMacro perspectiva={perspectiva} />

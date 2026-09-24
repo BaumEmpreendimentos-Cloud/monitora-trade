@@ -24,7 +24,7 @@ export default function QuadroNoticias({ perspectiva }) {
     <div className="rounded-2xl border bg-card p-5 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b">
         <Newspaper className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-bold uppercase tracking-wide">Notícias Compiladas pela IA</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wide">Notícias do Mercado</h3>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
