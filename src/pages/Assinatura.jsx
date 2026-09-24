@@ -121,7 +121,7 @@ export default function Assinatura() {
                 )}
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-3xl font-heading font-bold">R$ 30,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
+                    <p className="text-3xl font-heading font-bold">R$ 15,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
                   </div>
                   <ul className="text-sm space-y-1.5 text-muted-foreground">
                     <li>• Cotações em tempo real da B3</li>

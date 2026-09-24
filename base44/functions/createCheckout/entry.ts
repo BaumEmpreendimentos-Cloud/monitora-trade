@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import Stripe from 'npm:stripe@17.7.0';
 
-const PRICE_ID = 'price_1U3eQIReRwwryMF8aorhFK5i';
+const PRICE_ID = 'price_1UJFfPReRwwryMF82hH3I3NR';
 
 export default async function(req) {
   try {

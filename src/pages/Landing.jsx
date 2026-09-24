@@ -93,7 +93,7 @@ export default function Landing() {
         <div className="rounded-xl border bg-card p-8">
           <Crown className="w-8 h-8 text-amber-500 mx-auto mb-3" />
           <h2 className="text-2xl font-heading font-bold mb-2">Plano Premium</h2>
-          <p className="text-3xl font-heading font-bold mb-1">R$ 30,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
+          <p className="text-3xl font-heading font-bold mb-1">R$ 15,00<span className="text-base font-normal text-muted-foreground">/mês</span></p>
           <p className="text-sm text-muted-foreground mb-6">Após o período de 15 dias grátis.</p>
           <Link to="/register?returnTo=/operacoes">
             <Button size="lg">Iniciar teste gratuito</Button>
