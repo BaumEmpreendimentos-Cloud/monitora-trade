@@ -1,0 +1,178 @@
+{
+  "name": "PerspectivaMercado",
+  "type": "object",
+  "properties": {
+    "data_referencia": {
+      "type": "string",
+      "title": "Data de refer\u00eancia (YYYY-MM-DD)"
+    },
+    "estado_animico": {
+      "type": "number",
+      "title": "Estado An\u00edmico B3 (0-100)"
+    },
+    "mood_label": {
+      "type": "string",
+      "title": "R\u00f3tulo do estado an\u00edmico"
+    },
+    "bias": {
+      "type": "string",
+      "enum": [
+        "BULLISH",
+        "BEARISH",
+        "NEUTRO"
+      ],
+      "title": "Vi\u00e9s do mercado"
+    },
+    "bias_confidence": {
+      "type": "number",
+      "title": "Confian\u00e7a do vi\u00e9s (%)"
+    },
+    "resumo_ia": {
+      "type": "string",
+      "title": "Perspectiva di\u00e1ria da IA"
+    },
+    "catalisadores": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Catalisadores B3 e externos"
+    },
+    "recomendacoes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Diretrizes operacionais B3"
+    },
+    "risco_eleitoral_nivel": {
+      "type": "string",
+      "title": "N\u00edvel de risco eleitoral"
+    },
+    "risco_eleitoral_resumo": {
+      "type": "string",
+      "title": "Leitura do risco eleitoral e fiscal"
+    },
+    "premio_di_hedge": {
+      "type": "string",
+      "title": "Pr\u00eamio DI / Hedge sugerido"
+    },
+    "radar_macro": {
+      "type": "array",
+      "title": "Radar de transmiss\u00e3o macroecon\u00f4mica",
+      "items": {
+        "type": "object",
+        "properties": {
+          "indicador": {
+            "type": "string"
+          },
+          "variacao": {
+            "type": "string"
+          },
+          "impacta": {
+            "type": "string"
+          },
+          "correlacao": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "BULLISH_FOR_B3",
+              "BEARISH_FOR_B3",
+              "NEUTRAL"
+            ]
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "noticias": {
+      "type": "array",
+      "title": "Not\u00edcias compiladas pela IA",
+      "items": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string"
+          },
+          "resumo": {
+            "type": "string"
+          },
+          "fonte": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "sentimento": {
+            "type": "string",
+            "enum": [
+              "bullish",
+              "bearish",
+              "neutro"
+            ]
+          },
+          "score": {
+            "type": "number"
+          },
+          "tempo": {
+            "type": "string"
+          },
+          "conexao_b3": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cotacoes": {
+      "type": "array",
+      "title": "Cota\u00e7\u00f5es em destaque",
+      "items": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "change": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "gerado_em": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Gerado em"
+    }
+  },
+  "required": [
+    "data_referencia"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

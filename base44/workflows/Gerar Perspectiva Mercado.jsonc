@@ -1,0 +1,43 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 8,13 * * 1-5",
+      "one_time_date": null,
+      "timezone": "America/Sao_Paulo",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "gerar_perspectiva_mercado",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "gerar": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "gerarPerspectivaMercado"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Gerar perspectiva de mercado com IA"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Gerar Perspectiva Mercado",
+  "description": "Gera diariamente (8h e 13h em dias \u00fateis) a an\u00e1lise de mercado B3 compilada por IA para a p\u00e1gina inicial"
+}

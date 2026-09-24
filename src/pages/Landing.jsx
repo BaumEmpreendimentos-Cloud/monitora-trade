@@ -4,9 +4,16 @@ import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LineChart, Crown, TrendingUp, Clock, BarChart3, ArrowRight } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import QuotesCarousel from '@/components/landing/QuotesCarousel';
+import PainelPerspectivasIA from '@/components/landing/PainelPerspectivasIA';
+import TermometroRiscoEleitoral from '@/components/landing/TermometroRiscoEleitoral';
+import RadarTransmissaoMacro from '@/components/landing/RadarTransmissaoMacro';
+import QuadroNoticias from '@/components/landing/QuadroNoticias';
+import { usePerspectivaMercado } from '@/lib/usePerspectivaMercado';
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
+  const { perspectiva } = usePerspectivaMercado();
 
   if (isAuthenticated) {
     return <Navigate to="/operacoes" replace />;
@@ -32,6 +39,8 @@ export default function Landing() {
           </nav>
         </div>
       </header>
+
+      <QuotesCarousel />
 
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-24 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-6">
@@ -69,6 +78,16 @@ export default function Landing() {
           </div>
         ))}
       </section>
+
+      {perspectiva && (
+        <section className="max-w-6xl mx-auto px-4 pb-16 space-y-5">
+          <h2 className="text-xl md:text-2xl font-heading font-bold text-center mb-2">Radar de Mercado B3, compilado por IA</h2>
+          <PainelPerspectivasIA perspectiva={perspectiva} />
+          <TermometroRiscoEleitoral perspectiva={perspectiva} />
+          <RadarTransmissaoMacro perspectiva={perspectiva} />
+          <QuadroNoticias perspectiva={perspectiva} />
+        </section>
+      )}
 
       <section className="max-w-3xl mx-auto px-4 pb-20 text-center">
         <div className="rounded-xl border bg-card p-8">
