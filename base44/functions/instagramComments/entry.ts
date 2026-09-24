@@ -14,6 +14,8 @@ async function igFetch(path: string) {
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('instagram');
     const token = `access_token=${encodeURIComponent(accessToken)}`;
 

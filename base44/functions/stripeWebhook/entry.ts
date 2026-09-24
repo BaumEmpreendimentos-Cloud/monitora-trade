@@ -2,6 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import Stripe from 'npm:stripe@17.7.0';
 
+// Server-side fixed reward: never trust user-controlled beneficio_dias field
+const BENEFICIO_DIAS = 30;
+
 function periodEndISO(sub) {
   const ts = sub && sub.current_period_end;
   return ts ? new Date(ts * 1000).toISOString() : null;
@@ -47,12 +50,21 @@ export default async function(req) {
         try {
           const indicacoes = await base44.asServiceRole.entities.Indicacao.filter({ user_id: userId, status: 'pendente' });
           for (const ind of indicacoes) {
+            // Reject self-referrals (indicado_por_id === user_id)
+            if (ind.indicado_por_id === ind.user_id) {
+              await base44.asServiceRole.entities.Indicacao.update(ind.id, {
+                status: 'convertido',
+                data_conversao: new Date().toISOString(),
+                recompensa_aplicada: false
+              });
+              continue;
+            }
             let rewarded = false;
             try {
               const referrer = await base44.asServiceRole.entities.User.get(ind.indicado_por_id);
               if (referrer?.stripe_customer_id) {
                 await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
-                  amount: -((ind.beneficio_dias || 30) * 100),
+                  amount: -(BENEFICIO_DIAS * 100),
                   currency: 'brl',
                   description: 'Crédito por indicação de usuário'
                 });
@@ -71,9 +83,14 @@ export default async function(req) {
         try {
           const pending = await base44.asServiceRole.entities.Indicacao.filter({ indicado_por_id: userId, status: 'convertido', recompensa_aplicada: false });
           for (const ind of pending) {
+            // Reject self-referrals
+            if (ind.indicado_por_id === ind.user_id) {
+              await base44.asServiceRole.entities.Indicacao.update(ind.id, { recompensa_aplicada: true });
+              continue;
+            }
             try {
               await stripe.customers.createBalanceTransaction(customerId, {
-                amount: -((ind.beneficio_dias || 30) * 100),
+                amount: -(BENEFICIO_DIAS * 100),
                 currency: 'brl',
                 description: 'Crédito por indicação de usuário'
               });
