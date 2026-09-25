@@ -57,6 +57,13 @@
         }
       }
     },
+    "carousel_tickers": {
+      "type": "array",
+      "title": "Tickers da barra de cota\u00e7\u00f5es",
+      "items": {
+        "type": "string"
+      }
+    },
     "notif_push": {
       "type": "boolean",
       "title": "Notifica\u00e7\u00f5es Push",

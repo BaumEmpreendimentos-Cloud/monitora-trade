@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
+import CarouselTickersCard from '@/components/config/CarouselTickersCard';
 
 export default function Configuracoes() {
   const { user, checkUserAuth, logout } = useAuth();
@@ -133,6 +134,8 @@ export default function Configuracoes() {
             </div>
           </CardContent>
         </Card>
+
+        <CarouselTickersCard />
 
         <Card className="border-destructive/50">
           <CardHeader><CardTitle className="text-destructive">Zona de Perigo</CardTitle></CardHeader>
