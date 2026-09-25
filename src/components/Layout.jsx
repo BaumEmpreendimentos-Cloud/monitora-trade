@@ -8,6 +8,7 @@ import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import CpfRequiredDialog from '@/components/CpfRequiredDialog';
+import HeaderQuotesCarousel from '@/components/landing/HeaderQuotesCarousel';
 import { TourProvider } from '@/lib/TourContext';
 import GuidedTour from '@/components/GuidedTour';
 import TourButton from '@/components/TourButton';
@@ -138,6 +139,7 @@ export default function Layout() {
           </nav>
         </div>
       </header>
+      <HeaderQuotesCarousel />
       {!premium && !admin && daysLeft !== null && daysLeft > 0 && (
         <div className="bg-amber-50 text-amber-800 text-xs text-center py-1.5 px-2">
           Período grátis: restam {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'}.{' '}
