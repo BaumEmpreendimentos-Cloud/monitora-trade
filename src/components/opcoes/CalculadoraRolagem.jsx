@@ -50,8 +50,38 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
       (quoteRes.data?.quotes || []).forEach((q) => { qMap[q.symbol] = q.close; });
       setQuotes(qMap);
       setLastUpdate(new Date());
+      // Forçar atualização dos preços de fechamento e prêmios das novas séries
+      setLegConfigs((prev) => {
+        const next = { ...prev };
+        optionLegs.forEach((leg) => {
+          const existing = next[leg.id] || {};
+          const allEx = groupExercises(chainOptions, leg.categoria);
+          const exercises = showWeekly ? allEx : allEx.filter((ex) => !ex.week);
+          let targetDueDate = existing.targetDueDate;
+          if (!targetDueDate && exercises.length) {
+            const nextEx = findNextExercise(exercises, leg.vencimento);
+            targetDueDate = nextEx?.due_date || '';
+          }
+          // Se a série atual não existe mais no filtro (ex.: semanais desligado), recompute
+          if (targetDueDate && exercises.length && !exercises.find((e) => e.due_date === targetDueDate)) {
+            const nextEx = findNextExercise(exercises, leg.vencimento);
+            targetDueDate = nextEx?.due_date || '';
+          }
+          const curStrike = existing.targetStrike != null && existing.targetStrike !== '' ? Number(existing.targetStrike) : leg.strike;
+          const match = targetDueDate ? findOptionInExercise(exercises, curStrike, leg.categoria, targetDueDate) : null;
+          next[leg.id] = {
+            ...existing,
+            targetDueDate: targetDueDate || '',
+            targetStrike: curStrike,
+            newQty: existing.newQty != null ? existing.newQty : leg.quantidade,
+            closePrice: qMap[leg.ativo] ?? '',
+            newPremium: match?.close ?? '',
+          };
+        });
+        return next;
+      });
     } catch (e) { /* ignore */ } finally { setLoading(false); }
-  }, [ativoBase, optionLegs]);
+  }, [ativoBase, optionLegs, showWeekly]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -149,7 +179,29 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
     const match = findOptionInExercise(exercises, curStrike, leg.categoria, cfg.targetDueDate);
     const flow = calcRollFlow(leg.operacao, leg.quantidade, cfg.newQty ?? leg.quantidade, cfg.closePrice, cfg.newPremium);
     return { leg, cfg, match, exercises, ...flow };
-  }), [optionLegs, legConfigs, chain]);
+  }), [optionLegs, legConfigs, chain, getExercises]);
+
+  // Ao alternar séries semanais, revalidar a série selecionada de cada perna
+  useEffect(() => {
+    setLegConfigs((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      optionLegs.forEach((leg) => {
+        const existing = next[leg.id] || {};
+        const exercises = getExercises(leg.categoria);
+        if (!exercises.length) return;
+        if (!existing.targetDueDate || !exercises.find((e) => e.due_date === existing.targetDueDate)) {
+          const nextEx = findNextExercise(exercises, leg.vencimento);
+          const newDue = nextEx?.due_date || '';
+          const curStrike = existing.targetStrike != null && existing.targetStrike !== '' ? Number(existing.targetStrike) : leg.strike;
+          const match = newDue ? findOptionInExercise(exercises, curStrike, leg.categoria, newDue) : null;
+          next[leg.id] = { ...existing, targetDueDate: newDue, newPremium: match?.close ?? '' };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [showWeekly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newLegFlows = useMemo(() => newLegs.map((leg) => ({ leg, openFlow: calcOpenFlow(leg.operacao, leg.quantidade, leg.premium) })), [newLegs]);
 
