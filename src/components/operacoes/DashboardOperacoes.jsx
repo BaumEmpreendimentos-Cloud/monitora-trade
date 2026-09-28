@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, XAxis } from 'recharts';
-import { Activity, TrendingUp, CalendarDays, Target } from 'lucide-react';
+import { Activity, TrendingUp, CalendarDays, Target, ChevronDown } from 'lucide-react';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
@@ -24,6 +24,7 @@ function Metric({ icon: Icon, label, value, valueClass = '' }) {
 }
 
 export default function DashboardOperacoes({ openOps, closedOps, totalDia }) {
+  const [showCharts, setShowCharts] = useState(false);
   const chartData = useMemo(() => {
     const sorted = [...closedOps]
       .filter((o) => o.data_fechamento)
@@ -73,6 +74,14 @@ export default function DashboardOperacoes({ openOps, closedOps, totalDia }) {
 
   return (
     <div className="space-y-3">
+      <button
+        onClick={() => setShowCharts((p) => !p)}
+        className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground"
+      >
+        <span>Histórico de Resultados e Gráficos</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${showCharts ? 'rotate-180' : ''}`} />
+      </button>
+      {showCharts && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card>
           <CardContent className="p-4">
@@ -139,6 +148,7 @@ export default function DashboardOperacoes({ openOps, closedOps, totalDia }) {
           </CardContent>
         </Card>
       </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden">
         <Metric icon={Activity} label="Operações Abertas" value={String(openOps.length)} />
