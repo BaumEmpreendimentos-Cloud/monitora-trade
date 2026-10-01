@@ -46,7 +46,7 @@ export default function MapaCalorGrupo({ operacoes, quotes }) {
 
   const totalPnl = (percentMove) => operacoes.reduce((sum, o) => {
     if (isOption(o.categoria)) {
-      const basePrice = quotes[o.ativo_base];
+      const basePrice = quotes[o.ativo_base || referencia];
       if (basePrice == null || basePrice === '') return sum;
       const scenario = Number(basePrice) * (1 + percentMove);
       const r = calcResultadoOpcaoUnderlying(o.categoria, o.operacao, o.strike, o.preco_entrada, o.quantidade, scenario);
