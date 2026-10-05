@@ -109,7 +109,7 @@ export default function Operacoes() {
     const dir = o.operacao === 'VENDA' ? -1 : 1;
     return (cur - prev) * o.quantidade * dir;
   };
-  const groupDia = (id) => openOps.filter((o) => o.grupo_id === id).reduce((s, o) => s + dayVar(o), 0);
+  const groupDia = (id) => openOps.filter((o) => o.grupo_id === id && !o.simulada).reduce((s, o) => s + dayVar(o), 0);
   const groupAberto = (id) => openOps.filter((o) => o.grupo_id === id).reduce((s, o) => {
     const r = calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]);
     return s + (r || 0);
@@ -121,7 +121,7 @@ export default function Operacoes() {
   const totalDivPendente = dividendos.filter(isDivPendente).reduce((s, d) => s + (d.valor_total || 0), 0);
   const totalDivPago = dividendos.filter((d) => !isDivPendente(d)).reduce((s, d) => s + (d.valor_total || 0), 0);
 
-  const totalDia = openOps.reduce((s, o) => s + dayVar(o), 0);
+  const totalDia = openOps.filter((o) => !o.simulada).reduce((s, o) => s + dayVar(o), 0);
   const totalHist = closedOps.reduce((s, o) => s + (o.resultado_valor || 0), 0);
   const totalAberto = openOps.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0);
   const totalEncerradas = totalHist + totalDivPago;
