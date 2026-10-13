@@ -187,13 +187,16 @@ export default function Opcoes() {
           />
         ) : (
         <>
-        {/* Seletor de grupo ou banner de posição simulada */}
-        {simPosicao ? (
+        {/* Banner de posição simulada do Simulador Livre */}
+        {simPosicao && (
           <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-primary/40 bg-primary/5 text-sm">
             <span>Exibindo <strong>posição do Simulador Livre</strong> — valide payoff, gregas, margem, rolagem e cenários antes de abrir a operação.</span>
             <Button variant="outline" size="sm" onClick={() => { setSimPosicao(null); setSpotPrice(null); }}>Voltar à seleção de grupo</Button>
           </div>
-        ) : gruposAtivos.length === 0 ? (
+        )}
+
+        {/* Seletor de grupo (apenas quando não há posição simulada) */}
+        {!simPosicao && gruposAtivos.length === 0 && (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-sm text-muted-foreground">
@@ -201,32 +204,34 @@ export default function Opcoes() {
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            <div data-tour="opcoes-grupos">
-              <Label className="text-xs text-muted-foreground uppercase mb-2 block">Selecione um Grupo</Label>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5">
-                {gruposAtivos.map((g) => {
-                  const count = operacoes.filter((o) => o.grupo_id === g.id).length;
-                  return (
-                    <button
-                      key={g.id}
-                      onClick={() => { setSelectedGrupoId(g.id); setTargetProfit(''); setStopLoss(''); }}
-                      className={`px-2.5 py-2 rounded-lg border text-left transition ${
-                        selectedGrupoId === g.id
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                          : 'border-border hover:bg-accent'
-                      }`}
-                    >
-                      <div className="text-xs font-medium truncate">{g.nome}</div>
-                      <div className="text-[10px] text-muted-foreground">{count} op.</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        )}
 
-            {/* Painel de controle: spot, IV, refresh */}
+        {!simPosicao && gruposAtivos.length > 0 && (
+          <div data-tour="opcoes-grupos">
+            <Label className="text-xs text-muted-foreground uppercase mb-2 block">Selecione um Grupo</Label>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5">
+              {gruposAtivos.map((g) => {
+                const count = operacoes.filter((o) => o.grupo_id === g.id).length;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => { setSelectedGrupoId(g.id); setTargetProfit(''); setStopLoss(''); }}
+                    className={`px-2.5 py-2 rounded-lg border text-left transition ${
+                      selectedGrupoId === g.id
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <div className="text-xs font-medium truncate">{g.nome}</div>
+                    <div className="text-[10px] text-muted-foreground">{count} op.</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Painel de controle: spot, IV, refresh */}
             {(selectedGrupoId || simPosicao) && (
               <Card data-tour="opcoes-spot">
                 <CardContent className="p-4 space-y-4">
@@ -389,8 +394,6 @@ export default function Opcoes() {
                 </CardContent>
               </Card>
             )}
-          </>
-        )}
         </>
         )}
       </div>
