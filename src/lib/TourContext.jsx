@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { tourStepsOperacoes, tourStepsOpcoes } from '@/lib/tourSteps';
 
 const TourContext = createContext(null);
@@ -15,15 +17,35 @@ export function TourProvider({ children }) {
   const [steps, setSteps] = useState([]);
   const [screen, setScreen] = useState(null);
   const location = useLocation();
+  const { user } = useAuth();
+  const persistingRef = useRef(false);
 
+  // Server (user profile) is the source of truth; localStorage is a fallback
+  // for the current session before the profile loads.
   const getSeen = () => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+    const local = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } })();
+    const remote = (user && user.tour_visto) || {};
+    return { ...local, ...remote };
   };
 
-  const markSeen = (scr) => {
-    const seen = getSeen();
-    seen[scr] = true;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seen));
+  const markSeen = async (scr) => {
+    // Optimistically update localStorage so the UI reacts immediately.
+    const local = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } })();
+    local[scr] = true;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+
+    // Persist to the user profile so it survives logout and other devices.
+    if (user && !persistingRef.current) {
+      persistingRef.current = true;
+      try {
+        const remote = (user.tour_visto) || {};
+        await base44.auth.updateMe({ tour_visto: { ...remote, [scr]: true } });
+      } catch (e) {
+        // Silent: localStorage already keeps this session consistent.
+      } finally {
+        persistingRef.current = false;
+      }
+    }
   };
 
   const startTour = (scr) => {
@@ -52,9 +74,12 @@ export function TourProvider({ children }) {
     stopTour();
   };
 
-  // Auto-start on first visit
+  // Auto-start on first visit (per user, across devices)
   useEffect(() => {
     if (active) return;
+    // Wait until the user profile has loaded so we don't re-trigger a tour
+    // the user already completed on another device/session.
+    if (!user) return;
     const seen = getSeen();
     if (location.pathname === '/operacoes' && !seen.operacoes) {
       const t = setTimeout(() => startTour('operacoes'), 1000);
@@ -64,7 +89,7 @@ export function TourProvider({ children }) {
       const t = setTimeout(() => startTour('opcoes'), 1000);
       return () => clearTimeout(t);
     }
-  }, [location.pathname, active]);
+  }, [location.pathname, active, user]);
 
   return (
     <TourContext.Provider value={{ active, currentStep, steps, screen, next, prev, stopTour, finishTour, startTour }}>

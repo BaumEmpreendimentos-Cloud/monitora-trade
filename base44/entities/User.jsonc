@@ -82,6 +82,18 @@
     "cpf": {
       "type": "string",
       "title": "CPF"
+    },
+    "tour_visto": {
+      "type": "object",
+      "title": "Tours guiados j\u00e1 visualizados",
+      "properties": {
+        "operacoes": {
+          "type": "boolean"
+        },
+        "opcoes": {
+          "type": "boolean"
+        }
+      }
     }
   },
   "required": [
