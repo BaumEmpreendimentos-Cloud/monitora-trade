@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Search, Layers, Sparkles, ChevronDown, ChevronUp, Lightbulb, Shield, Gauge } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Search, Layers, Sparkles, ChevronDown, ChevronUp, Lightbulb, Shield, Gauge, Loader2 } from 'lucide-react';
 import { strategyTemplates } from '@/lib/strategyTemplates';
 
 const difficultyColors = {
@@ -9,7 +9,7 @@ const difficultyColors = {
   'Profissional': 'text-red-600 bg-red-50 border-red-200',
 };
 
-export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase }) {
+export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase, loading = false }) {
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState(null);
@@ -190,10 +190,11 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                 <button
                   type="button"
                   onClick={() => onSelectTemplate(template)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-primary text-foreground hover:text-primary-foreground font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-primary text-foreground hover:text-primary-foreground font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <span>Simular no Payoff</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>{loading ? 'Buscando opções...' : 'Simular no Payoff'}</span>
+                  {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>

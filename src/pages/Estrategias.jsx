@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import StrategyCatalog from '@/components/opcoes/StrategyCatalog';
+import { resolveStrategyLegs } from '@/lib/strategyResolver';
 
 export default function Estrategias() {
   const navigate = useNavigate();
   const [ativoBase, setAtivoBase] = useState('PETR4');
   const [spotPrice, setSpotPrice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   const fetchSpot = useCallback(async () => {
     if (!ativoBase.trim()) return;
@@ -28,31 +30,46 @@ export default function Estrategias() {
 
   useEffect(() => { fetchSpot(); }, [fetchSpot]);
 
-  // Escala os strikes do template proporcionalmente ao spot atual e envia ao Simulador
-  const handleApplyTemplate = (template) => {
-    const refPrice = 38; // preço de referência dos templates (PETR4)
-    const scaledLegs = template.legs.map((leg, index) => {
-      const offset = leg.strike > 0 ? (leg.strike - refPrice) : 0;
-      const adjustedStrike = leg.strike > 0 ? Number(((spotPrice || refPrice) + offset).toFixed(2)) : 0;
-      return {
-        ...leg,
-        id: `leg-${Date.now()}-${index}`,
-        strike: adjustedStrike,
-        ticker: leg.ticker,
-      };
-    });
-    navigate('/opcoes', { state: {
-      mode: 'simulador',
-      template: { ...template, legs: scaledLegs },
-      spotPrice: spotPrice || refPrice,
-      ativoBase,
-      strategyInfo: {
-        name: template.name,
-        detailedDescription: template.detailedDescription,
-        b3PracticalTips: template.b3PracticalTips,
-        marginRequirementB3: template.marginRequirementB3,
-      },
-    } });
+  // Resolve as pernas do template para opções reais da B3 e envia ao Simulador
+  const handleApplyTemplate = async (template) => {
+    setResolving(true);
+    try {
+      const { legs: resolvedLegs } = await resolveStrategyLegs(ativoBase, spotPrice, template.legs);
+      navigate('/opcoes', { state: {
+        mode: 'simulador',
+        template: { ...template, legs: resolvedLegs },
+        spotPrice: spotPrice || 38,
+        ativoBase,
+        strategyInfo: {
+          name: template.name,
+          detailedDescription: template.detailedDescription,
+          b3PracticalTips: template.b3PracticalTips,
+          marginRequirementB3: template.marginRequirementB3,
+        },
+      } });
+    } catch (e) {
+      // Fallback: envia o template original com strikes escalonados
+      const refPrice = 38;
+      const scaledLegs = template.legs.map((leg, index) => {
+        const offset = leg.strike > 0 ? (leg.strike - refPrice) : 0;
+        const adjustedStrike = leg.strike > 0 ? Number(((spotPrice || refPrice) + offset).toFixed(2)) : 0;
+        return { ...leg, id: `leg-${Date.now()}-${index}`, strike: adjustedStrike, ticker: leg.ticker };
+      });
+      navigate('/opcoes', { state: {
+        mode: 'simulador',
+        template: { ...template, legs: scaledLegs },
+        spotPrice: spotPrice || refPrice,
+        ativoBase,
+        strategyInfo: {
+          name: template.name,
+          detailedDescription: template.detailedDescription,
+          b3PracticalTips: template.b3PracticalTips,
+          marginRequirementB3: template.marginRequirementB3,
+        },
+      } });
+    } finally {
+      setResolving(false);
+    }
   };
 
   return (
@@ -81,7 +98,7 @@ export default function Estrategias() {
           )}
         </div>
 
-        <StrategyCatalog onSelectTemplate={handleApplyTemplate} spotPrice={spotPrice} ativoBase={ativoBase} />
+        <StrategyCatalog onSelectTemplate={handleApplyTemplate} spotPrice={spotPrice} ativoBase={ativoBase} loading={resolving} />
       </div>
     </div>
   );
