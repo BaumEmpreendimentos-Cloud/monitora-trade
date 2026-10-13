@@ -119,7 +119,7 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed min-h-[48px]">{template.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed min-h-[48px]">{template.description}</p>
                 <div className="p-3 rounded-lg border bg-muted/50 space-y-1.5 text-[11px]">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-muted-foreground font-medium">Lucro Máx:</span>
@@ -148,7 +148,7 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                 </div>
 
                 {isExpanded && template.detailedDescription && (
-                  <div className="space-y-2.5 text-[11px] border-t pt-2">
+                  <div className="space-y-2.5 text-sm border-t pt-2">
                     <p className="text-muted-foreground leading-relaxed">{template.detailedDescription}</p>
                     {template.marginRequirementB3 && (
                       <div className="flex items-start gap-1.5 p-2 rounded-lg bg-blue-50 border border-blue-200">
