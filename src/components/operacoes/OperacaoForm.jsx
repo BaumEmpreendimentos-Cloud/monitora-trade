@@ -10,7 +10,7 @@ const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'FII'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 const isOption = (c) => c === 'CALL' || c === 'PUT';
 
-export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
+export default function OperacaoForm({ open, onClose, grupos, onSubmit, identificadorInicial }) {
   const [identificador, setIdentificador] = useState('');
   const [ativo, setAtivo] = useState('');
   const [ativoBase, setAtivoBase] = useState('');
@@ -42,7 +42,7 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
 
   useEffect(() => {
     if (open) {
-      setIdentificador(''); setAtivo(''); setAtivoBase(''); setCategoria('ACAO');
+      setIdentificador(identificadorInicial || ''); setAtivo(''); setAtivoBase(''); setCategoria('ACAO');
       setOperacao('COMPRA'); setQuantidade(''); setPreco('');
       setDataAbertura(new Date().toISOString().slice(0, 10));
       setStrike(''); setVencimento(''); setErr('');
@@ -86,6 +86,7 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit }) {
               value={identificador}
               onChange={(e) => setIdentificador(e.target.value)}
               placeholder="Nome do identificador (vazio = automático)"
+              disabled={!!identificadorInicial}
             />
             <datalist id="grupos-list">
               {grupos.map((g) => <option key={g.id} value={g.nome} />)}

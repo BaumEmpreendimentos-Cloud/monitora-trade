@@ -30,6 +30,7 @@ export default function Operacoes() {
   const [loading, setLoading] = useState(true);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [formGrupo, setFormGrupo] = useState(null);
   const [encerrar, setEncerrar] = useState(null);
   const [editarOp, setEditarOp] = useState(null);
   const [editarGrupo, setEditarGrupo] = useState(null);
@@ -255,7 +256,7 @@ export default function Operacoes() {
             <Button size="sm" variant="outline" asChild>
               <Link to="/rolagem"><Repeat className="w-4 h-4 mr-1" /> Rolagem</Link>
             </Button>
-            <Button size="sm" onClick={() => setFormOpen(true)} data-tour="ops-nova"><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
+            <Button size="sm" onClick={() => { setFormGrupo(null); setFormOpen(true); }} data-tour="ops-nova"><Plus className="w-4 h-4 mr-1" /> Nova Operação</Button>
           </div>
         </div>
 
@@ -312,6 +313,7 @@ export default function Operacoes() {
                                 <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setDividendoGrupo(g); }} title="Adicionar dividendo" disabled={!ativosBaseGrupo.length}><Coins className="w-3.5 h-3.5 mr-1" /> Dividendo</Button>
                                 <Button size="sm" variant="outline" className={`text-xs ${hasAlertaGrupo(g.id) ? 'text-amber-600 border-amber-400' : ''}`} onClick={(e) => { e.stopPropagation(); setAlertaGrupo(g); }} title="Criar alerta de resultado" data-tour="ops-alerta">{hasAlertaGrupo(g.id) ? <BellRing className="w-3.5 h-3.5 mr-1" /> : <Bell className="w-3.5 h-3.5 mr-1" />} Alerta</Button>
                                 <Button size="sm" variant="outline" className="text-xs" asChild onClick={(e) => e.stopPropagation()} title="Ir para Análise de Opções"><Link to="/opcoes" state={{ selectedGrupoId: g.id, tab: 'rolagem', mode: 'posicao' }}><Repeat className="w-3.5 h-3.5 mr-1" /> Rolagem</Link></Button>
+                                <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setFormGrupo(g); setFormOpen(true); }} title="Adicionar operação a este identificador"><Plus className="w-3.5 h-3.5 mr-1" /> Adicionar</Button>
                                 {gOpen.some((o) => o.simulada) && (
                                   <Button size="sm" variant="outline" className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDeleteGrupoSimulado(g); }} title="Excluir operações simuladas"><Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir Sim.</Button>
                                 )}
@@ -439,7 +441,7 @@ export default function Operacoes() {
         )}
       </div>
 
-      <OperacaoForm open={formOpen} onClose={() => setFormOpen(false)} grupos={groupsWithOpen} onSubmit={handleCreate} />
+      <OperacaoForm open={formOpen} onClose={() => { setFormOpen(false); setFormGrupo(null); }} grupos={groupsWithOpen} onSubmit={handleCreate} identificadorInicial={formGrupo?.nome} />
       <EncerrarDialog operacao={encerrar} onClose={() => setEncerrar(null)} onConfirm={handleEncerrar} />
       <EditarOperacaoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditarOperacao} />
       <EditarIdentificadorDialog grupo={editarGrupo} onClose={() => setEditarGrupo(null)} onSubmit={handleEditarIdentificador} />
