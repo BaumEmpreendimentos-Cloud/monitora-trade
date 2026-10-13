@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Search, TrendingUp, Layers, Save, Lightbulb, Shield } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, Layers, Save, Lightbulb, Shield, LineChart as LineChartIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SalvarOperacaoDialog from '@/components/opcoes/SalvarOperacaoDialog';
 import { businessDaysUntil } from '@/lib/operacoes';
@@ -34,7 +34,7 @@ function templateLegsToSimLegs(legs, spotPrice) {
   });
 }
 
-export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv = 0.30, onSpotChange, strategyInfo, ativoBase }) {
+export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv = 0.30, onSpotChange, strategyInfo, ativoBase, onEnviarParaAnalise }) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [legs, setLegs] = useState(() => templateLegsToSimLegs(initialLegs, initialSpotPrice));
@@ -454,9 +454,12 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
         <p className="text-sm text-amber-600 text-center py-4">Informe o preço spot (Spot) para calcular payoff e margem.</p>
       )}
 
-      {/* Salvar como Operação */}
+      {/* Salvar como Operação / Enviar para Análise */}
       {legs.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
+          <Button onClick={() => onEnviarParaAnalise?.(legs, spot, ativoBase)} variant="outline" className="gap-2">
+            <LineChartIcon className="w-4 h-4" /> Enviar para Análise de Posição
+          </Button>
           <Button onClick={() => setSaveOpen(true)} className="gap-2" data-tour="sim-salvar">
             <Save className="w-4 h-4" /> Salvar como Operação
           </Button>

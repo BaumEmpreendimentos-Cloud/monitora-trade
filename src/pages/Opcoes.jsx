@@ -36,6 +36,7 @@ export default function Opcoes() {
   const [simSpotPrice, setSimSpotPrice] = useState(null);
   const [simStrategyInfo, setSimStrategyInfo] = useState(null);
   const [simAtivoBase, setSimAtivoBase] = useState('');
+  const [simPosicao, setSimPosicao] = useState(null);
   const location = useLocation();
 
   // Carregar grupos e operações abertas
@@ -81,11 +82,15 @@ export default function Opcoes() {
     return operacoes.filter((o) => o.grupo_id === selectedGrupoId);
   }, [selectedGrupoId, operacoes]);
 
-  const legs = useMemo(() => operacoesToLegs(grupoOps), [grupoOps]);
+  const legs = useMemo(() => {
+    if (simPosicao) return simPosicao.legs;
+    return operacoesToLegs(grupoOps);
+  }, [simPosicao, grupoOps]);
 
   const ativoBase = useMemo(() => {
+    if (simPosicao) return simPosicao.ativoBase || '';
     return grupoOps.find((o) => o.ativo_base)?.ativo_base || grupoOps[0]?.ativo_base || '';
-  }, [grupoOps]);
+  }, [simPosicao, grupoOps]);
 
   const selectedGrupo = useMemo(() => grupos.find((g) => g.id === selectedGrupoId), [grupos, selectedGrupoId]);
 
@@ -107,7 +112,10 @@ export default function Opcoes() {
     }
   }, [ativoBase]);
 
-  useEffect(() => { fetchSpot(); }, [fetchSpot]);
+  useEffect(() => {
+    if (simPosicao) { setSpotPrice(simPosicao.spot); return; }
+    fetchSpot();
+  }, [simPosicao, fetchSpot]);
 
   const greeks = useMemo(() => {
     if (!displayLegs.length || !spotPrice) return null;
@@ -164,11 +172,28 @@ export default function Opcoes() {
         </div>
 
         {mode === 'simulador' ? (
-          <SimuladorOperacoes initialLegs={simInitialLegs} initialSpotPrice={simSpotPrice} iv={iv} strategyInfo={simStrategyInfo} ativoBase={simAtivoBase} />
+          <SimuladorOperacoes
+            initialLegs={simInitialLegs}
+            initialSpotPrice={simSpotPrice}
+            iv={iv}
+            strategyInfo={simStrategyInfo}
+            ativoBase={simAtivoBase}
+            onEnviarParaAnalise={(legsEnv, spotEnv, baseEnv) => {
+              setSimPosicao({ legs: legsEnv, spot: spotEnv, ativoBase: baseEnv });
+              setMode('posicao');
+              setSimulatedLegs(null);
+              setTab('payoff');
+            }}
+          />
         ) : (
         <>
-        {/* Seletor de grupo */}
-        {gruposAtivos.length === 0 ? (
+        {/* Seletor de grupo ou banner de posição simulada */}
+        {simPosicao ? (
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-primary/40 bg-primary/5 text-sm">
+            <span>Exibindo <strong>posição do Simulador Livre</strong> — valide payoff, gregas, margem, rolagem e cenários antes de abrir a operação.</span>
+            <Button variant="outline" size="sm" onClick={() => { setSimPosicao(null); setSpotPrice(null); }}>Voltar à seleção de grupo</Button>
+          </div>
+        ) : gruposAtivos.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-sm text-muted-foreground">
@@ -202,7 +227,7 @@ export default function Opcoes() {
             </div>
 
             {/* Painel de controle: spot, IV, refresh */}
-            {selectedGrupoId && (
+            {(selectedGrupoId || simPosicao) && (
               <Card data-tour="opcoes-spot">
                 <CardContent className="p-4 space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -249,7 +274,7 @@ export default function Opcoes() {
             )}
 
             {/* Tabs */}
-            {selectedGrupoId && legs.length > 0 && spotPrice != null && (
+            {(selectedGrupoId || simPosicao) && legs.length > 0 && spotPrice != null && (
               <>
                 <div className="flex gap-1 border-b overflow-x-auto" data-tour="opcoes-tabs">
                   {tabs.map((t) => {
@@ -353,7 +378,7 @@ export default function Opcoes() {
             )}
 
             {/* Empty state quando grupo selecionado sem dados suficientes */}
-            {selectedGrupoId && (legs.length === 0 || spotPrice == null) && (
+            {(selectedGrupoId || simPosicao) && (legs.length === 0 || spotPrice == null) && (
               <Card>
                 <CardContent className="p-6 text-center">
                   <p className="text-sm text-muted-foreground">
