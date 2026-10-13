@@ -108,13 +108,14 @@ export async function resolveStrategyLegs(ativoBase, spotPrice, templateLegs) {
       }
     }
 
-    // Fallback: strike escalado, sem ticker real
+    // Fallback: strike escalado, sem ticker real — NÃO usar o ticker do template (PETR4)
+    // pois pertence a outro ativo base. Deixar vazio para o usuário buscar manualmente.
     return {
       ...leg,
       id: `leg-${Date.now()}-${index}`,
       strike: targetStrike,
       premium: leg.premium || 0,
-      ticker: leg.ticker || '',
+      ticker: '',
       dueDate: resolvedDueDate || leg.dueDate || 'À Vista',
     };
   });
