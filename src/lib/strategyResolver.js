@@ -11,8 +11,18 @@ function isWeekly(symbol) {
   return /W\d+$/i.test(symbol || '');
 }
 
-// Encontra o próximo vencimento mensal na cadeia de opções
+// Diferença em dias entre uma data futura e hoje
+function daysFromToday(dateStr) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+
+// Encontra o próximo vencimento mensal com pelo menos 15 dias de duração.
+// Se o vencimento mais próximo estiver abaixo de 15 dias, usa o seguinte.
 function findNextMonthlyExpiration(options) {
+  const MIN_DIAS = 15;
   const monthlyDates = new Set();
   (options || []).forEach((o) => {
     if (o.due_date && !isWeekly(o.symbol)) {
@@ -21,7 +31,12 @@ function findNextMonthlyExpiration(options) {
   });
   const sorted = [...monthlyDates].sort((a, b) => a.localeCompare(b));
   const today = new Date().toISOString().slice(0, 10);
-  return sorted.find((d) => d >= today) || sorted[sorted.length - 1] || null;
+  const futuros = sorted.filter((d) => d >= today);
+  // Primeiro vencimento mensal com pelo menos 15 dias
+  const elegivel = futuros.find((d) => daysFromToday(d) >= MIN_DIAS);
+  if (elegivel) return elegivel;
+  // Fallback: último vencimento disponível
+  return futuros[futuros.length - 1] || sorted[sorted.length - 1] || null;
 }
 
 // Encontra a opção com strike mais próximo do alvo, do tipo correto, no vencimento informado
