@@ -25,9 +25,14 @@ export default function MapaCalorGrupo({ operacoes, quotes }) {
   const [expanded, setExpanded] = useState(true);
 
   const referencia = useMemo(() => {
-    const bases = operacoes.filter((o) => isOption(o.categoria)).map((o) => o.ativo_base).filter(Boolean);
+    // Priorizar ativo_base de qualquer operação (incluindo ações, que sempre têm o underlying correto)
+    const bases = operacoes.map((o) => o.ativo_base).filter(Boolean);
+    if (bases.length) return mostCommon(bases);
+    // Fallback: ticker da operação de ação (underlying)
+    const stockAtivo = operacoes.find((o) => o.categoria === 'ACAO')?.ativo;
+    if (stockAtivo) return stockAtivo;
     const ativos = operacoes.map((o) => o.ativo);
-    return mostCommon(bases) || mostCommon(ativos) || ativos[0];
+    return mostCommon(ativos) || ativos[0];
   }, [operacoes]);
 
   const currentPrice = quotes[referencia];
