@@ -5,7 +5,7 @@ export function isGestor(user) {
 }
 
 export function isPremium(user) {
-  return user?.subscription_status === 'active' || isGestor(user);
+  return user?.lifetime_access || user?.subscription_status === 'active' || isGestor(user);
 }
 
 export function trialDaysLeft(user) {

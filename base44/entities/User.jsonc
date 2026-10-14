@@ -42,6 +42,11 @@
       "title": "Bloqueado",
       "default": false
     },
+    "lifetime_access": {
+      "type": "boolean",
+      "title": "Acesso vital\u00edcio",
+      "default": false
+    },
     "tracked_tickers": {
       "type": "array",
       "title": "Ativos acompanhados",
