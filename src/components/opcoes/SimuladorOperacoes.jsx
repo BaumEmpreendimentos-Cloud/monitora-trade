@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Search, TrendingUp, Layers, Save, Lightbulb, Shield, LineChart as LineChartIcon } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, Layers, Save, Lightbulb, Shield, LineChart as LineChartIcon, Target, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SalvarOperacaoDialog from '@/components/opcoes/SalvarOperacaoDialog';
 import { businessDaysUntil } from '@/lib/operacoes';
@@ -46,6 +46,33 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
   const [searchSide, setSearchSide] = useState('BUY');
   const [searchQty, setSearchQty] = useState(100);
   const [searching, setSearching] = useState(false);
+  const [ativoBaseState, setAtivoBaseState] = useState(ativoBase || '');
+  const [fetchingBase, setFetchingBase] = useState(false);
+
+  // Sincroniza ativoBaseState quando a prop muda (ex: vindo de Estratégias)
+  useEffect(() => {
+    setAtivoBaseState(ativoBase || '');
+  }, [ativoBase]);
+
+  // Valida se uma opção pertence ao ativo base definido (prefixo B3: primeiras 4 letras)
+  const isOptionFromAtivoBase = (ticker) => {
+    if (!ativoBaseState.trim()) return true;
+    const prefix = ativoBaseState.trim().toUpperCase().substring(0, 4);
+    return (ticker || '').toUpperCase().startsWith(prefix);
+  };
+
+  // Busca cotação do ativo base ao confirmar o ticker
+  const handleAtivoBaseBlur = async () => {
+    const symbol = ativoBaseState.trim().toUpperCase();
+    if (!symbol || fetchingBase) return;
+    setFetchingBase(true);
+    try {
+      const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: symbol });
+      const close = res.data?.quotes?.[0]?.close;
+      if (close) setSpotPrice(String(close));
+    } catch (e) { /* ignore */ }
+    finally { setFetchingBase(false); }
+  };
 
   // Atualiza legs quando initialLegs muda (ex: ao aplicar template)
   useEffect(() => {
@@ -110,6 +137,12 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
   const handleTickerBlur = async (index, ticker) => {
     const symbol = (ticker || '').trim().toUpperCase();
     if (!symbol || fetchingTicker === index) return;
+    const leg = legs[index];
+    if (leg && ativoBaseState.trim() && !isOptionFromAtivoBase(symbol)) {
+      const base = ativoBaseState.trim().toUpperCase();
+      toast({ title: 'Ativo não permitido', description: `${symbol} não pertence ao ativo base ${base}.`, variant: 'destructive' });
+      return;
+    }
     setFetchingTicker(index);
     try {
       const [qRes, sRes] = await Promise.all([
@@ -171,6 +204,11 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
   const handleSearch = async () => {
     const term = searchTerm.trim().toUpperCase();
     if (!term) return;
+    if (ativoBaseState.trim() && !isOptionFromAtivoBase(term)) {
+      const base = ativoBaseState.trim().toUpperCase();
+      toast({ title: 'Opção não permitida', description: `${term} não pertence ao ativo base ${base}. Apenas opções com prefixo ${base.substring(0, 4)} são aceitas.`, variant: 'destructive' });
+      return;
+    }
     setSearching(true);
     try {
       const res = await base44.functions.invoke('oplabMarket', { action: 'search', expr: term, type: 'STOCK,OPTION', limit: 10 });
@@ -191,6 +229,12 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
     if (!item) return;
     const symbol = item.symbol || item.ticker || searchTerm;
     const type = (item.type === 'CALL' || item.type === 'PUT') ? item.type : 'STOCK';
+
+    if (type !== 'STOCK' && ativoBaseState.trim() && !isOptionFromAtivoBase(symbol)) {
+      const base = ativoBaseState.trim().toUpperCase();
+      toast({ title: 'Opção não permitida', description: `${symbol} não pertence ao ativo base ${base}.`, variant: 'destructive' });
+      return;
+    }
 
     const desc = item.description || '';
     const strikeMatch = desc.match(/R\$\s*([\d.]+(?:,\d+)?)(?=,|$)/);
@@ -255,6 +299,31 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
               onChange={(e) => setIvState(Number(e.target.value) / 100)}
               className="h-8 w-16 text-sm"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Ativo Base */}
+      <div className="p-4 rounded-xl border bg-card" data-tour="sim-ativo-base">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5" /> Ativo Base (Underlying)
+            </Label>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Defina o ativo base da operação. Apenas opções deste ativo poderão ser adicionadas ao simulador.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              value={ativoBaseState}
+              onChange={(e) => setAtivoBaseState(e.target.value.toUpperCase())}
+              onBlur={handleAtivoBaseBlur}
+              placeholder="Ex: PETR4, VALE3, BOVA11..."
+              className="h-9 w-44 text-sm font-bold uppercase"
+            />
+            {fetchingBase && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />}
           </div>
         </div>
       </div>
@@ -457,7 +526,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
       {/* Salvar como Operação / Enviar para Análise */}
       {legs.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-end gap-2">
-          <Button onClick={() => onEnviarParaAnalise?.(legs, spot, ativoBase)} variant="outline" className="gap-2">
+          <Button onClick={() => onEnviarParaAnalise?.(legs, spot, ativoBaseState)} variant="outline" className="gap-2">
             <LineChartIcon className="w-4 h-4" /> Enviar para Análise de Posição
           </Button>
           <Button onClick={() => setSaveOpen(true)} className="gap-2" data-tour="sim-salvar">
@@ -470,7 +539,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
         open={saveOpen}
         onOpenChange={setSaveOpen}
         legs={legs}
-        ativoBase={ativoBase || ''}
+        ativoBase={ativoBaseState || ''}
         defaultName={strategyInfo?.name || ''}
         onSaved={() => navigate('/operacoes')}
       />
