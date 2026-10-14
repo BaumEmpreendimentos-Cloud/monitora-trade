@@ -8,13 +8,14 @@ export default async function(req) {
 
     const body = await req.json();
     const { ticker, spotPrice, iv, ivShock, interestRate, legsDesc, scenarioText } = body || {};
-    if (!ticker || spotPrice == null || !legsDesc) {
+    if (spotPrice == null || !legsDesc) {
       return Response.json({ error: 'Parâmetros insuficientes.' }, { status: 400 });
     }
 
+    const ativoLabel = ticker || 'Posição';
     const effectiveIv = ((Number(iv) + Number(ivShock) / 100) * 100).toFixed(1);
 
-    const prompt = `Você é um analista quantitativo de opções da B3 (bolsa brasileira). Analise o seguinte cenário de stress-test para uma posição em ${ticker}:
+    const prompt = `Você é um analista quantitativo de opções da B3 (bolsa brasileira). Analise o seguinte cenário de stress-test para uma posição em ${ativoLabel}:
 
 ATIVO: ${ticker}
 PREÇO ATUAL: R$ ${Number(spotPrice).toFixed(2)}
