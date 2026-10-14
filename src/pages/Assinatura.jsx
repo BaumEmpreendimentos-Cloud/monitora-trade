@@ -4,13 +4,15 @@ import { useAuth } from '@/lib/AuthContext';
 import { isPremium, isGestor, trialDaysLeft } from '@/lib/access';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Crown, CheckCircle2, XCircle, Loader2, Clock, ShieldCheck, Users, Copy, Check } from 'lucide-react';
+import { Crown, CheckCircle2, XCircle, Loader2, Clock, ShieldCheck, Users, Copy, Check, Ban, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function Assinatura() {
   const { user, checkUserAuth } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [error, setError] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [indicacoes, setIndicacoes] = useState([]);
@@ -67,6 +69,20 @@ export default function Assinatura() {
     }
   };
 
+  const handleCancel = async () => {
+    setCancelLoading(true); setError('');
+    try {
+      await base44.functions.invoke('cancelSubscription', {});
+      await checkUserAuth && checkUserAuth();
+      setStatusMsg('Assinatura cancelada. Você manterá o acesso até o fim do período já pago.');
+      setShowCancelConfirm(false);
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const periodEnd = user?.current_period_end ? new Date(user.current_period_end).toLocaleDateString('pt-BR') : null;
 
   return (
@@ -99,13 +115,37 @@ export default function Assinatura() {
               </div>
             ) : premium ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-emerald-600 font-semibold">
-                  <CheckCircle2 className="w-5 h-5" /> Assinatura ativa
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Você tem acesso aos dados premium.
-                  {periodEnd && ` Renovação em ${periodEnd}.`}
-                </p>
+                {user?.lifetime_access ? (
+                  <div className="flex items-center gap-2 text-amber-600 font-semibold">
+                    <Crown className="w-5 h-5" /> Acesso vitalício
+                  </div>
+                ) : user?.cancel_at_period_end ? (
+                  <>
+                    <div className="flex items-center gap-2 text-amber-600 font-semibold">
+                      <AlertTriangle className="w-5 h-5" /> Cancelamento agendado
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Sua assinatura foi cancelada e permanecerá ativa até {periodEnd}.
+                      Após essa data, o acesso Premium será encerrado.
+                    </p>
+                    <Button variant="outline" className="w-full" onClick={handleSubscribe} disabled={loading}>
+                      {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando...</> : <><Crown className="w-4 h-4 mr-2" /> Reativar assinatura</>}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-emerald-600 font-semibold">
+                      <CheckCircle2 className="w-5 h-5" /> Assinatura ativa
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Você tem acesso aos dados premium.
+                      {periodEnd && ` Renovação em ${periodEnd}.`}
+                    </p>
+                    <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={() => setShowCancelConfirm(true)}>
+                      <Ban className="w-4 h-4 mr-2" /> Cancelar assinatura
+                    </Button>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -137,6 +177,27 @@ export default function Assinatura() {
             )}
           </CardContent>
         </Card>
+
+        {showCancelConfirm && (
+          <Card className="border-destructive/30">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-2 text-destructive font-semibold">
+                <AlertTriangle className="w-5 h-5" /> Confirmar cancelamento
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Tem certeza que deseja cancelar sua assinatura? Você manterá o acesso Premium até o fim do período já pago ({periodEnd || 'data não disponível'}), após o que o acesso será encerrado.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)} disabled={cancelLoading}>
+                  Manter assinatura
+                </Button>
+                <Button variant="destructive" className="flex-1" onClick={handleCancel} disabled={cancelLoading}>
+                  {cancelLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cancelando...</> : 'Confirmar cancelamento'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {user?.id && !admin && (
           <Card>

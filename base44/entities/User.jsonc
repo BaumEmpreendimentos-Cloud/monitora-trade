@@ -32,6 +32,11 @@
       "type": "string",
       "title": "Fim do per\u00edodo atual"
     },
+    "cancel_at_period_end": {
+      "type": "boolean",
+      "title": "Cancelamento agendado para o fim do per\u00edodo",
+      "default": false
+    },
     "trial_start": {
       "type": "string",
       "format": "date-time",

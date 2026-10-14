@@ -108,7 +108,8 @@ export default async function(req) {
         const status = event.type === 'customer.subscription.deleted' ? 'canceled' : sub.status;
         await base44.asServiceRole.entities.User.update(u.id, {
           subscription_status: status,
-          current_period_end: periodEndISO(sub)
+          current_period_end: periodEndISO(sub),
+          cancel_at_period_end: event.type === 'customer.subscription.deleted' ? false : !!sub.cancel_at_period_end
         });
       }
     }
