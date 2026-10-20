@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Layers, Plus, Trash2, Scale, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RefreshCw, Layers, Plus, Trash2, Scale, Calendar, RotateCcw } from 'lucide-react';
 import {
   groupExercises, findOptionInExercise, findNextExercise, exerciseLabel,
   calcRollFlow, calcOpenFlow, classifyRollResult,
@@ -28,6 +29,11 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
   const [legConfigs, setLegConfigs] = useState({});
   const [newLegs, setNewLegs] = useState([]);
   const [showWeekly, setShowWeekly] = useState(false);
+  const [legsExcluidas, setLegsExcluidas] = useState([]);
+
+  const toggleLegExcluida = useCallback((legId) => {
+    setLegsExcluidas((prev) => (prev.includes(legId) ? prev.filter((id) => id !== legId) : [...prev, legId]));
+  }, []);
 
   const getExercises = useCallback((tipo) => {
     const all = groupExercises(chain, tipo);
@@ -205,15 +211,21 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
 
   const newLegFlows = useMemo(() => newLegs.map((leg) => ({ leg, openFlow: calcOpenFlow(leg.operacao, leg.quantidade, leg.premium) })), [newLegs]);
 
-  const totalClose = legFlows.reduce((s, f) => s + f.closeFlow, 0);
-  const totalOpen = legFlows.reduce((s, f) => s + f.openFlow, 0) + newLegFlows.reduce((s, f) => s + f.openFlow, 0);
+  // Pernas que entram na rolagem (excluindo as desmarcadas pelo usuário)
+  const legFlowsAtivas = useMemo(
+    () => legFlows.filter((f) => !legsExcluidas.includes(f.leg.id)),
+    [legFlows, legsExcluidas]
+  );
+
+  const totalClose = legFlowsAtivas.reduce((s, f) => s + f.closeFlow, 0);
+  const totalOpen = legFlowsAtivas.reduce((s, f) => s + f.openFlow, 0) + newLegFlows.reduce((s, f) => s + f.openFlow, 0);
   const netFlow = totalClose + totalOpen;
-  const totalQty = legFlows.reduce((s, f) => s + (Number(f.cfg.newQty) || 0), 0) + newLegs.reduce((s, l) => s + (Number(l.quantidade) || 0), 0);
+  const totalQty = legFlowsAtivas.reduce((s, f) => s + (Number(f.cfg.newQty) || 0), 0) + newLegs.reduce((s, l) => s + (Number(l.quantidade) || 0), 0);
   const resultado = classifyRollResult(netFlow, totalQty);
 
   const simularNoPayoff = () => {
     const outrasOps = (operacoes || []).filter((o) => o.categoria !== 'CALL' && o.categoria !== 'PUT');
-    const opsRoladas = legFlows.map(({ leg, cfg, match }) => ({
+    const opsRoladas = legFlowsAtivas.map(({ leg, cfg, match }) => ({
       id: `${leg.id}_rolada`,
       categoria: leg.categoria,
       operacao: leg.operacao,
@@ -264,18 +276,31 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
       {legFlows.map(({ leg, cfg, match, exercises, closeFlow, openFlow, netFlow: legNet }) => {
         const isSell = leg.operacao === 'VENDA';
         const curQty = cfg.newQty ?? leg.quantidade;
+        const excluida = legsExcluidas.includes(leg.id);
+        const legNetAtivo = excluida ? 0 : legNet;
         return (
-          <Card key={leg.id}>
+          <Card key={leg.id} className={excluida ? 'opacity-60' : ''}>
             <CardContent className="p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm font-semibold flex-wrap">
+                  <Checkbox
+                    checked={!excluida}
+                    onCheckedChange={() => toggleLegExcluida(leg.id)}
+                    title={excluida ? 'Incluir esta perna na rolagem' : 'Excluir esta perna da rolagem'}
+                  />
+                  <span className="text-[11px] uppercase text-muted-foreground">{excluida ? 'Não rolar' : 'Rolar'}</span>
+                  <span className="text-muted-foreground/40">|</span>
                   <span className={isSell ? 'text-red-600' : 'text-emerald-600'}>{isSell ? 'VENDIDA' : 'COMPRADA'}</span>
                   <span>{leg.categoria}</span>
                   <span className="font-mono text-muted-foreground">{leg.ativo}</span>
                   <span className="text-muted-foreground">Strike R$ {Number(leg.strike).toFixed(2)}</span>
                   <span className="text-muted-foreground">Qtd {leg.quantidade}</span>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded ${legNet >= 0 ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'text-red-600 bg-red-50 dark:bg-red-950/30'}`}>{legNet >= 0 ? '+ CRÉDITO' : '- DÉBITO'} {fmt(Math.abs(legNet))}</span>
+                {excluida ? (
+                  <span className="text-xs font-bold px-2 py-1 rounded text-muted-foreground bg-muted">Fora da rolagem</span>
+                ) : (
+                  <span className={`text-xs font-bold px-2 py-1 rounded ${legNetAtivo >= 0 ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'text-red-600 bg-red-50 dark:bg-red-950/30'}`}>{legNetAtivo >= 0 ? '+ CRÉDITO' : '- DÉBITO'} {fmt(Math.abs(legNetAtivo))}</span>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -390,7 +415,19 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
         <CardContent className="p-3 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-sm font-bold">Balanço Financeiro Consolidado</h4>
-            <span className="text-xs font-bold px-2 py-1 rounded bg-card border">{resultado.label}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {legsExcluidas.length > 0 && (
+                <>
+                  <span className="text-xs text-muted-foreground">
+                    {legsExcluidas.length} {legsExcluidas.length === 1 ? 'perna fora da rolagem' : 'pernas fora da rolagem'}
+                  </span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setLegsExcluidas([])}>
+                    <RotateCcw className="w-3 h-3 mr-1" /> Restaurar todas
+                  </Button>
+                </>
+              )}
+              <span className="text-xs font-bold px-2 py-1 rounded bg-card border">{resultado.label}</span>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div><div className="text-xs text-muted-foreground">1. Fechamento das Pernas Atuais</div><div className={`text-lg font-bold font-mono ${totalClose >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{totalClose >= 0 ? '+' : ''}{fmt(totalClose)}</div></div>
