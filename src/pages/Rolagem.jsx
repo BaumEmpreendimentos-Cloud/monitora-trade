@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, Search, BarChart3 } from 'lucide-react';
+import { RefreshCw, Search, BarChart3, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import ExpirationBar from '@/components/rolagem/ExpirationBar';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
@@ -40,6 +41,8 @@ export default function Rolagem() {
   const [strikeMax, setStrikeMax] = useState(saved?.strikeMax ?? '');
   const [expLeft, setExpLeft] = useState(saved?.expLeft || null);
   const [expRight, setExpRight] = useState(saved?.expRight || null);
+  const [excluidos, setExcluidos] = useState(saved?.excluidos || []);
+  const [ocultarExcluidas, setOcultarExcluidas] = useState(false);
   const isInitialMount = useRef(true);
 
   const loadUserOps = useCallback(async () => {
@@ -60,9 +63,9 @@ export default function Rolagem() {
   // Persistir seleções no localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight, excluidos }));
     } catch (e) { /* ignore */ }
-  }, [ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight]);
+  }, [ativoBase, ativoBuscado, tipo, strikeMin, strikeMax, expLeft, expRight, excluidos]);
 
   const fetchChain = useCallback(async (symbol) => {
     if (!symbol) return;
@@ -175,6 +178,29 @@ export default function Rolagem() {
       right: byExpStrike[`${expRight}_${strike}`],
     })).filter((p) => p.left && p.right);
   }, [options, tipo, expLeft, expRight, strikeMin, strikeMax]);
+
+  // Chave única de cada perna de rolagem (ativo + vencimentos + strike)
+  const rowKeyFor = useCallback(
+    (strike) => `${ativoBuscado}|${tipo}|${expLeft}|${expRight}|${strike}`,
+    [ativoBuscado, tipo, expLeft, expRight]
+  );
+
+  const toggleExcluida = useCallback((strike) => {
+    const k = rowKeyFor(strike);
+    setExcluidos((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
+  }, [rowKeyFor]);
+
+  const restaurarTodas = () => setExcluidos([]);
+
+  const excluidasCount = useMemo(
+    () => pares.filter((p) => excluidos.includes(rowKeyFor(p.strike))).length,
+    [pares, excluidos, rowKeyFor]
+  );
+
+  const paresExibidos = useMemo(
+    () => (ocultarExcluidas ? pares.filter((p) => !excluidos.includes(rowKeyFor(p.strike))) : pares),
+    [pares, ocultarExcluidas, excluidos, rowKeyFor]
+  );
 
   // Map de tickers que o usuário possui (com quantidade líquida por ticker)
   const ownedMap = useMemo(() => {
@@ -295,6 +321,10 @@ export default function Rolagem() {
               <p className="text-sm text-muted-foreground text-center py-10">Selecione dois vencimentos acima para comparar as rolagens.</p>
             ) : pares.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-10">Nenhuma opção encontrada para os filtros selecionados.</p>
+            ) : paresExibidos.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">
+                Todas as pernas foram excluídas da rolagem. Use "Mostrar" para exibi-las ou "Restaurar todas".
+              </p>
             ) : (
               <Card>
                 <CardContent className="p-0">
@@ -302,6 +332,9 @@ export default function Rolagem() {
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10">
                         <tr className="bg-muted text-xs text-muted-foreground uppercase">
+                          <th rowSpan={2} className="p-2 text-center border-r align-middle" style={{ borderColor: 'hsl(var(--border))' }}>
+                            Rolar
+                          </th>
                           <th colSpan={3} className="p-2 text-center border-r" style={{ borderColor: 'hsl(var(--border))' }}>
                             Vencimento 1<br/>{expLeft ? new Date(expLeft + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                           </th>
@@ -324,7 +357,8 @@ export default function Rolagem() {
                         </tr>
                       </thead>
                       <tbody>
-                        {pares.map((p) => {
+                        {paresExibidos.map((p) => {
+                          const excluida = excluidos.includes(rowKeyFor(p.strike));
                           const leftPrice = p.left?.close;
                           const rightPrice = p.right?.close;
                           const rolagem = (leftPrice != null && rightPrice != null) ? rightPrice - leftPrice : null;
@@ -345,7 +379,14 @@ export default function Rolagem() {
                           }
 
                           return (
-                            <tr key={p.strike} className={`border-t hover:bg-accent/30 ${owned ? 'bg-amber-100 dark:bg-amber-900/40 ring-1 ring-inset ring-amber-400 dark:ring-amber-500' : ''}`}>
+                            <tr key={p.strike} className={`border-t hover:bg-accent/30 ${excluida ? 'opacity-45' : ''} ${owned && !excluida ? 'bg-amber-100 dark:bg-amber-900/40 ring-1 ring-inset ring-amber-400 dark:ring-amber-500' : ''}`}>
+                              <td className="p-2 text-center border-r" style={{ borderColor: 'hsl(var(--border))' }}>
+                                <Checkbox
+                                  checked={!excluida}
+                                  onCheckedChange={() => toggleExcluida(p.strike)}
+                                  title={excluida ? 'Incluir esta perna na rolagem' : 'Excluir esta perna da rolagem'}
+                                />
+                              </td>
                               <td className="p-2 font-medium whitespace-nowrap">
                                 {ownedLeft && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold mr-1.5 align-middle">★</span>}
                                 {p.left?.symbol || '—'}
@@ -372,9 +413,26 @@ export default function Rolagem() {
               </Card>
             )}
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">★</span>
-              Opções que você possui neste ativo
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">★</span>
+                Opções que você possui neste ativo
+              </div>
+              {excluidasCount > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">
+                    {excluidasCount} {excluidasCount === 1 ? 'perna excluída' : 'pernas excluídas'} da rolagem
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => setOcultarExcluidas((v) => !v)}>
+                    {ocultarExcluidas
+                      ? <><Eye className="w-3.5 h-3.5 mr-1" /> Mostrar</>
+                      : <><EyeOff className="w-3.5 h-3.5 mr-1" /> Ocultar</>}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={restaurarTodas}>
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restaurar todas
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         )}
