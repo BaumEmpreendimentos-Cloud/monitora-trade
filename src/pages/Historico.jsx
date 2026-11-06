@@ -96,6 +96,11 @@ export default function Historico() {
             const totalOps = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
             const totalDiv = divs.reduce((s, d) => s + (d.valor_total || 0), 0);
             const total = totalOps + totalDiv;
+            // Lançamentos individuais: operações encerradas + dividendos já pagos, misturados por data
+            const itens = [
+              ...lista.map((o) => ({ key: o.id, tipo: 'op', ts: o.data_fechamento ? new Date(o.data_fechamento).getTime() : 0, op: o })),
+              ...divs.map((d) => ({ key: `div-${d.id}`, tipo: 'div', ts: d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').getTime() : 0, div: d })),
+            ].sort((a, b) => b.ts - a.ts);
             return (
               <Card key={nome}>
                 <CardContent className="p-0">
@@ -128,44 +133,51 @@ export default function Historico() {
                           </div>
                         </td>
                       </tr>
-                      {expanded[nome] && lista.map((o) => (
-                        <tr key={o.id} className="border-t">
-                          <td className="p-2 font-medium">{o.ativo}</td>
-                          <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
-                          <td className="p-2">{o.categoria}</td>
-                          <td className="p-2">{o.operacao}</td>
-                          <td className="p-2 text-right">{o.quantidade}</td>
-                          <td className="p-2 text-right">{fmt(o.preco_entrada)}</td>
-                          <td className="p-2 text-right">{fmt(o.preco_fechamento)}</td>
-                          <td className={`p-2 text-right ${color(o.resultado_pct)}`}>{fmtPct(o.resultado_pct)}</td>
-                          <td className={`p-2 text-right ${color(o.resultado_valor)}`}>{fmt(o.resultado_valor)}</td>
-                          <td className="p-2 text-right text-muted-foreground">{o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
-                          <td className="p-2">
-                            <div className="flex gap-1">
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(o)} title="Excluir operação"><Trash2 className="w-3.5 h-3.5" /></Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {expanded[nome] && divs.map((d) => (
-                        <tr key={`div-${d.id}`} className="border-t bg-amber-50/50">
-                          <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
-                          <td className="p-2 text-muted-foreground">—</td>
-                          <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
-                          <td className="p-2">—</td>
-                          <td className="p-2 text-right">{d.quantidade}</td>
-                          <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right">—</td>
-                          <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
-                          <td className="p-2 text-right text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                        </tr>
-                      ))}
+                      {expanded[nome] && itens.map((it) => {
+                        if (it.tipo === 'div') {
+                          const d = it.div;
+                          return (
+                            <tr key={it.key} className="border-t bg-amber-50/50 dark:bg-amber-950/20">
+                              <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
+                              <td className="p-2 text-muted-foreground">—</td>
+                              <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
+                              <td className="p-2 text-xs text-muted-foreground">Lançamento</td>
+                              <td className="p-2 text-right">{d.quantidade}</td>
+                              <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
+                              <td className="p-2 text-right">—</td>
+                              <td className="p-2 text-right">—</td>
+                              <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
+                              <td className="p-2 text-right text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                              <td className="p-2" />
+                            </tr>
+                          );
+                        }
+                        const o = it.op;
+                        return (
+                          <tr key={it.key} className="border-t">
+                            <td className="p-2 font-medium">{o.ativo}</td>
+                            <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
+                            <td className="p-2">{o.categoria}</td>
+                            <td className="p-2">{o.operacao}</td>
+                            <td className="p-2 text-right">{o.quantidade}</td>
+                            <td className="p-2 text-right">{fmt(o.preco_entrada)}</td>
+                            <td className="p-2 text-right">{fmt(o.preco_fechamento)}</td>
+                            <td className={`p-2 text-right ${color(o.resultado_pct)}`}>{fmtPct(o.resultado_pct)}</td>
+                            <td className={`p-2 text-right ${color(o.resultado_valor)}`}>{fmt(o.resultado_valor)}</td>
+                            <td className="p-2 text-right text-muted-foreground">{o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
+                            <td className="p-2">
+                              <div className="flex gap-1">
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditarOp(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setToDelete(o)} title="Excluir operação"><Trash2 className="w-3.5 h-3.5" /></Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                   </div>
-                  <HistoricoGrupoMobile nome={nome} lista={lista} divs={divs} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[nome]} onToggle={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))} />
+                  <HistoricoGrupoMobile nome={nome} itens={itens} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[nome]} onToggle={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))} />
                 </CardContent>
               </Card>
             );

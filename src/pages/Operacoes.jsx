@@ -290,8 +290,8 @@ export default function Operacoes() {
               })();
               const baseQuote = baseRef ? quotes[baseRef] : null;
               const ativosBaseGrupo = [...new Set(gOpen.map((o) => o.ativo_base || o.ativo))];
-              const gDividendos = dividendos
-                .filter((d) => d.grupo_id === g.id)
+              const gDivPendente = dividendos
+                .filter((d) => d.grupo_id === g.id && isDivPendente(d))
                 .sort((a, b) => (a.data_pagamento || '').localeCompare(b.data_pagamento || ''));
               return (
                 <Card key={g.id} data-tour="ops-grupo">
@@ -388,7 +388,7 @@ export default function Operacoes() {
                             </tr>
                           );
                         })}
-                        {gDividendos.map((d) => {
+                        {gDivPendente.map((d) => {
                           const pendente = isDivPendente(d);
                           return (
                             <tr key={`div-${d.id}`} className="border-t bg-amber-50/50 dark:bg-amber-950/20">
@@ -418,7 +418,7 @@ export default function Operacoes() {
                     <GrupoMobile
                      grupo={g}
                      openOps={gOpen}
-                     divs={gDividendos}
+                     divs={gDivPendente}
                      quotes={quotes}
                      expanded={!!expanded[g.id]}
                      onToggleExpand={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}
