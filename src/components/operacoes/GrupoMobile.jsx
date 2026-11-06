@@ -8,9 +8,8 @@ const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Nu
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 const isOption = (c) => c === 'CALL' || c === 'PUT';
 
-export default function GrupoMobile({ grupo, openOps, divs = [], quotes, expanded, onToggleExpand, selectedOp, onSelectOp, onSelectGroup, onEditGrupo, onEditOp, onEncerrar, onAddDividendo, onDeleteDividendo, onAlertaGrupo, onAlertaOp, alertas = [], summary }) {
+export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expanded, onToggleExpand, selectedOp, onSelectOp, onSelectGroup, onEditGrupo, onEditOp, onEncerrar, onAddDividendo, onDeleteDividendo, onAlertaGrupo, onAlertaOp, alertas = [], summary }) {
   const { hist, dia, divPago, aberto, divPendente } = summary;
-  const hoje = new Date().toISOString().split('T')[0];
   const ativosBase = [...new Set(openOps.map((o) => o.ativo_base || o.ativo))];
   const hasAlertaGrupo = alertas.some(a => a.grupo_id === grupo.id);
   const hasAlertaOp = (oid) => alertas.some(a => a.operacao_id === oid);
@@ -72,24 +71,21 @@ export default function GrupoMobile({ grupo, openOps, divs = [], quotes, expande
               </div>
             );
           })}
-          {divs.map((d) => {
-            const pendente = d.data_pagamento > hoje;
-            return (
-              <div key={`div-${d.id}`} className="border rounded-lg p-3 space-y-2 bg-amber-50/50 dark:bg-amber-950/20">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span>
-                  <span className={`text-xs font-medium ${pendente ? 'text-amber-600' : 'text-emerald-600'}`}>{pendente ? 'Pendente' : 'Pago'}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Qtd:</span> {d.quantidade}</div>
-                  <div><span className="text-muted-foreground">Valor/Ação:</span> {fmt(d.valor_por_acao)}</div>
-                  <div><span className="text-muted-foreground">Total:</span> <span className="text-emerald-600 font-medium">{fmt(d.valor_total)}</span></div>
-                  <div><span className="text-muted-foreground">Pagto:</span> {d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</div>
-                </div>
-                <Button size="sm" variant="ghost" className="min-h-[44px] text-destructive" onClick={() => onDeleteDividendo(d.id)}><Trash2 className="w-3.5 h-3.5 mr-1" />Excluir</Button>
+          {pendingDivs.map((d) => (
+            <div key={`div-${d.id}`} className="border rounded-lg p-3 space-y-2 bg-amber-50/50">
+              <div className="flex justify-between items-center">
+                <span className="font-medium inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span>
+                <span className="text-xs text-amber-600 font-medium">DIV</span>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="text-muted-foreground">Qtd:</span> {d.quantidade}</div>
+                <div><span className="text-muted-foreground">Valor/Ação:</span> {fmt(d.valor_por_acao)}</div>
+                <div><span className="text-muted-foreground">Total:</span> <span className="text-emerald-600 font-medium">{fmt(d.valor_total)}</span></div>
+                <div><span className="text-muted-foreground">Pagto:</span> {d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</div>
+              </div>
+              <Button size="sm" variant="ghost" className="min-h-[44px] text-destructive" onClick={() => onDeleteDividendo(d.id)}><Trash2 className="w-3.5 h-3.5 mr-1" />Excluir</Button>
+            </div>
+          ))}
         </div>
       )}
     </div>
