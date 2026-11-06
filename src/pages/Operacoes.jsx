@@ -193,13 +193,13 @@ export default function Operacoes() {
       const user = await base44.auth.me();
       await base44.entities.GrupoOperacao.update(g.id, { nome: novoNome });
       await Promise.all(['Operacao', 'Dividendo', 'Alerta'].map(async (entityName) => {
-        let result;
-        do {
-          result = await base44.entities[entityName].updateMany(
+        for (let lote = 0; lote < 10; lote++) {
+          const result = await base44.entities[entityName].updateMany(
             { created_by_id: user.id, grupo_id: g.id, grupo_nome: { $ne: novoNome } },
             { $set: { grupo_nome: novoNome } }
           );
-        } while (result.has_more);
+          if (!result?.has_more) break;
+        }
       }));
       setGrupos((p) => p.map((x) => (x.id === g.id ? { ...x, nome: novoNome } : x)));
       const atualizarNome = (items) => items.map((x) => (x.grupo_id === g.id ? { ...x, grupo_nome: novoNome } : x));
