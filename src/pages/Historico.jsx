@@ -22,16 +22,32 @@ export default function Historico() {
   const [toDelete, setToDelete] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [nomeGrupos, setNomeGrupos] = useState({});
+
+  // Carrega todas as páginas (evita perder operações encerradas por limite)
+  const fetchAll = async (fetcher) => {
+    const acc = [];
+    let cursor;
+    for (let i = 0; i < 40; i++) {
+      const page = await fetcher(cursor);
+      acc.push(...(page?.items || []));
+      if (!page?.has_more) break;
+      cursor = page.next_cursor;
+    }
+    return acc;
+  };
 
   const loadData = async () => {
     setLoading(true); setError('');
     try {
-      const [o, d] = await Promise.all([
-        base44.entities.Operacao.filter({ status: 'FECHADA' }, '-data_fechamento', 500),
-        base44.entities.Dividendo.list('-created_date', 500),
+      const [o, d, gs] = await Promise.all([
+        fetchAll((cursor) => base44.entities.Operacao.filter({ status: 'FECHADA' }, { sort: '-data_fechamento', limit: 500, ...(cursor ? { cursor } : {}) })),
+        fetchAll((cursor) => base44.entities.Dividendo.list({ sort: '-created_date', limit: 500, ...(cursor ? { cursor } : {}) })),
+        fetchAll((cursor) => base44.entities.GrupoOperacao.list({ sort: '-created_date', limit: 500, ...(cursor ? { cursor } : {}) })),
       ]);
-      setOps(o || []);
-      setDividendos(d || []);
+      setOps(o);
+      setDividendos(d);
+      setNomeGrupos(Object.fromEntries(gs.map((g) => [g.id, g.nome])));
     } catch (e) { setError(e.response?.data?.error || e.message); }
     finally { setLoading(false); }
   };
@@ -61,14 +77,16 @@ export default function Historico() {
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
+  // Agrupa pelo vínculo real (grupo_id) para operações e dividendos caírem no mesmo card
+  const chaveGrupo = (r) => r.grupo_id || r.grupo_nome;
   const divPorGrupo = {};
-  dividendos.filter((d) => d.data_pagamento <= todayStr).forEach((d) => { (divPorGrupo[d.grupo_nome] ||= []).push(d); });
+  dividendos.filter((d) => d.data_pagamento <= todayStr).forEach((d) => { (divPorGrupo[chaveGrupo(d)] ||= []).push(d); });
 
   const grupos = {};
-  ops.forEach((o) => { (grupos[o.grupo_nome] ||= []).push(o); });
-  const groupMaxDate = (nome) => {
-    const opsDates = (grupos[nome] || []).map((o) => o.data_fechamento ? new Date(o.data_fechamento).getTime() : 0);
-    const divDates = (divPorGrupo[nome] || []).map((d) => d.data_pagamento ? new Date(d.data_pagamento).getTime() : 0);
+  ops.forEach((o) => { (grupos[chaveGrupo(o)] ||= []).push(o); });
+  const groupMaxDate = (chave) => {
+    const opsDates = (grupos[chave] || []).map((o) => o.data_fechamento ? new Date(o.data_fechamento).getTime() : 0);
+    const divDates = (divPorGrupo[chave] || []).map((d) => d.data_pagamento ? new Date(d.data_pagamento).getTime() : 0);
     return Math.max(0, ...opsDates, ...divDates);
   };
   const nomes = [...new Set([...Object.keys(grupos), ...Object.keys(divPorGrupo)])].sort((a, b) => groupMaxDate(b) - groupMaxDate(a));
@@ -86,13 +104,14 @@ export default function Historico() {
         ) : nomes.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Nenhuma operação encerrada.</p>
         ) : (
-          nomes.map((nome) => {
-            const lista = (grupos[nome] || []).slice().sort((a, b) => {
+          nomes.map((chave) => {
+            const nome = nomeGrupos[chave] || (grupos[chave] || [])[0]?.grupo_nome || (divPorGrupo[chave] || [])[0]?.grupo_nome || 'Sem grupo';
+            const lista = (grupos[chave] || []).slice().sort((a, b) => {
               const da = a.data_fechamento ? new Date(a.data_fechamento).getTime() : 0;
               const db = b.data_fechamento ? new Date(b.data_fechamento).getTime() : 0;
               return db - da;
             });
-            const divs = divPorGrupo[nome] || [];
+            const divs = divPorGrupo[chave] || [];
             const totalOps = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
             const totalDiv = divs.reduce((s, d) => s + (d.valor_total || 0), 0);
             const total = totalOps + totalDiv;
@@ -102,7 +121,7 @@ export default function Historico() {
               ...divs.map((d) => ({ key: `div-${d.id}`, tipo: 'div', ts: d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').getTime() : 0, div: d })),
             ].sort((a, b) => b.ts - a.ts);
             return (
-              <Card key={nome}>
+              <Card key={chave}>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto hidden md:block">
                   <table className="w-full text-sm">
@@ -122,18 +141,18 @@ export default function Historico() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))}>
+                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setExpanded((p) => ({ ...p, [chave]: !p[chave] }))}>
                         <td colSpan={11} className="p-2.5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              {expanded[nome] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                              {expanded[chave] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                               <span className="font-bold">{nome}</span>
                             </div>
                             <span>Resultado Total: <b className={color(total)}>{fmt(total)}</b></span>
                           </div>
                         </td>
                       </tr>
-                      {expanded[nome] && itens.map((it) => {
+                      {expanded[chave] && itens.map((it) => {
                         if (it.tipo === 'div') {
                           const d = it.div;
                           return (
@@ -177,7 +196,7 @@ export default function Historico() {
                     </tbody>
                   </table>
                   </div>
-                  <HistoricoGrupoMobile nome={nome} itens={itens} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[nome]} onToggle={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))} />
+                  <HistoricoGrupoMobile nome={nome} itens={itens} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[chave]} onToggle={() => setExpanded((p) => ({ ...p, [chave]: !p[chave] }))} />
                 </CardContent>
               </Card>
             );
