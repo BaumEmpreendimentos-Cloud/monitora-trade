@@ -77,8 +77,8 @@ export default function Historico() {
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
-  // Agrupa pelo vínculo real (grupo_id) para operações e dividendos caírem no mesmo card
-  const chaveGrupo = (r) => r.grupo_id || r.grupo_nome;
+  // Agrupa pelo identificador do grupo (nome atual) para operações e dividendos caírem no mesmo card
+  const chaveGrupo = (r) => nomeGrupos[r.grupo_id] || r.grupo_nome || 'Sem grupo';
   const divPorGrupo = {};
   dividendos.filter((d) => d.data_pagamento <= todayStr).forEach((d) => { (divPorGrupo[chaveGrupo(d)] ||= []).push(d); });
 
@@ -104,14 +104,13 @@ export default function Historico() {
         ) : nomes.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Nenhuma operação encerrada.</p>
         ) : (
-          nomes.map((chave) => {
-            const nome = nomeGrupos[chave] || (grupos[chave] || [])[0]?.grupo_nome || (divPorGrupo[chave] || [])[0]?.grupo_nome || 'Sem grupo';
-            const lista = (grupos[chave] || []).slice().sort((a, b) => {
+          nomes.map((nome) => {
+            const lista = (grupos[nome] || []).slice().sort((a, b) => {
               const da = a.data_fechamento ? new Date(a.data_fechamento).getTime() : 0;
               const db = b.data_fechamento ? new Date(b.data_fechamento).getTime() : 0;
               return db - da;
             });
-            const divs = divPorGrupo[chave] || [];
+            const divs = divPorGrupo[nome] || [];
             const totalOps = lista.reduce((s, o) => s + (o.resultado_valor || 0), 0);
             const totalDiv = divs.reduce((s, d) => s + (d.valor_total || 0), 0);
             const total = totalOps + totalDiv;
@@ -121,7 +120,7 @@ export default function Historico() {
               ...divs.map((d) => ({ key: `div-${d.id}`, tipo: 'div', ts: d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').getTime() : 0, div: d })),
             ].sort((a, b) => b.ts - a.ts);
             return (
-              <Card key={chave}>
+              <Card key={nome}>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto hidden md:block">
                   <table className="w-full text-sm">
@@ -141,18 +140,18 @@ export default function Historico() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setExpanded((p) => ({ ...p, [chave]: !p[chave] }))}>
+                      <tr className="bg-primary/5 cursor-pointer hover:bg-primary/10" onClick={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))}>
                         <td colSpan={11} className="p-2.5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              {expanded[chave] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                              {expanded[nome] ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                               <span className="font-bold">{nome}</span>
                             </div>
                             <span>Resultado Total: <b className={color(total)}>{fmt(total)}</b></span>
                           </div>
                         </td>
                       </tr>
-                      {expanded[chave] && itens.map((it) => {
+                      {expanded[nome] && itens.map((it) => {
                         if (it.tipo === 'div') {
                           const d = it.div;
                           return (
@@ -196,7 +195,7 @@ export default function Historico() {
                     </tbody>
                   </table>
                   </div>
-                  <HistoricoGrupoMobile nome={nome} itens={itens} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[chave]} onToggle={() => setExpanded((p) => ({ ...p, [chave]: !p[chave] }))} />
+                  <HistoricoGrupoMobile nome={nome} itens={itens} total={total} onEdit={setEditarOp} onDelete={setToDelete} collapsed={!expanded[nome]} onToggle={() => setExpanded((p) => ({ ...p, [nome]: !p[nome] }))} />
                 </CardContent>
               </Card>
             );
