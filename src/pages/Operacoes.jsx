@@ -190,10 +190,22 @@ export default function Operacoes() {
     if (!g) return;
     setError('');
     try {
+      const user = await base44.auth.me();
       await base44.entities.GrupoOperacao.update(g.id, { nome: novoNome });
+      await Promise.all(['Operacao', 'Dividendo', 'Alerta'].map(async (entityName) => {
+        let result;
+        do {
+          result = await base44.entities[entityName].updateMany(
+            { created_by_id: user.id, grupo_id: g.id, grupo_nome: { $ne: novoNome } },
+            { $set: { grupo_nome: novoNome } }
+          );
+        } while (result.has_more);
+      }));
       setGrupos((p) => p.map((x) => (x.id === g.id ? { ...x, nome: novoNome } : x)));
-      await base44.entities.Operacao.updateMany({ grupo_id: g.id }, { $set: { grupo_nome: novoNome } });
-      setOps((p) => p.map((x) => (x.grupo_id === g.id ? { ...x, grupo_nome: novoNome } : x)));
+      const atualizarNome = (items) => items.map((x) => (x.grupo_id === g.id ? { ...x, grupo_nome: novoNome } : x));
+      setOps(atualizarNome);
+      setDividendos(atualizarNome);
+      setAlertas(atualizarNome);
       setEditarGrupo(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
