@@ -290,7 +290,9 @@ export default function Operacoes() {
               })();
               const baseQuote = baseRef ? quotes[baseRef] : null;
               const ativosBaseGrupo = [...new Set(gOpen.map((o) => o.ativo_base || o.ativo))];
-              const gDivPendente = dividendos.filter((d) => d.grupo_id === g.id && isDivPendente(d));
+              const gDividendos = dividendos
+                .filter((d) => d.grupo_id === g.id)
+                .sort((a, b) => (a.data_pagamento || '').localeCompare(b.data_pagamento || ''));
               return (
                 <Card key={g.id} data-tour="ops-grupo">
                   <CardContent className="p-0">
@@ -386,26 +388,29 @@ export default function Operacoes() {
                             </tr>
                           );
                         })}
-                        {gDivPendente.map((d) => (
-                          <tr key={`div-${d.id}`} className="border-t bg-amber-50/50">
-                            <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
-                            <td className="p-2 text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                            <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
-                            <td className="p-2"></td>
-                            <td className="p-2 text-right">{d.quantidade}</td>
-                            <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
-                            <td className="p-2"></td>
-                            <td className="p-2"></td>
-                            <td className="p-2"></td>
-                            <td className="p-2"></td>
-                            <td className="p-2"></td>
-                            <td className="p-2 text-right text-amber-600 text-xs">Pendente</td>
-                            <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
-                            <td className="p-2">
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDividendo(d.id)} title="Excluir dividendo"><Trash2 className="w-3.5 h-3.5" /></Button>
-                            </td>
-                          </tr>
-                        ))}
+                        {gDividendos.map((d) => {
+                          const pendente = isDivPendente(d);
+                          return (
+                            <tr key={`div-${d.id}`} className="border-t bg-amber-50/50 dark:bg-amber-950/20">
+                              <td className="p-2 font-medium"><span className="inline-flex items-center gap-1"><Coins className="w-3.5 h-3.5 text-amber-500" />{d.ativo}</span></td>
+                              <td className="p-2 text-muted-foreground">{d.data_pagamento ? new Date(d.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                              <td className="p-2 text-xs text-amber-600 font-medium">DIV</td>
+                              <td className="p-2 text-xs text-muted-foreground">Lançamento</td>
+                              <td className="p-2 text-right">{d.quantidade}</td>
+                              <td className="p-2 text-right">{fmt(d.valor_por_acao)}</td>
+                              <td className="p-2"></td>
+                              <td className="p-2"></td>
+                              <td className="p-2"></td>
+                              <td className="p-2"></td>
+                              <td className="p-2"></td>
+                              <td className="p-2 text-right text-xs">{pendente ? <span className="text-amber-600">Pendente</span> : <span className="text-emerald-600">Pago</span>}</td>
+                              <td className="p-2 text-right text-emerald-600 font-medium">{fmt(d.valor_total)}</td>
+                              <td className="p-2">
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDividendo(d.id)} title="Excluir dividendo"><Trash2 className="w-3.5 h-3.5" /></Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                       )}
                     </table>
@@ -413,7 +418,7 @@ export default function Operacoes() {
                     <GrupoMobile
                      grupo={g}
                      openOps={gOpen}
-                     pendingDivs={gDivPendente}
+                     divs={gDividendos}
                      quotes={quotes}
                      expanded={!!expanded[g.id]}
                      onToggleExpand={() => setExpanded((p) => ({ ...p, [g.id]: !p[g.id] }))}
