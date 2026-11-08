@@ -29,7 +29,7 @@ export default function CardAutorizacoes({ autorizacoes, onAutorizar, onRevogar 
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Autorize outros usuários a acompanhar suas operações. Eles veem apenas as operações, sem poder editar ou registrar nada.
+          Autorize outros usuários a acompanhar suas operações. Eles veem os identificadores completos, com os mesmos dados e totais, e podem editar e encerrar as operações abertas.
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
           <Input
