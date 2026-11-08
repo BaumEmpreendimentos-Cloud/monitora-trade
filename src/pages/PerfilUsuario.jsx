@@ -24,15 +24,18 @@ export default function PerfilUsuario() {
   const [editar, setEditar] = useState(null);
   const [erroAcao, setErroAcao] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true); setErro('');
+  const load = useCallback(async (silent = false) => {
+    if (!silent) { setLoading(true); setErro(''); }
     try {
       const res = await base44.functions.invoke('compartilharOperacoes', { action: 'operacoes', titularId: userId, status });
       setDados(res.data);
+      setErro('');
     } catch (e) {
-      setDados(null);
-      setErro(e.response?.data?.error || e.message);
-    } finally { setLoading(false); }
+      if (!silent) {
+        setDados(null);
+        setErro(e.response?.data?.error || e.message);
+      }
+    } finally { if (!silent) setLoading(false); }
   }, [userId, status]);
 
   useEffect(() => { load(); }, [load]);
@@ -67,6 +70,15 @@ export default function PerfilUsuario() {
     if (status === 'ABERTA' && abertas.length) fetchQuotes();
     else setQuotes({});
   }, [status, abertas.length]);
+
+  // Atualização automática das operações e cotações a cada 5 minutos
+  useEffect(() => {
+    const id = setInterval(() => {
+      load(true);
+      fetchQuotes();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [load, fetchQuotes]);
 
   const handleEncerrar = async (preco, irrf) => {
     const o = encerrar;

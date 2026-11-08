@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Coins } from 'lucide-react';
+import { Pencil, Coins, ChevronDown } from 'lucide-react';
 import CustoUnitario from '@/components/operacoes/CustoUnitario';
 import { calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
 
@@ -20,6 +20,7 @@ const variavelDia = (operacao, quotes, prevQuotes) => {
 };
 
 export default function GrupoCompartilhado({ grupo, status, quotes, prevQuotes, onEditar, onEncerrar }) {
+  const [aberto, setAberto] = useState(true);
   const abertas = status === 'ABERTA';
   const resultadoAberto = abertas
     ? grupo.ops.reduce((s, o) => s + (calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, quotes[o.ativo]) || 0), 0)
@@ -33,7 +34,15 @@ export default function GrupoCompartilhado({ grupo, status, quotes, prevQuotes, 
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 px-3 py-2.5 bg-primary/5">
           <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <span className="font-bold text-sm truncate" title={grupo.nome}>{grupo.nome}</span>
+            <button
+              type="button"
+              onClick={() => setAberto((v) => !v)}
+              className="flex items-center gap-1.5 min-w-0 rounded px-1 -ml-1 hover:bg-primary/10"
+              title={aberto ? 'Recolher identificador' : 'Expandir identificador'}
+            >
+              <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${aberto ? '' : '-rotate-90'}`} />
+              <span className="font-bold text-sm truncate">{grupo.nome}</span>
+            </button>
             {abertas && <CustoUnitario operacoes={grupo.ops} />}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -43,6 +52,8 @@ export default function GrupoCompartilhado({ grupo, status, quotes, prevQuotes, 
           </div>
         </div>
 
+        {aberto && (
+        <>
         <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-sm">
             <thead>
@@ -200,6 +211,8 @@ export default function GrupoCompartilhado({ grupo, status, quotes, prevQuotes, 
             </div>
           ))}
         </div>
+        </>
+        )}
       </CardContent>
     </Card>
   );
