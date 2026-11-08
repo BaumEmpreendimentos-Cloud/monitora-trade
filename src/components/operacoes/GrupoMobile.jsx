@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, Coins, Pencil, Trash2, Bell, BellRing } from 'lucide-react';
 import { calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
+import CustoUnitario from '@/components/operacoes/CustoUnitario';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
@@ -32,6 +33,7 @@ export default function GrupoMobile({ grupo, openOps, pendingDivs, quotes, expan
         <div>Op. Encerradas: <b className={color(hist + divPago)}>{fmt(hist + divPago)}</b></div>
         <div>Total: <b className={color(hist + divPago + aberto + divPendente)}>{fmt(hist + divPago + aberto + divPendente)}</b></div>
         <div>Dia: <b className={color(dia)}>{fmt(dia)}</b></div>
+        <div><CustoUnitario operacoes={openOps} /></div>
       </div>
       {expanded && (
         <div className="space-y-2">

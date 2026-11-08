@@ -11,6 +11,7 @@ import DividendoForm from '@/components/operacoes/DividendoForm';
 import AlertaForm from '@/components/operacoes/AlertaForm';
 import MapaCalorGrupo from '@/components/operacoes/MapaCalorGrupo';
 import GrupoMobile from '@/components/operacoes/GrupoMobile';
+import CustoUnitario from '@/components/operacoes/CustoUnitario';
 import DashboardOperacoes from '@/components/operacoes/DashboardOperacoes';
 import PullToRefresh from '@/components/PullToRefresh';
 import { calcValorInicial, calcResultadoValor, calcResultadoPct, calcExtrinseco, businessDaysUntil, moneynessRowClass } from '@/lib/operacoes';
@@ -331,6 +332,7 @@ export default function Operacoes() {
                                 )}
                               </div>
                               <div className="flex gap-4 text-sm shrink-0">
+                                <CustoUnitario operacoes={gOpen} label="Custo/un." />
                                 <span>Op. Encerradas: <b className={color(hist + groupDivPago(g.id))}>{fmt(hist + groupDivPago(g.id))}</b></span>
                                 <span>Valor Total: <b className={color(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}>{fmt(hist + groupDivPago(g.id) + groupAberto(g.id) + groupDivPendente(g.id))}</b></span>
                                 <span>Resultado do Dia: <b className={color(dia)}>{fmt(dia)}</b></span>
@@ -453,7 +455,7 @@ export default function Operacoes() {
         )}
       </div>
 
-      <OperacaoForm open={formOpen} onClose={() => { setFormOpen(false); setFormGrupo(null); }} grupos={groupsWithOpen} onSubmit={handleCreate} identificadorInicial={formGrupo?.nome} />
+      <OperacaoForm open={formOpen} onClose={() => { setFormOpen(false); setFormGrupo(null); }} grupos={groupsWithOpen} operacoes={openOps} onSubmit={handleCreate} identificadorInicial={formGrupo?.nome} />
       <EncerrarDialog operacao={encerrar} onClose={() => setEncerrar(null)} onConfirm={handleEncerrar} />
       <EditarOperacaoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditarOperacao} />
       <EditarIdentificadorDialog grupo={editarGrupo} onClose={() => setEditarGrupo(null)} onSubmit={handleEditarIdentificador} />

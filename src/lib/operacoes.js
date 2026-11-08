@@ -71,6 +71,36 @@ export const moneynessRowClass = (categoria, strike, underlying) => {
   return '';
 };
 
+// Custo por unidade para montar o identificador (posições abertas)
+// - Com ações/FII/DOLLAR: preço médio do ativo deduzido dos prêmios líquidos das opções
+// - Somente opções: fluxo por unidade (recebeu = positivo, pagou = negativo)
+export const calcCustoUnitario = (operacoes = []) => {
+  const isOpt = (c) => c === 'CALL' || c === 'PUT';
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const fluxo = (o) => (o.operacao === 'VENDA' ? 1 : -1) * num(o.quantidade) * num(o.preco_entrada);
+  const soma = (lista) => lista.reduce((s, o) => s + fluxo(o), 0);
+
+  const ativos = operacoes.filter((o) => !isOpt(o.categoria));
+  const opcoes = operacoes.filter((o) => isOpt(o.categoria));
+  const caixaAtivos = soma(ativos);
+  const caixaOpcoes = soma(opcoes);
+  const qtdAtivos = ativos.reduce((s, o) => s + (o.operacao === 'VENDA' ? -1 : 1) * num(o.quantidade), 0);
+
+  if (Math.abs(qtdAtivos) > 0) {
+    return {
+      tipo: 'acoes',
+      valor: -(caixaAtivos + caixaOpcoes) / Math.abs(qtdAtivos),
+      precoMedio: Math.abs(caixaAtivos / qtdAtivos),
+      premios: caixaOpcoes,
+      quantidade: Math.abs(qtdAtivos),
+    };
+  }
+
+  const refQtd = opcoes.reduce((m, o) => Math.max(m, Math.abs(num(o.quantidade))), 0);
+  if (!refQtd) return null;
+  return { tipo: 'opcoes', valor: caixaOpcoes / refQtd, premios: caixaOpcoes, quantidade: refQtd };
+};
+
 // Resultado de uma opção no vencimento dado o preço do ativo base (underlying)
 export const calcResultadoOpcaoUnderlying = (categoria, operacao, strike, precoEntrada, quantidade, underlying) => {
   if (underlying == null || underlying === '' || strike == null) return null;

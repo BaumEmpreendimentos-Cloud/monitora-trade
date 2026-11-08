@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers, Share2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -37,6 +37,7 @@ const PAGE_TITLES = {
   '/importar-historico': 'Importar Histórico',
   '/cotacoes': 'Cotações',
   '/mensagens': 'Mensagens',
+  '/compartilhados': 'Perfis',
   '/painel': 'Painel',
   '/assinatura': 'Premium',
   '/configuracoes': 'Configurações',
@@ -55,7 +56,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const admin = isGestor(user);
-  const pageTitle = PAGE_TITLES[location.pathname] || '';
+  const pageTitle = PAGE_TITLES[location.pathname] || (location.pathname.startsWith('/perfil/') ? 'Perfil' : '');
   const showBack = !MAIN_TABS.includes(location.pathname);
 
   const handleTabClick = (e, path) => {
@@ -126,6 +127,7 @@ export default function Layout() {
           <nav className="flex gap-1 items-center">
             <NavLink to="/operacoes" className={linkClass}>Operações</NavLink>
             <NavLink to="/mensagens" className={linkClass}><MessageSquare className="w-4 h-4 inline -mt-0.5" /> Mensagens</NavLink>
+            <NavLink to="/compartilhados" className={linkClass}><Share2 className="w-4 h-4 inline -mt-0.5" /> Perfis</NavLink>
             <NavLink to="/estrategias" className={linkClass}><Layers className="w-4 h-4 inline -mt-0.5" /> Estratégias</NavLink>
             <NavLink to="/instagram" className={linkClass}><InstagramIcon className="w-4 h-4 inline -mt-0.5" /> Instagram</NavLink>
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
