@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Trash2, User, Crown, Calendar, Bell } from 'lucide-react';
+import { Trash2, User, Crown, Calendar, Bell, Share2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -132,6 +132,16 @@ export default function Configuracoes() {
                 onCheckedChange={(v) => handleNotifToggle('notif_inapp', v)}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" /> Compartilhamento de operações</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">Autorize outros usuários a visualizar suas operações (somente leitura) e acesse os perfis que liberaram acesso para você.</p>
+            <Button variant="outline" className="min-h-[44px]" onClick={() => navigate('/compartilhados')}>
+              <Share2 className="w-4 h-4 mr-2" /> Gerenciar compartilhamentos
+            </Button>
           </CardContent>
         </Card>
 

@@ -22,6 +22,8 @@ const ImportarHistorico = lazy(() => import('./pages/ImportarHistorico'));
 const Assinatura = lazy(() => import('./pages/Assinatura'));
 const Painel = lazy(() => import('./pages/Painel'));
 const Mensagens = lazy(() => import('./pages/Mensagens'));
+const Compartilhados = lazy(() => import('./pages/Compartilhados'));
+const PerfilUsuario = lazy(() => import('./pages/PerfilUsuario'));
 const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const IRPF = lazy(() => import('./pages/IRPF'));
 const Rolagem = lazy(() => import('./pages/Rolagem'));
@@ -71,6 +73,8 @@ const AuthenticatedApp = () => {
           <Route path="/cotacoes" element={<Cotacoes />} />
           <Route path="/assinatura" element={<Assinatura />} />
           <Route path="/mensagens" element={<Mensagens />} />
+          <Route path="/compartilhados" element={<Compartilhados />} />
+          <Route path="/perfil/:userId" element={<PerfilUsuario />} />
           <Route path="/painel" element={<Painel />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/irpf" element={<IRPF />} />
