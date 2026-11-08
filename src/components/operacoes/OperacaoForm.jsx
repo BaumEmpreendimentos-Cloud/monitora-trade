@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import MobileSelect from '@/components/MobileSelect';
 import { lookupOption } from '@/lib/oplab';
+import { calcCustoUnitario } from '@/lib/operacoes';
+import CustoUnitario from '@/components/operacoes/CustoUnitario';
 
 const CATEGORIAS = ['ACAO', 'CALL', 'PUT', 'DOLLAR', 'FII'];
 const OPERACOES = ['COMPRA', 'VENDA'];
 const isOption = (c) => c === 'CALL' || c === 'PUT';
 
-export default function OperacaoForm({ open, onClose, grupos, onSubmit, identificadorInicial }) {
+export default function OperacaoForm({ open, onClose, grupos, operacoes = [], onSubmit, identificadorInicial }) {
   const [identificador, setIdentificador] = useState('');
   const [ativo, setAtivo] = useState('');
   const [ativoBase, setAtivoBase] = useState('');
@@ -48,6 +50,17 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit, identifi
       setStrike(''); setVencimento(''); setErr('');
     }
   }, [open]);
+
+  // Custo por unidade do identificador já montado + a perna que está sendo incluída
+  const previewOps = useMemo(() => {
+    const nome = identificador.trim().toLowerCase();
+    const existentes = nome ? operacoes.filter((o) => (o.grupo_nome || '').toLowerCase() === nome) : [];
+    const q = Number(quantidade);
+    const p = Number(preco);
+    return q > 0 && p > 0
+      ? [...existentes, { categoria, operacao, quantidade: q, preco_entrada: p }]
+      : existentes;
+  }, [identificador, operacoes, quantidade, preco, categoria, operacao]);
 
   const submit = () => {
     const a = ativo.trim().toUpperCase();
@@ -139,6 +152,12 @@ export default function OperacaoForm({ open, onClose, grupos, onSubmit, identifi
             <Label>Data de Abertura</Label>
             <Input type="date" value={dataAbertura} onChange={(e) => setDataAbertura(e.target.value)} />
           </div>
+          {calcCustoUnitario(previewOps) && (
+            <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
+              <span className="text-sm text-muted-foreground">Custo por unidade</span>
+              <CustoUnitario operacoes={previewOps} label="" className="text-sm" valueClassName="text-base" />
+            </div>
+          )}
           {err && <p className="text-sm text-destructive">{err}</p>}
       </div>
     </ResponsiveDialog>
