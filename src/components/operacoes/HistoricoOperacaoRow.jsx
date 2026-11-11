@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, RotateCcw } from 'lucide-react';
 
 const fmt = (v) => v == null || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const color = (v) => v == null ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600';
 
-export default function HistoricoOperacaoRow({ operacao: o, onEdit, onDelete }) {
+export default function HistoricoOperacaoRow({ operacao: o, onEdit, onDelete, onReabrir }) {
   return (
     <tr className="border-t">
       <td className="p-2 font-medium">{o.ativo}</td>
@@ -20,6 +20,7 @@ export default function HistoricoOperacaoRow({ operacao: o, onEdit, onDelete }) 
       <td className="p-2 text-right text-muted-foreground">{o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</td>
       <td className="p-2"><div className="flex gap-1">
         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(o)} title="Editar operação"><Pencil className="w-3.5 h-3.5" /></Button>
+        <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => onReabrir(o)} title="Reabrir operação (encerrada por engano)"><RotateCcw className="w-3.5 h-3.5" /></Button>
         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => onDelete(o)} title="Excluir operação"><Trash2 className="w-3.5 h-3.5" /></Button>
       </div></td>
     </tr>

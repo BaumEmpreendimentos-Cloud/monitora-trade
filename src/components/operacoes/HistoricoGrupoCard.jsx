@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import HistoricoGrupoDesktop from '@/components/operacoes/HistoricoGrupoDesktop';
 import HistoricoGrupoMobile from '@/components/operacoes/HistoricoGrupoMobile';
 
-export default function HistoricoGrupoCard({ grupo, onEdit, onDelete }) {
+export default function HistoricoGrupoCard({ grupo, onEdit, onDelete, onReabrir }) {
   const [expanded, setExpanded] = useState(false);
   const { data, isPending, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['historico', 'detalhes', grupo.id],
@@ -25,8 +25,8 @@ export default function HistoricoGrupoCard({ grupo, onEdit, onDelete }) {
   const onToggle = () => setExpanded((value) => !value);
   return (
     <Card><CardContent className="p-0">
-      <HistoricoGrupoDesktop grupo={grupo} lista={lista} divs={divs} expanded={expanded} onToggle={onToggle} onEdit={onEdit} onDelete={onDelete} />
-      <HistoricoGrupoMobile nome={grupo.nome} lista={lista} divs={divs} total={grupo.total} onEdit={onEdit} onDelete={onDelete} collapsed={!expanded} onToggle={onToggle} />
+      <HistoricoGrupoDesktop grupo={grupo} lista={lista} divs={divs} expanded={expanded} onToggle={onToggle} onEdit={onEdit} onDelete={onDelete} onReabrir={onReabrir} />
+      <HistoricoGrupoMobile nome={grupo.nome} lista={lista} divs={divs} total={grupo.total} onEdit={onEdit} onDelete={onDelete} onReabrir={onReabrir} collapsed={!expanded} onToggle={onToggle} />
       {expanded && isPending && <p className="p-3 text-sm text-muted-foreground">Carregando operações e dividendos...</p>}
       {expanded && isError && <p className="p-3 text-sm text-destructive">{error.response?.data?.error || error.message}</p>}
       {expanded && hasNextPage && <div className="p-3"><Button variant="outline" size="sm" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>{isFetchingNextPage ? 'Carregando...' : 'Carregar mais lançamentos'}</Button></div>}

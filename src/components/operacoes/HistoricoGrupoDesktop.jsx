@@ -6,7 +6,7 @@ import HistoricoDividendoRow from '@/components/operacoes/HistoricoDividendoRow'
 const fmt = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const columns = ['Ativo', 'Abertura', 'Cat.', 'Op.', 'Qtd', 'Preço Entr.', 'Preço Encerr.', 'Result. %', 'Result. Valor', 'Encerrado em', 'Ações'];
 
-export default function HistoricoGrupoDesktop({ grupo, lista, divs, expanded, onToggle, onEdit, onDelete }) {
+export default function HistoricoGrupoDesktop({ grupo, lista, divs, expanded, onToggle, onEdit, onDelete, onReabrir }) {
   return (
     <div className="overflow-x-auto hidden md:block">
       <table className="w-full text-sm">
@@ -25,7 +25,7 @@ export default function HistoricoGrupoDesktop({ grupo, lista, divs, expanded, on
               </div>
             </td>
           </tr>
-          {expanded && lista.map((operacao) => <HistoricoOperacaoRow key={operacao.id} operacao={operacao} onEdit={onEdit} onDelete={onDelete} />)}
+          {expanded && lista.map((operacao) => <HistoricoOperacaoRow key={operacao.id} operacao={operacao} onEdit={onEdit} onDelete={onDelete} onReabrir={onReabrir} />)}
           {expanded && divs.map((dividendo) => <HistoricoDividendoRow key={dividendo.id} dividendo={dividendo} />)}
         </tbody>
       </table>

@@ -1,12 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Coins, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Coins, Pencil, Trash2, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fmtPct = (v) => (v === null || v === undefined || v === '' ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`);
 const color = (v) => (v === null || v === undefined ? '' : v >= 0 ? 'text-emerald-600' : 'text-red-600');
 
-export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit, onDelete, collapsed, onToggle }) {
+export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit, onDelete, onReabrir, collapsed, onToggle }) {
   return (
     <div className="md:hidden p-3 space-y-3">
       <div className="flex items-center justify-between cursor-pointer" onClick={onToggle}>
@@ -33,8 +33,9 @@ export default function HistoricoGrupoMobile({ nome, lista, divs, total, onEdit,
             <div><span className="text-muted-foreground">Abertura:</span> {o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</div>
             <div><span className="text-muted-foreground">Fechamento:</span> {o.data_fechamento ? new Date(o.data_fechamento).toLocaleDateString('pt-BR') : '—'}</div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" className="min-h-[44px] flex-1" onClick={() => onEdit(o)}><Pencil className="w-3.5 h-3.5 mr-1" />Editar</Button>
+            <Button size="sm" variant="outline" className="min-h-[44px] flex-1 text-amber-600" onClick={() => onReabrir(o)}><RotateCcw className="w-3.5 h-3.5 mr-1" />Reabrir</Button>
             <Button size="sm" variant="ghost" className="min-h-[44px] text-destructive" onClick={() => onDelete(o)}><Trash2 className="w-3.5 h-3.5 mr-1" />Excluir</Button>
           </div>
         </div>

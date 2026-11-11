@@ -23,6 +23,7 @@ export default function Historico() {
   const [error, setError] = useState('');
   const [editarOp, setEditarOp] = useState(null);
   const [toDelete, setToDelete] = useState(null);
+  const [toReabrir, setToReabrir] = useState(null);
   const [saving, setSaving] = useState(false);
 
 
@@ -32,6 +33,25 @@ export default function Historico() {
       await base44.entities.Operacao.update(id, dados);
       await queryClient.invalidateQueries({ queryKey: ['historico'] });
       setEditarOp(null);
+    } catch (e) { setError(e.response?.data?.error || e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleReabrir = async () => {
+    const o = toReabrir;
+    if (!o) return;
+    setSaving(true); setError('');
+    try {
+      await base44.entities.Operacao.update(o.id, {
+        status: 'ABERTA',
+        preco_fechamento: null,
+        resultado_valor: null,
+        resultado_pct: null,
+        data_fechamento: null,
+        irrf: 0,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['historico'] });
+      setToReabrir(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
     finally { setSaving(false); }
   };
@@ -62,7 +82,7 @@ export default function Historico() {
         ) : grupos.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Nenhuma operação encerrada.</p>
         ) : (
-          grupos.map((grupo) => <HistoricoGrupoCard key={grupo.id} grupo={grupo} onEdit={setEditarOp} onDelete={setToDelete} />)
+          grupos.map((grupo) => <HistoricoGrupoCard key={grupo.id} grupo={grupo} onEdit={setEditarOp} onDelete={setToDelete} onReabrir={setToReabrir} />)
         )}
         {hasNextPage && <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>{isFetchingNextPage ? 'Carregando...' : 'Carregar mais identificadores'}</Button>}
         <EditarHistoricoDialog operacao={editarOp} onClose={() => setEditarOp(null)} onSubmit={handleEditar} />
@@ -75,6 +95,17 @@ export default function Historico() {
         >
           <p className="text-sm text-muted-foreground">Deseja realmente excluir a operação <b>{toDelete?.ativo}</b>? Essa ação não pode ser desfeita.</p>
           {error && <p className="text-sm text-destructive">{error}</p>}
+        </ResponsiveDialog>
+        <ResponsiveDialog
+          open={!!toReabrir}
+          onOpenChange={(v) => !v && setToReabrir(null)}
+          title="Reabrir operação"
+          className="max-w-md"
+          footer={<><Button variant="outline" onClick={() => setToReabrir(null)} disabled={saving}>Cancelar</Button><Button onClick={handleReabrir} disabled={saving}>{saving ? 'Reabrindo...' : 'Reabrir'}</Button></>}
+        >
+          <p className="text-sm text-muted-foreground">
+            A operação <b>{toReabrir?.ativo}</b> voltará para <b>Posições abertas</b> em Operações, mantendo o preço e a data de entrada. Preço de encerramento, resultado e IRRF serão apagados.
+          </p>
         </ResponsiveDialog>
       </div>
     </div>
