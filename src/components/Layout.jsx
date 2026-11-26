@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers, Share2 } from 'lucide-react';
+import { LineChart, Crown, LogOut, MessageSquare, Users, ShieldAlert, Settings, History, TrendingUp, ArrowLeft, Receipt, Instagram as InstagramIcon, Layers, Share2, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { hasAccess, isPremium, isGestor, trialDaysLeft } from '@/lib/access';
@@ -46,9 +46,10 @@ const PAGE_TITLES = {
   '/opcoes': 'Simulador',
   '/estrategias': 'Estratégias',
   '/instagram': 'Instagram',
+  '/monitora-ai': 'Monitora AI',
 };
 
-const MAIN_TABS = ['/operacoes', '/estrategias', '/mensagens', '/instagram', '/configuracoes'];
+const MAIN_TABS = ['/operacoes', '/estrategias', '/monitora-ai', '/mensagens', '/instagram', '/configuracoes'];
 
 export default function Layout() {
   const { user, checkUserAuth, logout } = useAuth();
@@ -129,6 +130,7 @@ export default function Layout() {
             <NavLink to="/mensagens" className={linkClass}><MessageSquare className="w-4 h-4 inline -mt-0.5" /> Mensagens</NavLink>
             <NavLink to="/compartilhados" className={linkClass}><Share2 className="w-4 h-4 inline -mt-0.5" /> Perfis</NavLink>
             <NavLink to="/estrategias" className={linkClass}><Layers className="w-4 h-4 inline -mt-0.5" /> Estratégias</NavLink>
+            <NavLink to="/monitora-ai" className={linkClass}><Sparkles className="w-4 h-4 inline -mt-0.5" /> Monitora AI</NavLink>
             <NavLink to="/instagram" className={linkClass}><InstagramIcon className="w-4 h-4 inline -mt-0.5" /> Instagram</NavLink>
             {admin && <NavLink to="/painel" className={linkClass}><Users className="w-4 h-4 inline -mt-0.5" /> Painel</NavLink>}
             <NavLink to="/assinatura" className={linkClass}><Crown className="w-4 h-4 inline -mt-0.5" /> Premium</NavLink>
@@ -164,6 +166,7 @@ export default function Layout() {
         <div className="flex items-center justify-around h-14">
           <NavLink to="/operacoes" className={mobileLinkClass} end onClick={(e) => handleTabClick(e, '/operacoes')}><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
           <NavLink to="/estrategias" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/estrategias')}><Layers className="w-5 h-5" /><span className="text-[10px]">Estratégias</span></NavLink>
+          <NavLink to="/monitora-ai" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/monitora-ai')}><Sparkles className="w-5 h-5" /><span className="text-[10px]">IA</span></NavLink>
           <NavLink to="/mensagens" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/mensagens')}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
           <NavLink to="/instagram" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/instagram')}><InstagramIcon className="w-5 h-5" /><span className="text-[10px]">Instagram</span></NavLink>
           <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>

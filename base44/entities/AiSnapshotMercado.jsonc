@@ -1,0 +1,83 @@
+{
+  "name": "AiSnapshotMercado",
+  "type": "object",
+  "properties": {
+    "capturado_em": {
+      "type": "string",
+      "title": "ISO timestamp da captura"
+    },
+    "selic_meta": {
+      "type": "number",
+      "title": "BCB SGS 432 (% a.a.)"
+    },
+    "selic_data_ref": {
+      "type": "string",
+      "title": "Data oficial BCB"
+    },
+    "cdi_anual": {
+      "type": "number",
+      "title": "BCB SGS 4389 (% a.a.)"
+    },
+    "ptax_venda": {
+      "type": "number",
+      "title": "BCB SGS 1 (R$)"
+    },
+    "ipca_12m": {
+      "type": "number",
+      "title": "BCB SGS 13522 (%)"
+    },
+    "cotacoes_json": {
+      "type": "string",
+      "title": "Snapshot OpLab v3 em JSON"
+    },
+    "fonte_primaria": {
+      "type": "string",
+      "default": "OpLab v3 + BCB SGS"
+    }
+  },
+  "required": [
+    "capturado_em",
+    "cotacoes_json"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

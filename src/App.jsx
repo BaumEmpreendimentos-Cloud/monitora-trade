@@ -28,6 +28,7 @@ const Configuracoes = lazy(() => import('./pages/Configuracoes'));
 const IRPF = lazy(() => import('./pages/IRPF'));
 const Rolagem = lazy(() => import('./pages/Rolagem'));
 const Instagram = lazy(() => import('./pages/Instagram'));
+const MonitoraAI = lazy(() => import('./pages/MonitoraAI'));
 const Opcoes = lazy(() => import('./pages/Opcoes'));
 const Estrategias = lazy(() => import('./pages/Estrategias'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
           <Route path="/opcoes" element={<Opcoes />} />
           <Route path="/estrategias" element={<Estrategias />} />
           <Route path="/instagram" element={<Instagram />} />
+          <Route path="/monitora-ai" element={<MonitoraAI />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

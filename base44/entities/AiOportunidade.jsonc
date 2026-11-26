@@ -1,0 +1,204 @@
+{
+  "name": "AiOportunidade",
+  "type": "object",
+  "properties": {
+    "ativo_base": {
+      "type": "string",
+      "title": "Ativo subjacente (ex: PETR4, WDO)"
+    },
+    "motor": {
+      "type": "string",
+      "enum": [
+        "DAY_TRADE",
+        "OPCOES",
+        "LONGO_PRAZO"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "gray"
+      ],
+      "title": "Motor anal\u00edtico"
+    },
+    "template_id": {
+      "type": "string",
+      "title": "ID do template em strategyTemplates.js"
+    },
+    "estrategia_nome": {
+      "type": "string",
+      "title": "Nome da estrat\u00e9gia ou setup"
+    },
+    "direcao": {
+      "type": "string",
+      "enum": [
+        "COMPRA",
+        "VENDA",
+        "NEUTRA"
+      ],
+      "enumColors": [
+        "green",
+        "red",
+        "gray"
+      ],
+      "title": "Dire\u00e7\u00e3o"
+    },
+    "horizonte": {
+      "type": "string",
+      "title": "Horizonte estimado (ex: 22 d.u.)"
+    },
+    "preco_referencia": {
+      "type": "number",
+      "title": "Spot ou entrada de refer\u00eancia"
+    },
+    "stop_referencia": {
+      "type": "number",
+      "title": "Stop t\u00e9cnico ou de estrutura"
+    },
+    "alvo_referencia": {
+      "type": "number",
+      "title": "Alvo de refer\u00eancia"
+    },
+    "probabilidade_lucro_pct": {
+      "type": "number",
+      "title": "PoP estimada pelo modelo (%)"
+    },
+    "risco_retorno": {
+      "type": "number",
+      "title": "Raz\u00e3o Retorno / Risco"
+    },
+    "score_quant": {
+      "type": "number",
+      "title": "Score determin\u00edstico (0-100)"
+    },
+    "nivel_risco": {
+      "type": "string",
+      "enum": [
+        "BAIXO",
+        "MODERADO",
+        "ALTO",
+        "BLOQUEADO"
+      ],
+      "enumColors": [
+        "green",
+        "yellow",
+        "orange",
+        "red"
+      ],
+      "title": "N\u00edvel de risco"
+    },
+    "selic_referencia": {
+      "type": "number",
+      "title": "Taxa Selic usada no c\u00e1lculo (% a.a.)"
+    },
+    "iv_referencia": {
+      "type": "number",
+      "title": "IV usada no c\u00e1lculo (%)"
+    },
+    "origem_dados": {
+      "type": "string",
+      "title": "Ex: OpLab v3 + BCB SGS"
+    },
+    "justificativa_ia": {
+      "type": "string",
+      "title": "S\u00edntese interpretativa da IA"
+    },
+    "pernas_json": {
+      "type": "string",
+      "title": "Pernas resolvidas (JSON)"
+    },
+    "greeks": {
+      "type": "object",
+      "title": "Gregas consolidadas (c\u00e1lculo determin\u00edstico)"
+    },
+    "break_evens": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "title": "Break-evens calculados"
+    },
+    "margem_estimada_brl": {
+      "type": "number",
+      "title": "Margem estimada (n\u00e3o oficial)"
+    },
+    "veto_motivos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Motivos de veto de risco"
+    },
+    "valida_ate": {
+      "type": "string",
+      "title": "ISO timestamp de validade"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ATIVA",
+        "APROVADA",
+        "VETADA_RISCO",
+        "EXPIRADA",
+        "EXECUTADA"
+      ],
+      "enumColors": [
+        "blue",
+        "green",
+        "red",
+        "gray",
+        "purple"
+      ],
+      "default": "ATIVA",
+      "title": "Status"
+    }
+  },
+  "required": [
+    "ativo_base",
+    "motor",
+    "estrategia_nome",
+    "direcao",
+    "preco_referencia",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

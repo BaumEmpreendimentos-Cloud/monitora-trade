@@ -59,22 +59,27 @@ function findClosestOption(options, type, targetStrike, dueDate) {
  * @param {Array} templateLegs - pernas do template
  * @returns {Promise<{legs: Array, dueDate: string|null, resolved: boolean}>}
  */
-export async function resolveStrategyLegs(ativoBase, spotPrice, templateLegs) {
+export async function resolveStrategyLegs(ativoBase, spotPrice, templateLegs, preloadedOptions = null) {
   const ref = spotPrice || REF_PRICE;
   const scale = ref / REF_PRICE;
 
-  let chainOptions = [];
+  let chainOptions = Array.isArray(preloadedOptions) ? preloadedOptions : [];
   let resolvedDueDate = null;
 
-  try {
-    const res = await base44.functions.invoke('oplabMarket', {
-      action: 'optionChain',
-      symbol: ativoBase.toUpperCase(),
-    });
-    chainOptions = res.data?.options || [];
+  if (Array.isArray(preloadedOptions)) {
+    // Cadeia já carregada pelo chamador (evita uma chamada OpLab por template)
     resolvedDueDate = findNextMonthlyExpiration(chainOptions);
-  } catch (e) {
-    chainOptions = [];
+  } else {
+    try {
+      const res = await base44.functions.invoke('oplabMarket', {
+        action: 'optionChain',
+        symbol: ativoBase.toUpperCase(),
+      });
+      chainOptions = res.data?.options || [];
+      resolvedDueDate = findNextMonthlyExpiration(chainOptions);
+    } catch (e) {
+      chainOptions = [];
+    }
   }
 
   const legs = (templateLegs || []).map((leg, index) => {
