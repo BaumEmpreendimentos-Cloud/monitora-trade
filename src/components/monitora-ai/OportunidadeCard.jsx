@@ -53,10 +53,16 @@ export default function OportunidadeCard({ op, onStatus, onExecutar, favorita })
             <p className="text-sm mt-0.5 truncate">{op.estrategia_nome}</p>
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <div className="text-xs text-muted-foreground">Lucro máx. aprox.</div>
-          <div className={`text-sm font-semibold tabular-nums ${Number(maxProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            {maxProfit === null ? '—' : brl(maxProfit)}
+        <div className="text-right shrink-0 space-y-1">
+          <div>
+            <div className="text-xs text-muted-foreground">Lucro máx. aprox.</div>
+            <div className={`text-sm font-semibold tabular-nums ${Number(maxProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {maxProfit === null ? '—' : brl(maxProfit)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Margem est.</div>
+            <div className="text-xs font-medium tabular-nums">{brl(op.margem_estimada_brl)}</div>
           </div>
         </div>
       </button>
