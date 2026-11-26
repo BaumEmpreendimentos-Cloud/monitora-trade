@@ -118,8 +118,9 @@ export default function MonitoraAI() {
 
   const ativos = useMemo(() => {
     const doPortfolio = [...new Set(groups.map((g) => g.ativoBase).filter(Boolean))];
-    return [...new Set([...ativosMonitorados, ...doPortfolio])].slice(0, MAX_ATIVOS);
-  }, [ativosMonitorados, groups]);
+    const comOportunidade = [...new Set(oportunidades.map((o) => o.ativo_base).filter(Boolean))];
+    return [...new Set([...ativosMonitorados, ...doPortfolio, ...comOportunidade])].slice(0, MAX_ATIVOS);
+  }, [ativosMonitorados, groups, oportunidades]);
 
   const ativo = ativoSel || ativos[0] || '';
 
@@ -129,15 +130,21 @@ export default function MonitoraAI() {
     [oportunidades]
   );
 
+  // Ativo selecionado na barra de chips filtra o quadro (sem seleção = todos)
+  const oportunidadesDoAtivo = useMemo(
+    () => (ativoSel ? oportunidadesQuadro.filter((o) => o.ativo_base === ativoSel) : oportunidadesQuadro),
+    [oportunidadesQuadro, ativoSel]
+  );
+
   // Estratégias preferidas aparecem primeiro, sem esconder as demais
   const oportunidadesOrdenadas = useMemo(() => {
     const peso = (o) => (favoritas.includes(o.template_id) ? 1 : 0);
-    return [...oportunidadesQuadro].sort((a, b) => {
+    return [...oportunidadesDoAtivo].sort((a, b) => {
       const diff = peso(b) - peso(a);
       if (diff !== 0) return diff;
       return String(b.created_date || '').localeCompare(String(a.created_date || ''));
     });
-  }, [oportunidadesQuadro, favoritas]);
+  }, [oportunidadesDoAtivo, favoritas]);
 
   const diagnostico = useMemo(() => diagnosticarSinais(oportunidades, quotesMap), [oportunidades, quotesMap]);
 
@@ -385,18 +392,27 @@ export default function MonitoraAI() {
           >
             <div className="px-4 py-2 border-b">
               <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setAtivoSel('')}
+                  className={`px-2 py-0.5 rounded border text-xs transition-colors ${!ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+                >
+                  Todos
+                </button>
                 {ativos.map((a) => (
                   <button
                     key={a}
                     onClick={() => setAtivoSel(a)}
-                    className={`px-2 py-0.5 rounded border text-xs transition-colors ${a === ativo ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+                    className={`px-2 py-0.5 rounded border text-xs transition-colors ${a === ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
                   >
                     {a}
                   </button>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
-                {ativosMonitorados.length ? `${ativosMonitorados.length} ativo(s) monitorado(s)` : 'Lista padrão de ativos'} · ajuste em "Ativos e estratégias"
+                {ativoSel
+                  ? `${oportunidadesOrdenadas.length} oportunidade(s) de ${ativoSel} · varredura em ${ativoSel}`
+                  : `${oportunidadesOrdenadas.length} oportunidade(s) no quadro · clique em um ativo para filtrar`}
+                {ativosMonitorados.length ? ` · ${ativosMonitorados.length} ativo(s) monitorado(s)` : ''} · ajuste em "Ativos e estratégias"
               </p>
             </div>
 
@@ -405,7 +421,9 @@ export default function MonitoraAI() {
                 <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}</div>
               ) : !oportunidadesOrdenadas.length ? (
                 <p className="text-sm text-muted-foreground py-3">
-                  Nenhuma oportunidade registrada. Escolha um ativo e rode a varredura — os números vêm da cadeia OpLab e dos módulos de cálculo do app.
+                  {ativoSel
+                    ? `Nenhuma oportunidade registrada para ${ativoSel}. Rode a varredura com esse ativo selecionado.`
+                    : 'Nenhuma oportunidade registrada. Escolha um ativo e rode a varredura — os números vêm da cadeia OpLab e dos módulos de cálculo do app.'}
                 </p>
               ) : (
                 oportunidadesOrdenadas.map((op) => (
