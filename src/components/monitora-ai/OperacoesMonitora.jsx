@@ -7,11 +7,11 @@ import { analyzeOpenGroups } from '@/lib/monitora-ai/portfolioEngine';
 const brl = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
 const cor = (v) => (Number(v) >= 0 ? 'text-emerald-600' : 'text-red-600');
 
-export default function OperacoesMonitora({ operacoes = [], quotesMap = {}, selicDecimal }) {
-  const { abertos, fechados } = useMemo(() => {
+export default function OperacoesMonitora({ operacoes = [], quotesMap = {}, selicDecimal, ivMap = {} }) {
+  const { abertos, fechados, realizadoPorGrupo, totalFechado } = useMemo(() => {
     const lista = operacoes || [];
     const abertas = lista.filter((o) => o.status === 'ABERTA');
-    const grupos = analyzeOpenGroups(abertas, quotesMap, { selicDecimal });
+    const grupos = analyzeOpenGroups(abertas, quotesMap, { selicDecimal, ivMap });
 
     const porGrupo = {};
     lista.filter((o) => o.status === 'FECHADA').forEach((o) => {
@@ -23,14 +23,19 @@ export default function OperacoesMonitora({ operacoes = [], quotesMap = {}, seli
       porGrupo[key].legsCount += 1;
     });
 
+    // Grupo com pernas abertas e encerradas (encerramento parcial) aparece uma única vez
+    const realizados = Object.values(porGrupo);
+    const idsAbertos = new Set(grupos.map((g) => g.groupId));
+
     return {
       abertos: grupos.sort((a, b) => b.unrealizedPnL - a.unrealizedPnL),
-      fechados: Object.values(porGrupo),
+      fechados: realizados.filter((g) => !idsAbertos.has(g.grupoId)),
+      realizadoPorGrupo: porGrupo,
+      totalFechado: realizados.reduce((acc, g) => acc + g.realizado, 0),
     };
-  }, [operacoes, quotesMap, selicDecimal]);
+  }, [operacoes, quotesMap, selicDecimal, ivMap]);
 
   const totalAberto = abertos.reduce((acc, g) => acc + g.unrealizedPnL, 0);
-  const totalFechado = fechados.reduce((acc, g) => acc + g.realizado, 0);
   const vazio = !abertos.length && !fechados.length;
 
   return (
@@ -57,6 +62,8 @@ export default function OperacoesMonitora({ operacoes = [], quotesMap = {}, seli
                 <div className="text-sm font-medium truncate">{g.grupoNome}</div>
                 <div className="text-xs text-muted-foreground">
                   {g.ativoBase} · {g.legsCount} perna(s) · {g.spotSource === 'cotacao' ? 'cotação atual' : 'preço de entrada'}
+                  {Number(g.ivDecimal) > 0 ? ` · IV ${(Number(g.ivDecimal) * 100).toFixed(0)}%${g.ivSource === 'oportunidade' ? '' : ' (premissa)'}` : ''}
+                  {realizadoPorGrupo[g.groupId] ? ` · ${brl(realizadoPorGrupo[g.groupId].realizado)} já encerrado` : ''}
                 </div>
               </div>
               <div className="text-right shrink-0">

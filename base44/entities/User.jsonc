@@ -88,6 +88,14 @@
         "type": "string"
       }
     },
+    "monitora_collar_meta": {
+      "type": "object",
+      "title": "Meta de lucro do Colar Perfeito na Monitora AI"
+    },
+    "monitora_capital_ref": {
+      "type": "number",
+      "title": "Capital de refer\u00eancia (R$) usado nos vetos de risco"
+    },
     "notif_push": {
       "type": "boolean",
       "title": "Notifica\u00e7\u00f5es Push",

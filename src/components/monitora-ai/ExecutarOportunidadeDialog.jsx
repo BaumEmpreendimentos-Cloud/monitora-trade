@@ -6,11 +6,36 @@ import { Label } from '@/components/ui/label';
 import ResponsiveDialog from '@/components/ResponsiveDialog';
 import { calcValorInicial } from '@/lib/operacoes';
 import { parseLegs } from '@/lib/monitora-ai/lucratividade';
+import { toList } from '@/lib/toList';
 import { PlayCircle } from 'lucide-react';
 
 const brl = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
 
-const nomePadrao = (op) => `${op.ativo_base || ''} ${op.estrategia_nome || ''}`.trim().slice(0, 50);
+// O vencimento entra no nome para que execuções de vencimentos diferentes não caiam no mesmo grupo
+const nomePadrao = (op) => {
+  const vencimento = parseLegs(op).find((l) => l.dueDate)?.dueDate || '';
+  return `${op.ativo_base || ''} ${op.estrategia_nome || ''} ${vencimento}`.replace(/\s+/g, ' ').trim().slice(0, 50);
+};
+
+/**
+ * Reaproveita o grupo pelo nome só quando ele não tem pernas abertas;
+ * caso contrário cria um novo para não misturar estruturas.
+ */
+async function resolverGrupo(nomeBase) {
+  const existentes = toList(await base44.entities.GrupoOperacao.filter({ nome: nomeBase }));
+  if (!existentes.length) return base44.entities.GrupoOperacao.create({ nome: nomeBase });
+
+  const abertas = toList(await base44.entities.Operacao.filter(
+    { grupo_id: { $in: existentes.map((g) => g.id) }, status: 'ABERTA' },
+    { limit: 1 }
+  ));
+  if (!abertas.length) return existentes[0];
+
+  const sufixo = ` ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+  const alternativo = `${nomeBase}`.slice(0, 50 - sufixo.length).trim() + sufixo;
+  const jaExiste = toList(await base44.entities.GrupoOperacao.filter({ nome: alternativo }));
+  return jaExiste[0] || base44.entities.GrupoOperacao.create({ nome: alternativo });
+}
 
 export default function ExecutarOportunidadeDialog({ open, onOpenChange, op, onSaved }) {
   const [identificador, setIdentificador] = useState('');
@@ -58,8 +83,7 @@ export default function ExecutarOportunidadeDialog({ open, onOpenChange, op, onS
     setSalvando(true);
     setError('');
     try {
-      const existentes = await base44.entities.GrupoOperacao.filter({ nome });
-      const grupo = existentes?.length ? existentes[0] : await base44.entities.GrupoOperacao.create({ nome });
+      const grupo = await resolverGrupo(nome);
 
       const hoje = new Date().toISOString().split('T')[0];
       const registros = legs.map((l) => {

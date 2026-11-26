@@ -9,10 +9,11 @@ import { strategyTemplates } from '@/lib/strategyTemplates';
 import { normalizarAtivo, MAX_ATIVOS } from '@/lib/monitora-ai/preferences';
 import { META_COLLAR_PADRAO, normalizarMetaCollar } from '@/lib/collar';
 
-export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], estrategias = [], metaCollar = META_COLLAR_PADRAO, onSalvar, salvando }) {
+export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], estrategias = [], metaCollar = META_COLLAR_PADRAO, capitalRef = 0, onSalvar, salvando }) {
   const [listaAtivos, setListaAtivos] = useState(ativos);
   const [listaEstrategias, setListaEstrategias] = useState(estrategias);
   const [meta, setMeta] = useState(normalizarMetaCollar(metaCollar));
+  const [capital, setCapital] = useState(capitalRef || '');
   const [novoAtivo, setNovoAtivo] = useState('');
   const [erro, setErro] = useState('');
 
@@ -21,9 +22,10 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
     setListaAtivos(ativos);
     setListaEstrategias(estrategias);
     setMeta(normalizarMetaCollar(metaCollar));
+    setCapital(capitalRef || '');
     setNovoAtivo('');
     setErro('');
-  }, [open, ativos, estrategias, metaCollar]);
+  }, [open, ativos, estrategias, metaCollar, capitalRef]);
 
   const categorias = useMemo(() => {
     const mapa = new Map();
@@ -72,7 +74,7 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
           <Button
             size="sm"
             disabled={salvando}
-            onClick={() => onSalvar({ ativos: listaAtivos, estrategias: listaEstrategias, metaCollar: normalizarMetaCollar(meta) })}
+            onClick={() => onSalvar({ ativos: listaAtivos, estrategias: listaEstrategias, metaCollar: normalizarMetaCollar(meta), capitalRef: capital })}
           >
             {salvando && <Loader2 className="w-3 h-3 animate-spin" />} Salvar
           </Button>
@@ -176,6 +178,26 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
               />
             </div>
           </div>
+        </div>
+
+        <div>
+          <h3 className="font-heading text-sm font-semibold">Capital de referência</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Valor usado só para os vetos de risco da varredura: risco máximo de 1,5% por operação e 35% de margem acumulada. Não é saldo de conta.
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">R$</span>
+            <Input
+              type="number"
+              step="100"
+              min="0"
+              value={capital}
+              onChange={(e) => setCapital(e.target.value)}
+              placeholder="Ex: 50000"
+              className="h-8 w-32 text-sm"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Em branco ou zero: os limites por capital ficam desativados.</p>
         </div>
 
         <p className="text-xs text-muted-foreground flex items-start gap-1">

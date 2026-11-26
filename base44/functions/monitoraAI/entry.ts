@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.63';
 import { secrets } from 'base44:runtime';
 
 const OPLAB_BASE = 'https://api.oplab.com.br/v3';
@@ -94,7 +94,7 @@ export default async function (req) {
 
     const quantPayload = JSON.stringify(body.quantPayload || {}).slice(0, MAX_QUANT_PAYLOAD);
 
-    const llmResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const invokeComite = (model) => base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Você é o Comitê Monitora AI de uma plataforma brasileira de controle de operações na B3.
 Sua função é EXCLUSIVAMENTE interpretar os números já calculados pelo sistema. Não recalcule gregas, payoffs, resultados, margem ou probabilidades, e não invente valores ausentes.
 
@@ -115,7 +115,7 @@ Regras:
 - Produza o parecer dos 6 agentes, exatamente nesta ordem: Macro, Técnico, Opções, Day Trade, Fundamentalista, Risco. Cada agente traz viés (BULLISH, BEARISH ou NEUTRO) e uma leitura de 1 a 2 frases ancorada nos dados acima.
 - Resumo executivo de até 5 frases.`,
       add_context_from_internet: true,
-      model: 'gemini_3_8_flash',
+      ...(model ? { model } : {}),
       response_json_schema: {
         type: 'object',
         properties: {
@@ -139,6 +139,17 @@ Regras:
       },
     });
 
+    // Modelo explícito com fallback: se o provedor recusar o modelo, repete na seleção automática
+    let llmResult;
+    let modeloUsado = 'gemini_3_8_flash (contexto de internet)';
+    try {
+      llmResult = await invokeComite('gemini_3_8_flash');
+    } catch (error) {
+      console.log('monitoraAI fallback LLM', error?.message);
+      llmResult = await invokeComite(null);
+      modeloUsado = 'automático (fallback sem modelo explícito)';
+    }
+
     const llm = typeof llmResult === 'string' ? {} : (llmResult || {});
     const agentes = Array.isArray(llm.agentes) ? llm.agentes : [];
 
@@ -148,7 +159,7 @@ Regras:
       correlacao_chave: llm.correlacao_chave || '',
       resumo_executivo: llm.resumo_executivo || 'A IA não retornou um resumo nesta execução.',
       agentes_json: JSON.stringify(agentes).slice(0, 20000),
-      modelo_ia: 'gemini_3_8_flash (contexto de internet)',
+      modelo_ia: modeloUsado,
       gerado_em: new Date().toISOString(),
     };
 

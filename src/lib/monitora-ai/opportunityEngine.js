@@ -4,7 +4,7 @@ import { evaluateOptionStructure } from './quantEngine';
 import { getOptionChain } from './marketEngine';
 import { buscarMontagens, legsDoCollar } from '@/lib/collar';
 
-const DEFAULT_TEMPLATE_IDS = [
+export const DEFAULT_TEMPLATE_IDS = [
   'venda-coberta',
   'trava-alta-call',
   'iron-condor',

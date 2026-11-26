@@ -18,11 +18,12 @@ import CollapsibleCard from '@/components/monitora-ai/CollapsibleCard';
 import PreferenciasMonitora from '@/components/monitora-ai/PreferenciasMonitora';
 import { getOfficialMacroRates, getBatchQuotes, quotesToMap } from '@/lib/monitora-ai/marketEngine';
 import { analyzeOpenGroups } from '@/lib/monitora-ai/portfolioEngine';
-import { scanTemplatesForAsset, buildOpportunityRecord } from '@/lib/monitora-ai/opportunityEngine';
+import { scanTemplatesForAsset, buildOpportunityRecord, DEFAULT_TEMPLATE_IDS } from '@/lib/monitora-ai/opportunityEngine';
 import { validateOpportunityAgainstRisk, classifyRiskLevel } from '@/lib/monitora-ai/riskEngine';
 import { persistOpportunities, updateOpportunityStatus, evaluateSignals, diagnosticarSinais } from '@/lib/monitora-ai/signalEngine';
-import { normalizarAtivos, normalizarEstrategias, ativosEfetivos, MAX_ATIVOS } from '@/lib/monitora-ai/preferences';
+import { normalizarAtivos, normalizarEstrategias, ativosEfetivos, normalizarCapital, MAX_ATIVOS } from '@/lib/monitora-ai/preferences';
 import { normalizarMetaCollar } from '@/lib/collar';
+import { toList } from '@/lib/toList';
 
 const STATUS_ACOMPANHADOS = ['APROVADA', 'EXECUTADA'];
 
@@ -63,34 +64,35 @@ export default function MonitoraAI() {
         ativos: normalizarAtivos(me?.monitora_ativos),
         estrategias: normalizarEstrategias(me?.monitora_estrategias),
         metaCollar: normalizarMetaCollar(me?.monitora_collar_meta),
+        capitalRef: normalizarCapital(me?.monitora_capital_ref),
       };
     },
   });
 
   const { data: openOps = [], isLoading: loadingOps } = useQuery({
     queryKey: ['monitora-ai-open-ops'],
-    queryFn: async () => (await base44.entities.Operacao.filter({ status: 'ABERTA' }, { sort: '-data_abertura', limit: 200 })).items || [],
+    queryFn: async () => toList(await base44.entities.Operacao.filter({ status: 'ABERTA' }, { sort: '-data_abertura', limit: 200 })),
     refetchInterval: 5 * 60 * 1000,
   });
 
   const { data: oportunidades = [], isLoading: loadingOportunidades } = useQuery({
     queryKey: ['monitora-ai-oportunidades'],
-    queryFn: async () => (await base44.entities.AiOportunidade.filter({}, { sort: '-created_date', limit: 24 })).items || [],
+    queryFn: async () => toList(await base44.entities.AiOportunidade.filter({}, { sort: '-created_date', limit: 24 })),
   });
 
   const { data: analises = [], isLoading: loadingAnalises } = useQuery({
     queryKey: ['monitora-ai-analises'],
-    queryFn: async () => (await base44.entities.AiAnalise.filter({}, { sort: '-created_date', limit: 6 })).items || [],
+    queryFn: async () => toList(await base44.entities.AiAnalise.filter({}, { sort: '-created_date', limit: 6 })),
   });
 
   const { data: operacoesMonitora = [] } = useQuery({
     queryKey: ['monitora-ai-operacoes-monitora'],
-    queryFn: async () => (await base44.entities.Operacao.filter({ origem: 'MONITORA_AI' }, { sort: '-data_abertura', limit: 200 })).items || [],
+    queryFn: async () => toList(await base44.entities.Operacao.filter({ origem: 'MONITORA_AI' }, { sort: '-data_abertura', limit: 200 })),
   });
 
   const { data: sinais = [] } = useQuery({
     queryKey: ['monitora-ai-sinais'],
-    queryFn: async () => (await base44.entities.AiResultadoSinal.filter({}, { sort: '-created_date', limit: 20 })).items || [],
+    queryFn: async () => toList(await base44.entities.AiResultadoSinal.filter({}, { sort: '-created_date', limit: 20 })),
   });
 
   const ativosMonitorados = useMemo(() => ativosEfetivos(prefs?.ativos), [prefs]);
@@ -113,9 +115,20 @@ export default function MonitoraAI() {
   });
 
   const quotesMap = useMemo(() => quotesToMap(quotes), [quotes]);
+
+  // IV por ativo: aproveita a IV de referência da última oportunidade registrada do ativo
+  const ivMap = useMemo(() => {
+    const mapa = {};
+    [...oportunidades].forEach((o) => {
+      const iv = Number(o.iv_referencia) / 100;
+      if (o.ativo_base && iv > 0.02) mapa[o.ativo_base] = iv;
+    });
+    return mapa;
+  }, [oportunidades]);
+
   const groups = useMemo(
-    () => analyzeOpenGroups(openOps, quotesMap, { selicDecimal: macro?.selicDecimal ?? 0.1325 }),
-    [openOps, quotesMap, macro]
+    () => analyzeOpenGroups(openOps, quotesMap, { selicDecimal: macro?.selicDecimal ?? 0.1325, ivMap }),
+    [openOps, quotesMap, macro, ivMap]
   );
 
   const ativos = useMemo(() => {
@@ -157,7 +170,7 @@ export default function MonitoraAI() {
   const avisos = [];
   if (macro?.indisponivel) avisos.push('BCB indisponível: a Selic usada é premissa padrão, não dado oficial.');
   if (!quotes.length) avisos.push('Cotações OpLab indisponíveis: o spot usa o preço de entrada das operações.');
-  avisos.push('Limites de risco por capital não são avaliados: a plataforma não guarda saldo de conta. Veto por risco ilimitado e concentração seguem ativos.');
+  if (!prefs?.capitalRef) avisos.push('Sem capital de referência informado: os vetos de risco por operação (1,5%) e de margem (35%) não são avaliados. Informe o capital em "Ativos e estratégias".');
   if (groups.some((g) => g.spotSource === 'entrada')) avisos.push('Alguns grupos sem cotação atual — P&L calculado sobre o preço de entrada.');
 
   async function handleScan() {
@@ -175,6 +188,8 @@ export default function MonitoraAI() {
         selicDecimal: macro?.selicDecimal ?? 0.1325,
         selicMeta: macro?.selicMeta,
         collarMeta: prefs?.metaCollar,
+        // Varre as estratégias preferidas além das padrão do catálogo
+        templateIds: [...new Set([...favoritas, ...DEFAULT_TEMPLATE_IDS])],
       });
 
       if (!chainAvailable) {
@@ -190,7 +205,7 @@ export default function MonitoraAI() {
         const validation = validateOpportunityAgainstRisk({
           opportunity: c,
           portfolioGroups: groups,
-          capitalTotalBrl: 0,
+          capitalTotalBrl: prefs?.capitalRef || 0,
         });
         return buildOpportunityRecord(c, validation, {
           nivelRisco: classifyRiskLevel(validation, c.scoreQuant, c.quant?.marginEstimate?.riskLevel),
@@ -211,7 +226,7 @@ export default function MonitoraAI() {
     }
   }
 
-  async function handleSalvarPreferencias({ ativos: novosAtivos, estrategias, metaCollar }) {
+  async function handleSalvarPreferencias({ ativos: novosAtivos, estrategias, metaCollar, capitalRef }) {
     setSalvandoPrefs(true);
     try {
       const listaAtivos = normalizarAtivos(novosAtivos);
@@ -220,6 +235,7 @@ export default function MonitoraAI() {
         monitora_ativos: listaAtivos,
         monitora_estrategias: listaEstrategias,
         monitora_collar_meta: normalizarMetaCollar(metaCollar),
+        monitora_capital_ref: normalizarCapital(capitalRef),
       });
       await queryClient.invalidateQueries({ queryKey: ['monitora-ai-prefs'] });
       setPrefsOpen(false);
@@ -450,6 +466,7 @@ export default function MonitoraAI() {
             operacoes={operacoesMonitora}
             quotesMap={quotesMap}
             selicDecimal={macro?.selicDecimal ?? 0.1325}
+            ivMap={ivMap}
           />
           <DesempenhoSinais sinais={sinais} diagnostico={diagnostico} />
           <SinaisPanel
@@ -475,6 +492,7 @@ export default function MonitoraAI() {
         ativos={ativosMonitorados}
         estrategias={favoritas}
         metaCollar={prefs?.metaCollar}
+        capitalRef={prefs?.capitalRef}
         onSalvar={handleSalvarPreferencias}
         salvando={salvandoPrefs}
       />

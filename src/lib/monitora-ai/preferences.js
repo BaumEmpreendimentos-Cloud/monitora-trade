@@ -17,6 +17,12 @@ export function normalizarEstrategias(lista) {
   return [...new Set(arr.map((id) => String(id || '').trim()).filter(Boolean))];
 }
 
+/** Capital de referência informado pelo usuário (R$). 0 = não informado. */
+export function normalizarCapital(valor) {
+  const n = Number(String(valor ?? '').replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? Number(n.toFixed(2)) : 0;
+}
+
 /** Ativos efetivos: lista do usuário quando existir; senão, a lista padrão. */
 export function ativosEfetivos(preferencias) {
   const doUsuario = normalizarAtivos(preferencias);
