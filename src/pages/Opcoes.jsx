@@ -36,6 +36,7 @@ export default function Opcoes() {
   const [simSpotPrice, setSimSpotPrice] = useState(null);
   const [simStrategyInfo, setSimStrategyInfo] = useState(null);
   const [simAtivoBase, setSimAtivoBase] = useState('');
+  const [ativoBaseResolvido, setAtivoBaseResolvido] = useState('');
   const [simPosicao, setSimPosicao] = useState(null);
   const location = useLocation();
 
@@ -87,15 +88,17 @@ export default function Opcoes() {
     return operacoesToLegs(grupoOps);
   }, [simPosicao, grupoOps]);
 
-  const ativoBase = useMemo(() => {
-    if (simPosicao) return simPosicao.ativoBase || '';
-    const comBase = grupoOps.find((o) => o.ativo_base);
-    if (comBase?.ativo_base) return comBase.ativo_base;
-    // Operações antigas sem ativo_base: a ação/FII do grupo define o ativo base
-    const acao = grupoOps.find((o) => ['ACAO', 'FII', 'DOLLAR'].includes(o.categoria) && o.ativo);
-    if (acao) return acao.ativo;
-    return grupoOps[0]?.ativo_base || '';
+  // Candidatos a ativo base: primeiro o ativo_base informado, depois a ação/FII do grupo
+  const candidatosBase = useMemo(() => {
+    if (simPosicao) return simPosicao.ativoBase ? [simPosicao.ativoBase] : [];
+    const bases = grupoOps.filter((o) => o.ativo_base).map((o) => o.ativo_base);
+    const acoes = grupoOps
+      .filter((o) => ['ACAO', 'FII', 'DOLLAR'].includes(o.categoria) && o.ativo)
+      .map((o) => o.ativo);
+    return [...new Set([...bases, ...acoes])];
   }, [simPosicao, grupoOps]);
+
+  const ativoBase = simPosicao ? (simPosicao.ativoBase || '') : (ativoBaseResolvido || candidatosBase[0] || '');
 
   const selectedGrupo = useMemo(() => grupos.find((g) => g.id === selectedGrupoId), [grupos, selectedGrupoId]);
 
@@ -105,20 +108,31 @@ export default function Opcoes() {
   const displayLegs = simulatedLegs || legs;
 
   const fetchSpot = useCallback(async () => {
-    if (!ativoBase) { setSpotPrice(null); return; }
+    if (!candidatosBase.length) { setSpotPrice(null); return; }
     setRefreshing(true);
     try {
-      const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: ativoBase });
-      setSpotPrice(res.data?.quotes?.[0]?.close ?? null);
+      const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: candidatosBase.join(',') });
+      const quotes = res.data?.quotes || [];
+      const quoteDe = (t) => quotes.find((q) => String(q.symbol).toUpperCase() === t.toUpperCase());
+      const negociavel = (q) => q && Number(q.close) > 0 && Number(q.volume) > 0;
+      // Prioriza um ticker realmente negociado (ignora códigos extintos com preço simbólico)
+      const escolhido =
+        candidatosBase.find((c) => negociavel(quoteDe(c))) ||
+        candidatosBase.find((c) => quoteDe(c)) ||
+        candidatosBase[0];
+      const q = quoteDe(escolhido);
+      setAtivoBaseResolvido(escolhido);
+      setSpotPrice(q && Number(q.close) > 0 ? Number(q.close) : null);
     } catch (e) {
       setSpotPrice(null);
     } finally {
       setRefreshing(false);
     }
-  }, [ativoBase]);
+  }, [candidatosBase]);
 
   useEffect(() => {
     if (simPosicao) { setSpotPrice(simPosicao.spot); return; }
+    setAtivoBaseResolvido('');
     fetchSpot();
   }, [simPosicao, fetchSpot]);
 
