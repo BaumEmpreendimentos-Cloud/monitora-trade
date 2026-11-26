@@ -150,9 +150,14 @@ export function findBreakEvens(legs, spotPrice, rangePercent = 0.4) {
   let prev = calculateExpiryPayoffAtPrice(legs, min, spotPrice);
   for (let p = min + step; p <= max; p += step) {
     const curr = calculateExpiryPayoffAtPrice(legs, p, spotPrice);
-    if ((prev <= 0 && curr >= 0) || (prev >= 0 && curr <= 0)) {
-      const zero = p - step + (step * Math.abs(prev)) / (Math.abs(prev) + Math.abs(curr));
-      if (!breakEvens.some((be) => Math.abs(be - zero) < 0.15)) {
+    const cruzouZero = Number.isFinite(prev) && Number.isFinite(curr)
+      && ((prev < 0 && curr > 0) || (prev > 0 && curr < 0));
+    if (cruzouZero) {
+      const denominador = Math.abs(prev) + Math.abs(curr);
+      const zero = denominador > 0
+        ? p - step + (step * Math.abs(prev)) / denominador
+        : null;
+      if (Number.isFinite(zero) && !breakEvens.some((be) => Math.abs(be - zero) < 0.15)) {
         breakEvens.push(Math.round(zero * 100) / 100);
       }
     }

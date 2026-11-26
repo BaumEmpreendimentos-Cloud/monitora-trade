@@ -92,6 +92,8 @@ export async function scanTemplatesForAsset({
   };
 }
 
+const num = (value, fallback = 0) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
+
 /** Monta o registro persistível de AiOportunidade a partir da candidata + veto de risco. */
 export function buildOpportunityRecord(candidate, validation, { nivelRisco, validadeHoras = 24 }) {
   const { quant } = candidate;
@@ -120,13 +122,13 @@ export function buildOpportunityRecord(candidate, validation, { nivelRisco, vali
       dueDate: l.dueDate,
     }))),
     greeks: {
-      delta: Number(quant.greeks.delta.toFixed(4)),
-      gamma: Number(quant.greeks.gamma.toFixed(6)),
-      theta: Number(quant.greeks.theta.toFixed(4)),
-      vega: Number(quant.greeks.vega.toFixed(4)),
+      delta: Number(num(quant.greeks?.delta).toFixed(4)),
+      gamma: Number(num(quant.greeks?.gamma).toFixed(6)),
+      theta: Number(num(quant.greeks?.theta).toFixed(4)),
+      vega: Number(num(quant.greeks?.vega).toFixed(4)),
     },
-    break_evens: quant.breakEvens || [],
-    margem_estimada_brl: Number((quant.marginEstimate?.netEstimatedMargin || 0).toFixed(2)),
+    break_evens: (quant.breakEvens || []).filter((be) => Number.isFinite(be)),
+    margem_estimada_brl: Number(num(quant.marginEstimate?.netEstimatedMargin).toFixed(2)),
     veto_motivos: validation?.blocked ? validation.reasons : [],
     valida_ate: new Date(Date.now() + validadeHoras * 3600 * 1000).toISOString(),
     status: validation?.blocked ? 'VETADA_RISCO' : 'ATIVA',
