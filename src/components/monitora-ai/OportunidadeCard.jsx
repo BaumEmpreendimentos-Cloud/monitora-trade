@@ -20,7 +20,7 @@ const STATUS_LABEL = {
   EXECUTADA: 'Executada',
 };
 
-export default function OportunidadeCard({ op, onStatus }) {
+export default function OportunidadeCard({ op, onStatus, favorita }) {
   const [open, setOpen] = useState(false);
   const pernas = (() => {
     try { return JSON.parse(op.pernas_json || '[]'); } catch { return []; }
@@ -35,6 +35,11 @@ export default function OportunidadeCard({ op, onStatus }) {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-heading text-sm font-semibold">{op.ativo_base}</span>
+              {favorita && (
+                <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                  ★ preferida
+                </span>
+              )}
               <span className="text-xs px-1.5 py-0.5 rounded border bg-muted text-muted-foreground">{op.direcao}</span>
               <span className="text-xs text-muted-foreground">{op.horizonte || '—'}</span>
             </div>
@@ -71,6 +76,17 @@ export default function OportunidadeCard({ op, onStatus }) {
             Premissas e cálculos {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
         </div>
+
+        {op.status === 'APROVADA' && (
+          <p className="mt-1.5 text-xs text-emerald-700">
+            Aprovada — entra no acompanhamento em "Resultado dos sinais" ao clicar em Avaliar sinais.
+          </p>
+        )}
+        {op.status === 'EXECUTADA' && (
+          <p className="mt-1.5 text-xs text-slate-600">
+            Executada — acompanhada no painel Resultado dos sinais.
+          </p>
+        )}
       </div>
 
       {open && (

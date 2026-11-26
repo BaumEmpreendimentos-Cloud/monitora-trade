@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, AlertTriangle, Layers, Wallet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { computePortfolioRisk } from '@/lib/monitora-ai/riskIndicators';
+import CollapsibleCard from './CollapsibleCard';
 
 const brl = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
 
@@ -25,18 +26,23 @@ export default function PainelRiscoCarteira({ groups = [], loading }) {
   const risco = computePortfolioRisk(groups);
 
   return (
-    <section className="rounded-xl border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b">
-        <div className="flex flex-wrap items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-muted-foreground" />
-          <h2 className="font-heading text-sm font-semibold">Risco da carteira</h2>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">cálculo determinístico</span>
-        </div>
+    <CollapsibleCard
+      id="risco"
+      icon={ShieldCheck}
+      title="Risco da carteira"
+      subtitle="cálculo determinístico"
+      actions={
         <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${RISK_STYLE[risco.nivelConsolidado] || RISK_STYLE.BAIXO}`}>
           {risco.nivelConsolidado}
         </span>
-      </div>
-
+      }
+      footer={
+        <p className="px-4 py-2 border-t text-xs text-foreground/70 flex items-start gap-1.5">
+          <Wallet className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          Limites avaliados: {risco.limites.maxGroupsPerUnderlying} grupos por ativo. A plataforma não guarda saldo de conta, então limites por capital não são calculados.
+        </p>
+      }
+    >
       {loading ? (
         <div className="p-4 grid grid-cols-2 gap-2">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
@@ -94,11 +100,6 @@ export default function PainelRiscoCarteira({ groups = [], loading }) {
           )}
         </div>
       )}
-
-      <p className="px-4 py-2 border-t text-xs text-foreground/70 flex items-start gap-1.5">
-        <Wallet className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-        Limites avaliados: {risco.limites.maxGroupsPerUnderlying} grupos por ativo. A plataforma não guarda saldo de conta, então limites por capital não são calculados.
-      </p>
-    </section>
+    </CollapsibleCard>
   );
 }

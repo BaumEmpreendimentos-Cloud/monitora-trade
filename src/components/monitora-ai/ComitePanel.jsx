@@ -2,6 +2,7 @@ import React from 'react';
 import { Brain, Loader2, RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import CollapsibleCard from './CollapsibleCard';
 
 const VIES_STYLE = {
   BULLISH: 'text-emerald-700 bg-emerald-50 border-emerald-200',
@@ -18,19 +19,18 @@ function fmtDate(iso) {
 
 export default function ComitePanel({ analise, running, onRun, loading }) {
   return (
-    <section className="rounded-xl border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b">
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <Brain className="w-4 h-4 text-muted-foreground" />
-          <h2 className="font-heading text-sm font-semibold">Comitê Monitora AI</h2>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">interpretação de IA</span>
-        </div>
+    <CollapsibleCard
+      id="comite"
+      icon={Brain}
+      title="Comitê Monitora AI"
+      subtitle="interpretação de IA"
+      actions={
         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onRun} disabled={running}>
           {running ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
           {running ? 'Processando' : 'Executar comitê'}
         </Button>
-      </div>
-
+      }
+    >
       {loading ? (
         <div className="p-4 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-16 w-full" /></div>
       ) : !analise ? (
@@ -74,6 +74,6 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
           </p>
         </div>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }

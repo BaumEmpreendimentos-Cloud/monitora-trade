@@ -1,9 +1,10 @@
 import React from 'react';
-import { Activity, Loader2 } from 'lucide-react';
+import { Activity, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CollapsibleCard from './CollapsibleCard';
 
 const brl = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
-const pct = (v) => (Number.isFinite(Number(v)) ? `${Number(v).toFixed(2)}%` : '—');
+const pct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(2)}%` : '—');
 
 const DESFECHO_STYLE = {
   ALVO_ATINGIDO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -21,23 +22,44 @@ const DESFECHO_LABEL = {
   EM_ACOMPANHAMENTO: 'Em acompanhamento',
 };
 
-export default function SinaisPanel({ sinais = [], avaliando, onAvaliar }) {
+export default function SinaisPanel({ sinais = [], avaliando, onAvaliar, diagnostico }) {
+  const d = diagnostico || {};
+
   return (
-    <section className="rounded-xl border bg-card">
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-muted-foreground" />
-          <h2 className="font-heading text-sm font-semibold">Resultado dos sinais</h2>
-        </div>
+    <CollapsibleCard
+      id="sinais"
+      icon={Activity}
+      title="Resultado dos sinais"
+      subtitle="acompanhamento"
+      actions={
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onAvaliar} disabled={avaliando}>
           {avaliando && <Loader2 className="w-3 h-3 animate-spin" />} Avaliar sinais
         </Button>
-      </div>
-
-      {!sinais.length ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          Nenhum sinal avaliado. Aprove ou execute uma oportunidade e reavalie com a cotação atual.
+      }
+      footer={
+        <p className="px-4 py-2 border-t text-xs text-muted-foreground flex items-start gap-1">
+          <Info className="w-3 h-3 mt-0.5 shrink-0" />
+          Compara a cotação atual do ativo base com o preço de referência da oportunidade. Não envia ordem.
         </p>
+      }
+    >
+      {!sinais.length ? (
+        <div className="px-4 py-3 space-y-1.5">
+          <p className="text-sm text-muted-foreground">Nenhum sinal avaliado ainda.</p>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>1. Aprove (ou marque como executada) uma oportunidade no painel de Oportunidades.</li>
+            <li>2. Clique em "Avaliar sinais" para registrar a cotação atual do ativo base.</li>
+            {d.aprovadas > 0 ? (
+              <li className="text-foreground/80">
+                Agora: {d.aprovadas} oportunidade(s) aprovada(s)/executada(s), {d.prontas} pronta(s) para avaliar.
+              </li>
+            ) : (
+              <li className="text-foreground/80">Agora: nenhuma oportunidade aprovada ou executada — por isso a lista está vazia.</li>
+            )}
+            {d.semCotacao > 0 && <li>{d.semCotacao} aguardando cotação do ativo base (a OpLab não retornou preço).</li>}
+            {d.neutras > 0 && <li>{d.neutras} estrutura(s) neutra(s) não geram sinal direcional.</li>}
+          </ul>
+        </div>
       ) : (
         <ul className="divide-y">
           {sinais.map((s) => (
@@ -58,6 +80,6 @@ export default function SinaisPanel({ sinais = [], avaliando, onAvaliar }) {
           ))}
         </ul>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }

@@ -14,10 +14,12 @@ export async function updateOpportunityStatus(id, status) {
 }
 
 const AVALIAVEIS = ['APROVADA', 'EXECUTADA'];
+const DIRECIONAIS = ['COMPRA', 'VENDA'];
 
-function desfechoDe(op, quote) {
+function desfechoDe(op, quote, retornoPct) {
   const alvo = Number(op.alvo_referencia);
   const stop = Number(op.stop_referencia);
+
   if (op.direcao === 'COMPRA') {
     if (Number.isFinite(alvo) && alvo > 0 && quote >= alvo) return 'ALVO_ATINGIDO';
     if (Number.isFinite(stop) && stop > 0 && quote <= stop) return 'STOP_ATINGIDO';
@@ -25,18 +27,55 @@ function desfechoDe(op, quote) {
     if (Number.isFinite(alvo) && alvo > 0 && quote <= alvo) return 'ALVO_ATINGIDO';
     if (Number.isFinite(stop) && stop > 0 && quote >= stop) return 'STOP_ATINGIDO';
   }
+
+  // Estruturas sem alvo/stop fixo (ex.: opções) encerram pela validade do sinal
+  if (op.valida_ate) {
+    const expiraEm = Date.parse(op.valida_ate);
+    if (Number.isFinite(expiraEm) && Date.now() > expiraEm) {
+      return retornoPct >= 0 ? 'EXPIRADO_LUCRO' : 'EXPIRADO_PREJUIZO';
+    }
+  }
+
   return 'EM_ACOMPANHAMENTO';
 }
 
 /**
- * Avalia as oportunidades aprovadas/executadas contra a cotação atual e grava o resultado do sinal.
- * Não altera operações nem envia ordens.
+ * Explica por que a lista de sinais está vazia: quantas oportunidades estão
+ * aprovadas/executadas, quantas são direcionais e quantas têm cotação disponível.
+ */
+export function diagnosticarSinais(oportunidades = [], quotesMap = {}) {
+  const aprovadas = (oportunidades || []).filter((o) => AVALIAVEIS.includes(o.status));
+  const direcionais = aprovadas.filter((o) => DIRECIONAIS.includes(o.direcao));
+  const neutras = aprovadas.length - direcionais.length;
+  const semCotacao = direcionais.filter((o) => {
+    const quote = Number(quotesMap[o.ativo_base]);
+    return !Number.isFinite(quote) || quote <= 0;
+  }).length;
+  const semReferencia = direcionais.filter((o) => {
+    const ref = Number(o.preco_referencia);
+    return !Number.isFinite(ref) || ref <= 0;
+  }).length;
+
+  return {
+    aprovadas: aprovadas.length,
+    direcionais: direcionais.length,
+    neutras,
+    semCotacao,
+    semReferencia,
+    prontas: Math.max(0, direcionais.length - semCotacao - semReferencia),
+  };
+}
+
+/**
+ * Avalia as oportunidades aprovadas/executadas contra a cotação atual e grava/atualiza
+ * o resultado do sinal sem duplicar registros. Não altera operações nem envia ordens.
  */
 export async function evaluateSignals(oportunidades = [], quotesMap = {}) {
   const alvo = (oportunidades || []).filter(
-    (o) => AVALIAVEIS.includes(o.status) && (o.direcao === 'COMPRA' || o.direcao === 'VENDA')
+    (o) => AVALIAVEIS.includes(o.status) && DIRECIONAIS.includes(o.direcao)
   );
-  if (!alvo.length) return { avaliados: 0, ignorados: (oportunidades || []).length };
+  const diagnostico = diagnosticarSinais(oportunidades, quotesMap);
+  if (!alvo.length) return { avaliados: 0, ignorados: (oportunidades || []).length, ...diagnostico };
 
   const existentes = await base44.entities.AiResultadoSinal.filter({}, { sort: '-created_date', limit: 200 });
   const porOportunidade = Object.fromEntries((existentes.items || []).map((s) => [s.oportunidade_id, s]));
@@ -58,7 +97,7 @@ export async function evaluateSignals(oportunidades = [], quotesMap = {}) {
       preco_entrada_ref: ref,
       preco_avaliacao: quote,
       retorno_pct: Number(retornoPct.toFixed(2)),
-      desfecho: desfechoDe(op, quote),
+      desfecho: desfechoDe(op, quote, retornoPct),
       avaliado_em: new Date().toISOString(),
     };
 
@@ -68,5 +107,5 @@ export async function evaluateSignals(oportunidades = [], quotesMap = {}) {
     avaliados += 1;
   }
 
-  return { avaliados, ignorados: (oportunidades || []).length - avaliados };
+  return { avaliados, ignorados: (oportunidades || []).length - avaliados, ...diagnostico };
 }
