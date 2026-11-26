@@ -388,13 +388,13 @@ export default function Rolagem() {
                                 />
                               </td>
                               <td className="p-2 font-medium whitespace-nowrap">
-                                {ownedLeft && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold mr-1.5 align-middle">★</span>}
+                                {ownedLeft && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-xs font-bold mr-1.5 align-middle">★</span>}
                                 {p.left?.symbol || '—'}
                               </td>
                               <td className="p-2 text-right">{fmt(leftPrice)}</td>
                               <td className="p-2 text-right border-r" style={{ borderColor: 'hsl(var(--border))' }}>{fmtInt(p.strike)}</td>
                               <td className="p-2 font-medium whitespace-nowrap">
-                                {ownedRight && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold mr-1.5 align-middle">★</span>}
+                                {ownedRight && <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-xs font-bold mr-1.5 align-middle">★</span>}
                                 {p.right?.symbol || '—'}
                               </td>
                               <td className="p-2 text-right">{fmt(rightPrice)}</td>
@@ -415,7 +415,7 @@ export default function Rolagem() {
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">★</span>
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-xs font-bold">★</span>
                 Opções que você possui neste ativo
               </div>
               {excluidasCount > 0 && (

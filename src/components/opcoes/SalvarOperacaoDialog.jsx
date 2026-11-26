@@ -106,7 +106,7 @@ export default function SalvarOperacaoDialog({ open, onOpenChange, legs, ativoBa
             >
               <FlaskConical className={`w-5 h-5 ${simulada ? 'text-purple-600' : 'text-muted-foreground'}`} />
               <span className="text-xs font-bold">Simulada</span>
-              <span className="text-[10px] text-muted-foreground text-center">Acompanhamento</span>
+              <span className="text-xs text-muted-foreground text-center">Acompanhamento</span>
             </button>
             <button
               type="button"
@@ -119,7 +119,7 @@ export default function SalvarOperacaoDialog({ open, onOpenChange, legs, ativoBa
             >
               <Building2 className={`w-5 h-5 ${!simulada ? 'text-emerald-600' : 'text-muted-foreground'}`} />
               <span className="text-xs font-bold">Real</span>
-              <span className="text-[10px] text-muted-foreground text-center">Montada na corretora</span>
+              <span className="text-xs text-muted-foreground text-center">Montada na corretora</span>
             </button>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function SalvarOperacaoDialog({ open, onOpenChange, legs, ativoBa
             placeholder="Ex: Covered Call PETR4, Iron Condor VALE3..."
             maxLength={50}
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Este nome agrupa todas as pernas da estratégia na aba de Operações.
           </p>
         </div>

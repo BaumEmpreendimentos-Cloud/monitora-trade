@@ -134,7 +134,7 @@ export default function AnaliseCenarios({ legs, spotPrice, iv = 0.28, interestRa
           <div className="overflow-x-auto">
             <table className="w-full text-center text-xs font-mono">
               <thead>
-                <tr className="border-b text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">
+                <tr className="border-b text-muted-foreground text-xs uppercase tracking-wider font-semibold">
                   <th className="py-2 px-2 text-left">Var.</th>
                   <th className="py-2 px-2 text-left">Preço</th>
                   {timeHorizons.map((h) => (
@@ -196,7 +196,7 @@ export default function AnaliseCenarios({ legs, spotPrice, iv = 0.28, interestRa
                 className="text-left p-3 rounded-lg border border-border hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition disabled:opacity-50"
               >
                 <div className="text-xs font-semibold">{scn.title}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{scn.desc}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{scn.desc}</div>
               </button>
             ))}
           </div>

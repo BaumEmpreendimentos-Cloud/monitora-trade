@@ -223,7 +223,7 @@ export default function Opcoes() {
                     }`}
                   >
                     <div className="text-xs font-medium truncate">{g.nome}</div>
-                    <div className="text-[10px] text-muted-foreground">{count} op.</div>
+                    <div className="text-xs text-muted-foreground">{count} op.</div>
                   </button>
                 );
               })}

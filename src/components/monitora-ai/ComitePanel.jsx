@@ -23,7 +23,7 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-muted-foreground" />
           <h2 className="font-heading text-sm font-semibold">Comitê Monitora AI</h2>
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">interpretação de IA</span>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">interpretação de IA</span>
         </div>
         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onRun} disabled={running}>
           {running ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
@@ -60,7 +60,7 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-foreground">{a.nome}</span>
                     {a.vies && (
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${VIES_STYLE[String(a.vies).toUpperCase()] || VIES_STYLE.NEUTRO}`}>{a.vies}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${VIES_STYLE[String(a.vies).toUpperCase()] || VIES_STYLE.NEUTRO}`}>{a.vies}</span>
                     )}
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed mt-1">{a.leitura}</p>

@@ -44,15 +44,15 @@ export default function SinaisPanel({ sinais = [], avaliando, onAvaliar }) {
             <li key={s.id} className="px-4 py-2.5 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-medium truncate">{s.ativo_base}</div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   entrada {brl(s.preco_entrada_ref)} → {brl(s.preco_avaliacao)}
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border ${DESFECHO_STYLE[s.desfecho] || DESFECHO_STYLE.EM_ACOMPANHAMENTO}`}>
+                <span className={`inline-block text-xs px-1.5 py-0.5 rounded border ${DESFECHO_STYLE[s.desfecho] || DESFECHO_STYLE.EM_ACOMPANHAMENTO}`}>
                   {DESFECHO_LABEL[s.desfecho] || s.desfecho}
                 </span>
-                <div className={`text-[11px] tabular-nums mt-0.5 ${Number(s.retorno_pct) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{pct(s.retorno_pct)}</div>
+                <div className={`text-xs tabular-nums mt-0.5 ${Number(s.retorno_pct) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{pct(s.retorno_pct)}</div>
               </div>
             </li>
           ))}

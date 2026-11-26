@@ -288,7 +288,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                     onCheckedChange={() => toggleLegExcluida(leg.id)}
                     title={excluida ? 'Incluir esta perna na rolagem' : 'Excluir esta perna da rolagem'}
                   />
-                  <span className="text-[11px] uppercase text-muted-foreground">{excluida ? 'Não rolar' : 'Rolar'}</span>
+                  <span className="text-xs uppercase text-muted-foreground">{excluida ? 'Não rolar' : 'Rolar'}</span>
                   <span className="text-muted-foreground/40">|</span>
                   <span className={isSell ? 'text-red-600' : 'text-emerald-600'}>{isSell ? 'VENDIDA' : 'COMPRADA'}</span>
                   <span>{leg.categoria}</span>
@@ -307,7 +307,7 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                 {/* Fechamento */}
                 <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">1. Fechamento Atual ({isSell ? 'Recompra' : 'Venda Liq.'})</div>
-                  <div><Label className="text-[11px]">Preço de Fechamento (R$)</Label>
+                  <div><Label className="text-xs">Preço de Fechamento (R$)</Label>
                     <Input type="number" step="0.01" value={cfg.closePrice ?? ''} onChange={(e) => setLegField(leg.id, 'closePrice', e.target.value)} className="h-8 text-sm" />
                   </div>
                   <div className={`text-right text-sm font-semibold ${closeFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{leg.quantidade} un × R$ {Number(cfg.closePrice || 0).toFixed(2)} = {closeFlow >= 0 ? '+' : ''}{fmt(closeFlow)}</div>
@@ -317,13 +317,13 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                 <div className="border rounded-lg p-2 space-y-1.5">
                   <div className="text-xs font-medium text-muted-foreground uppercase">2. Nova Série & Rebalanceamento ({isSell ? 'Venda Nova' : 'Compra Nova'})</div>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    <div><Label className="text-[11px]">Série (Mês)</Label>
+                    <div><Label className="text-xs">Série (Mês)</Label>
                       <select value={cfg.targetDueDate || ''} onChange={(e) => onExerciseChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
                         {exercises.length === 0 && <option value="">Sem séries</option>}
                         {exercises.map((ex) => <option key={ex.due_date} value={ex.due_date}>{exerciseLabel(ex)}</option>)}
                       </select>
                     </div>
-                    <div><Label className="text-[11px]">Novo Strike (R$)</Label>
+                    <div><Label className="text-xs">Novo Strike (R$)</Label>
                       <select value={cfg.targetStrike ?? ''} onChange={(e) => onStrikeChange(leg.id, e.target.value)} className="w-full h-8 text-sm rounded-md border border-input bg-transparent px-2">
                         {(() => {
                           const ex = exercises.find((e) => e.due_date === cfg.targetDueDate);
@@ -333,9 +333,9 @@ export default function CalculadoraRolagem({ operacoes, ativoBase, spotPrice, on
                         })()}
                       </select>
                     </div>
-                    <div><Label className="text-[11px]">Novo Ticker</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.symbol || '—'}</div></div>
-                    <div><Label className="text-[11px]">Dias Úteis</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.days_to_maturity ?? '—'}</div></div>
-                    <div><Label className="text-[11px]">Prêmio Novo (R$)</Label>
+                    <div><Label className="text-xs">Novo Ticker</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.symbol || '—'}</div></div>
+                    <div><Label className="text-xs">Dias Úteis</Label><div className="font-mono font-semibold text-sm h-8 flex items-center">{match?.days_to_maturity ?? '—'}</div></div>
+                    <div><Label className="text-xs">Prêmio Novo (R$)</Label>
                       <Input type="number" step="0.01" value={cfg.newPremium ?? ''} onChange={(e) => setLegField(leg.id, 'newPremium', e.target.value)} className="h-8 text-sm" />
                     </div>
                   </div>

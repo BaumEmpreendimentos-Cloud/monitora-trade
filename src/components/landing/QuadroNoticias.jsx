@@ -5,12 +5,12 @@ const CATEGORIAS = ['Todas', 'B3', 'Macro Brasil', 'Eleições & Política', 'Co
 
 function SentimentBadge({ sentimento, score }) {
   if (sentimento === 'bullish') {
-    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"><TrendingUp className="w-3 h-3" /> Bullish ({score > 0 ? '+' : ''}{score})</span>;
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"><TrendingUp className="w-3 h-3" /> Bullish ({score > 0 ? '+' : ''}{score})</span>;
   }
   if (sentimento === 'bearish') {
-    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-600 border border-red-500/30"><TrendingDown className="w-3 h-3" /> Bearish ({score})</span>;
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/10 text-red-600 border border-red-500/30"><TrendingDown className="w-3 h-3" /> Bearish ({score})</span>;
   }
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border"><Minus className="w-3 h-3" /> Neutro ({score > 0 ? `+${score}` : score})</span>;
+  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground border"><Minus className="w-3 h-3" /> Neutro ({score > 0 ? `+${score}` : score})</span>;
 }
 
 export default function QuadroNoticias({ perspectiva }) {

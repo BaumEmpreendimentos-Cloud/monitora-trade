@@ -280,7 +280,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
         </div>
         <div className="flex items-center gap-2">
           <div>
-            <Label className="text-[11px] text-muted-foreground uppercase">Spot (R$)</Label>
+            <Label className="text-xs text-muted-foreground uppercase">Spot (R$)</Label>
             <Input
               type="number"
               step="0.01"
@@ -291,7 +291,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
             />
           </div>
           <div>
-            <Label className="text-[11px] text-muted-foreground uppercase">IV (%)</Label>
+            <Label className="text-xs text-muted-foreground uppercase">IV (%)</Label>
             <Input
               type="number"
               step="1"
@@ -310,7 +310,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
             <Label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
               <Target className="w-3.5 h-3.5" /> Ativo Base (Underlying)
             </Label>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Defina o ativo base da operação. Apenas opções deste ativo poderão ser adicionadas ao simulador.
             </p>
           </div>
@@ -360,7 +360,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-muted-foreground" />
           <span className="text-xs font-semibold text-muted-foreground uppercase">Buscar Opção na B3</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium">Auto-Preenchimento Inteligente</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium">Auto-Preenchimento Inteligente</span>
         </div>
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
           <div className="relative flex-1">
@@ -384,7 +384,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                     className="w-full px-3 py-2 text-left hover:bg-accent text-xs font-mono flex items-center justify-between border-b last:border-0"
                   >
                     <span className="font-bold text-primary">{item.symbol || item.ticker}</span>
-                    <span className="text-[10px] text-muted-foreground">{item.description || item.type || ''}</span>
+                    <span className="text-xs text-muted-foreground">{item.description || item.type || ''}</span>
                   </button>
                 ))}
               </div>
@@ -448,7 +448,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                       </select>
                     </td>
                     <td className="px-3 py-2 font-bold">
-                      <span className={`px-2 py-0.5 rounded text-[11px] ${isStock ? 'text-sky-600 bg-sky-500/10' : leg.type === 'CALL' ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-600 bg-amber-500/10'}`}>{leg.type}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${isStock ? 'text-sky-600 bg-sky-500/10' : leg.type === 'CALL' ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-600 bg-amber-500/10'}`}>{leg.type}</span>
                     </td>
                     <td className="px-3 py-2">
                       <input
@@ -471,10 +471,10 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                       <div className="flex flex-col items-end gap-1">
                         <input type="number" step="100" value={leg.quantity} onChange={(e) => handleUpdateLeg(index, { quantity: parseInt(e.target.value) || 0 })} className="w-20 px-2 py-1 bg-background border rounded text-right focus:outline-none focus:border-primary" />
                         <div className="flex gap-0.5">
-                          <button onClick={() => handleQtyChange(index, -1000)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-1.000">-1k</button>
-                          <button onClick={() => handleQtyChange(index, -100)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-100">-100</button>
-                          <button onClick={() => handleQtyChange(index, 100)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+100">+100</button>
-                          <button onClick={() => handleQtyChange(index, 1000)} className="px-1.5 py-0.5 text-[10px] font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+1.000">+1k</button>
+                          <button onClick={() => handleQtyChange(index, -1000)} className="px-1.5 py-0.5 text-xs font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-1.000">-1k</button>
+                          <button onClick={() => handleQtyChange(index, -100)} className="px-1.5 py-0.5 text-xs font-bold rounded border border-red-500/30 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition" title="-100">-100</button>
+                          <button onClick={() => handleQtyChange(index, 100)} className="px-1.5 py-0.5 text-xs font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+100">+100</button>
+                          <button onClick={() => handleQtyChange(index, 1000)} className="px-1.5 py-0.5 text-xs font-bold rounded border border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition" title="+1.000">+1k</button>
                         </div>
                       </div>
                     </td>
@@ -482,7 +482,7 @@ export default function SimuladorOperacoes({ initialLegs, initialSpotPrice, iv =
                       {isStock ? <span className="text-muted-foreground">À Vista</span> : (
                         <div className="flex flex-col gap-0.5">
                           <input type="date" value={leg.dueDate || ''} onChange={(e) => handleUpdateLeg(index, { dueDate: e.target.value })} className="px-1 py-1 bg-background border rounded text-xs focus:outline-none focus:border-primary" />
-                          <span className="text-[10px] text-muted-foreground">{leg.daysToExpiry} d.u.</span>
+                          <span className="text-xs text-muted-foreground">{leg.daysToExpiry} d.u.</span>
                         </div>
                       )}
                     </td>

@@ -164,12 +164,12 @@ export default function Layout() {
       )}
       <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t bg-card no-select" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-around h-14">
-          <NavLink to="/operacoes" className={mobileLinkClass} end onClick={(e) => handleTabClick(e, '/operacoes')}><LineChart className="w-5 h-5" /><span className="text-[10px]">Operações</span></NavLink>
-          <NavLink to="/estrategias" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/estrategias')}><Layers className="w-5 h-5" /><span className="text-[10px]">Estratégias</span></NavLink>
-          <NavLink to="/monitora-ai" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/monitora-ai')}><Sparkles className="w-5 h-5" /><span className="text-[10px]">IA</span></NavLink>
-          <NavLink to="/mensagens" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/mensagens')}><MessageSquare className="w-5 h-5" /><span className="text-[10px]">Mensagens</span></NavLink>
-          <NavLink to="/instagram" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/instagram')}><InstagramIcon className="w-5 h-5" /><span className="text-[10px]">Instagram</span></NavLink>
-          <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-[10px]">Config</span></NavLink>
+          <NavLink to="/operacoes" className={mobileLinkClass} end onClick={(e) => handleTabClick(e, '/operacoes')}><LineChart className="w-5 h-5" /><span className="text-xs">Operações</span></NavLink>
+          <NavLink to="/estrategias" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/estrategias')}><Layers className="w-5 h-5" /><span className="text-xs">Estratégias</span></NavLink>
+          <NavLink to="/monitora-ai" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/monitora-ai')}><Sparkles className="w-5 h-5" /><span className="text-xs">IA</span></NavLink>
+          <NavLink to="/mensagens" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/mensagens')}><MessageSquare className="w-5 h-5" /><span className="text-xs">Mensagens</span></NavLink>
+          <NavLink to="/instagram" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/instagram')}><InstagramIcon className="w-5 h-5" /><span className="text-xs">Instagram</span></NavLink>
+          <NavLink to="/configuracoes" className={mobileLinkClass} onClick={(e) => handleTabClick(e, '/configuracoes')}><Settings className="w-5 h-5" /><span className="text-xs">Config</span></NavLink>
         </div>
       </nav>
       <GuidedTour />

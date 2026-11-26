@@ -233,7 +233,7 @@ export default function MonitoraAI() {
       {avisos.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 space-y-0.5">
           {avisos.map((a) => (
-            <p key={a} className="text-[11px] text-amber-800 flex items-start gap-1.5">
+            <p key={a} className="text-xs text-amber-800 flex items-start gap-1.5">
               <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {a}
             </p>
           ))}
@@ -263,7 +263,7 @@ export default function MonitoraAI() {
                 <button
                   key={a}
                   onClick={() => setAtivoSel(a)}
-                  className={`px-2 py-0.5 rounded border text-[11px] transition-colors ${a === ativo ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+                  className={`px-2 py-0.5 rounded border text-xs transition-colors ${a === ativo ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
                 >
                   {a}
                 </button>
@@ -282,7 +282,7 @@ export default function MonitoraAI() {
               )}
             </div>
 
-            <p className="px-4 py-2 border-t text-[10px] text-muted-foreground flex items-start gap-1">
+            <p className="px-4 py-2 border-t text-xs text-muted-foreground flex items-start gap-1">
               <Info className="w-3 h-3 mt-0.5 shrink-0" />
               Aprovar, vetar ou marcar como executada apenas registra o status. Nenhuma ordem é enviada à corretora.
             </p>

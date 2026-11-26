@@ -373,7 +373,7 @@ export default function Operacoes() {
                             <tr key={o.id} className={`border-t cursor-pointer hover:bg-accent/40 ${isSel ? 'bg-primary/5' : ''} ${mnyClass}`} onClick={() => { setSelectedGroup(null); setSelectedOp(isSel ? null : o); }}>
                               <td className="p-2 font-medium">
                                 {o.ativo}
-                                {o.simulada && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400" title="Operação simulada">SIM</span>}
+                                {o.simulada && <span className="ml-1 px-1 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400" title="Operação simulada">SIM</span>}
                               </td>
                               <td className="p-2 text-muted-foreground">{o.data_abertura ? new Date(o.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
                               <td className="p-2">{o.categoria}</td>

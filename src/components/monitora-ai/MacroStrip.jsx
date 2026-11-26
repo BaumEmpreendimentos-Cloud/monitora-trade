@@ -8,11 +8,11 @@ const brl = (v) => (v === null || v === undefined || !Number.isFinite(Number(v))
 function Indicator({ icon: Icon, label, value, source, date, fallback }) {
   return (
     <div className="rounded-lg border bg-card px-3 py-2.5">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
         <Icon className="w-3.5 h-3.5" /> {label}
       </div>
       <div className="mt-1 font-heading text-base font-semibold tabular-nums">{value}</div>
-      <div className="mt-0.5 text-[10px] text-muted-foreground flex items-center gap-1">
+      <div className="mt-0.5 text-xs text-muted-foreground flex items-center gap-1">
         {fallback ? (
           <>
             <AlertTriangle className="w-3 h-3 text-amber-600" /> premissa padrão

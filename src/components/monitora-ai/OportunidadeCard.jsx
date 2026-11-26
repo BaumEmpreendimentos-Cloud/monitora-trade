@@ -35,18 +35,18 @@ export default function OportunidadeCard({ op, onStatus }) {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-heading text-sm font-semibold">{op.ativo_base}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded border bg-muted text-muted-foreground">{op.direcao}</span>
-              <span className="text-[10px] text-muted-foreground">{op.horizonte || '—'}</span>
+              <span className="text-xs px-1.5 py-0.5 rounded border bg-muted text-muted-foreground">{op.direcao}</span>
+              <span className="text-xs text-muted-foreground">{op.horizonte || '—'}</span>
             </div>
             <p className="text-sm mt-0.5 truncate">{op.estrategia_nome}</p>
           </div>
           <div className="text-right shrink-0">
             <div className="font-heading text-lg font-bold tabular-nums leading-none">{Math.round(op.score_quant || 0)}</div>
-            <div className="text-[10px] text-muted-foreground">score</div>
+            <div className="text-xs text-muted-foreground">score</div>
           </div>
         </div>
 
-        <div className="mt-2.5 grid grid-cols-3 gap-2 text-[11px]">
+        <div className="mt-2.5 grid grid-cols-3 gap-2 text-xs">
           <div>
             <div className="text-muted-foreground">PoP modelo</div>
             <div className="font-medium tabular-nums">{num(op.probabilidade_lucro_pct, '%')}</div>
@@ -57,24 +57,24 @@ export default function OportunidadeCard({ op, onStatus }) {
           </div>
           <div>
             <div className="text-muted-foreground">Nível de risco</div>
-            <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded border text-[10px] ${RISCO_STYLE[op.nivel_risco] || RISCO_STYLE.MODERADO}`}>
+            <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded border text-xs ${RISCO_STYLE[op.nivel_risco] || RISCO_STYLE.MODERADO}`}>
               {op.nivel_risco || '—'}
             </span>
           </div>
         </div>
 
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${bloqueada ? 'bg-red-50 text-red-700 border-red-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded border ${bloqueada ? 'bg-red-50 text-red-700 border-red-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
             {STATUS_LABEL[op.status] || op.status}
           </span>
-          <button onClick={() => setOpen((v) => !v)} className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <button onClick={() => setOpen((v) => !v)} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
             Premissas e cálculos {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
         </div>
       </div>
 
       {open && (
-        <div className="border-t bg-muted/30 px-4 py-3 space-y-2.5 text-[11px]">
+        <div className="border-t bg-muted/30 px-4 py-3 space-y-2.5 text-xs">
           <div className="grid grid-cols-2 gap-x-3 gap-y-1">
             <span className="text-muted-foreground">Spot de referência</span><span className="tabular-nums text-right">{brl(op.preco_referencia)}</span>
             <span className="text-muted-foreground">Stop</span><span className="tabular-nums text-right">{brl(op.stop_referencia)}</span>
@@ -101,7 +101,7 @@ export default function OportunidadeCard({ op, onStatus }) {
           <div className="grid grid-cols-4 gap-2">
             {['delta', 'gamma', 'theta', 'vega'].map((k) => (
               <div key={k} className="rounded border bg-card px-1.5 py-1">
-                <div className="text-[9px] uppercase text-muted-foreground">{k}</div>
+                <div className="text-xs uppercase text-muted-foreground">{k}</div>
                 <div className="tabular-nums">{num(greeks[k])}</div>
               </div>
             ))}
@@ -115,12 +115,12 @@ export default function OportunidadeCard({ op, onStatus }) {
 
           {op.justificativa_ia && (
             <div className="rounded border bg-card p-2">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Interpretação da IA</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Interpretação da IA</div>
               <p className="leading-relaxed">{op.justificativa_ia}</p>
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground flex gap-1">
+          <p className="text-xs text-muted-foreground flex gap-1">
             <Info className="w-3 h-3 mt-0.5 shrink-0" />
             PoP é estimativa do modelo (lognormal) — não calibrada com histórico. Nenhuma ordem é enviada à corretora.
           </p>

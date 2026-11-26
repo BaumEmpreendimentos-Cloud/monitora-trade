@@ -94,7 +94,7 @@ export default function GrupoCompartilhado({ grupo, status, quotes, prevQuotes, 
                   <tr key={o.id} className={`border-t ${abertas ? moneynessRowClass(o.categoria, o.strike, quotes[o.ativo_base]) : ''}`}>
                     <td className="p-2 font-medium">
                       {o.ativo}
-                      {o.simulada && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400">SIM</span>}
+                      {o.simulada && <span className="ml-1 px-1 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400">SIM</span>}
                     </td>
                     <td className="p-2 text-muted-foreground">{data(o.data_abertura)}</td>
                     <td className="p-2">{o.categoria}</td>
