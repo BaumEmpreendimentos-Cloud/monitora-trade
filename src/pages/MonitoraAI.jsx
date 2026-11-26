@@ -18,6 +18,9 @@ import { persistOpportunities, updateOpportunityStatus, evaluateSignals } from '
 
 const FALLBACK_TICKERS = ['PETR4', 'VALE3', 'ITUB4', 'BBAS3', 'WEGE3'];
 
+// Avisos das rotinas somem sozinhos após 2 segundos
+const notificar = (props) => toast({ duration: 2000, ...props });
+
 function parseAgentes(json) {
   try {
     const list = JSON.parse(json || '[]');
@@ -100,7 +103,7 @@ export default function MonitoraAI() {
     if (!ativo) return;
     const spot = quotesMap[ativo];
     if (!spot) {
-      toast({ title: 'Cotação indisponível', description: `Não foi possível obter o spot de ${ativo}.`, variant: 'destructive' });
+      notificar({ title: 'Cotação indisponível', description: `Não foi possível obter o spot de ${ativo}.`, variant: 'destructive' });
       return;
     }
     setScanning(true);
@@ -113,11 +116,11 @@ export default function MonitoraAI() {
       });
 
       if (!chainAvailable) {
-        toast({ title: 'Cadeia indisponível', description: `A OpLab não retornou a cadeia de ${ativo}. Nenhum cálculo foi registrado.`, variant: 'destructive' });
+        notificar({ title: 'Cadeia indisponível', description: `A OpLab não retornou a cadeia de ${ativo}. Nenhum cálculo foi registrado.`, variant: 'destructive' });
         return;
       }
       if (!candidates.length) {
-        toast({ title: 'Sem estruturas resolvidas', description: `Nenhum template do catálogo pôde ser montado com a cadeia atual de ${ativo}.`, variant: 'destructive' });
+        notificar({ title: 'Sem estruturas resolvidas', description: `Nenhum template do catálogo pôde ser montado com a cadeia atual de ${ativo}.`, variant: 'destructive' });
         return;
       }
 
@@ -134,13 +137,13 @@ export default function MonitoraAI() {
 
       await persistOpportunities(records);
       const vetadas = records.filter((r) => r.status === 'VETADA_RISCO').length;
-      toast({
+      notificar({
         title: `${records.length} oportunidade(s) registradas`,
         description: vetadas ? `${vetadas} vetada(s) pelo motor de risco.` : 'Todas enquadradas nos limites de risco.',
       });
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-oportunidades'] });
     } catch (error) {
-      toast({ title: 'Falha na varredura', description: error?.message || 'Erro ao consultar a cadeia.', variant: 'destructive' });
+      notificar({ title: 'Falha na varredura', description: error?.message || 'Erro ao consultar a cadeia.', variant: 'destructive' });
     } finally {
       setScanning(false);
     }
@@ -181,10 +184,10 @@ export default function MonitoraAI() {
       const snap = await base44.entities.AiSnapshotMercado.create(res.data.snapshot);
       await base44.entities.AiAnalise.create({ ...res.data.analise, snapshot_id: snap.id });
 
-      toast({ title: 'Comitê executado', description: 'Análise registrada com snapshot de mercado.' });
+      notificar({ title: 'Comitê executado', description: 'Análise registrada com snapshot de mercado.' });
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-analises'] });
     } catch (error) {
-      toast({ title: 'Comitê não executado', description: error?.message || 'Erro ao gerar a análise.', variant: 'destructive' });
+      notificar({ title: 'Comitê não executado', description: error?.message || 'Erro ao gerar a análise.', variant: 'destructive' });
     } finally {
       setRunning(false);
     }
@@ -195,7 +198,7 @@ export default function MonitoraAI() {
       await updateOpportunityStatus(op.id, status);
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-oportunidades'] });
     } catch (error) {
-      toast({ title: 'Não foi possível atualizar', description: error?.message, variant: 'destructive' });
+      notificar({ title: 'Não foi possível atualizar', description: error?.message, variant: 'destructive' });
     }
   }
 
@@ -203,13 +206,13 @@ export default function MonitoraAI() {
     setAvaliando(true);
     try {
       const { avaliados, ignorados } = await evaluateSignals(oportunidades, quotesMap);
-      toast({
+      notificar({
         title: `${avaliados} sinal(is) avaliados`,
         description: ignorados > 0 ? `${ignorados} sem cotação ou estrutura neutra foram ignorados.` : 'Resultados atualizados com a cotação atual.',
       });
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-sinais'] });
     } catch (error) {
-      toast({ title: 'Falha ao avaliar sinais', description: error?.message, variant: 'destructive' });
+      notificar({ title: 'Falha ao avaliar sinais', description: error?.message, variant: 'destructive' });
     } finally {
       setAvaliando(false);
     }

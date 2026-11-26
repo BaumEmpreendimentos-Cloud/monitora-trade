@@ -110,7 +110,7 @@ function dispatch(action) {
   });
 }
 
-function toast({ ...props }) {
+function toast({ duration, ...props }) {
   const id = genId();
 
   const update = (props) =>
@@ -133,6 +133,13 @@ function toast({ ...props }) {
       },
     },
   });
+
+  if (duration) {
+    setTimeout(() => {
+      dismiss();
+      setTimeout(() => dispatch({ type: actionTypes.REMOVE_TOAST, toastId: id }), 200);
+    }, duration);
+  }
 
   return {
     id,
@@ -161,4 +168,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };
