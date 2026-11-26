@@ -42,11 +42,11 @@ export default function Estrategias() {
   const enviarCollarAoSimulador = (legs) => {
     navigate('/opcoes', { state: {
       mode: 'simulador',
-      template: { name: 'Collar Tradicional', legs },
+      template: { name: 'Colar Perfeito', legs },
       spotPrice: spotPrice || 0,
       ativoBase,
       strategyInfo: {
-        name: 'Collar Tradicional',
+        name: 'Colar Perfeito',
         detailedDescription: 'Ação comprada + CALL vendida + PUT comprada. O prêmio da CALL financia a PUT e a faixa de strikes foi escolhida para gerar ganho mesmo na queda do ativo.',
         b3PracticalTips: [
           'As três pernas precisam ter a mesma quantidade e o mesmo vencimento.',

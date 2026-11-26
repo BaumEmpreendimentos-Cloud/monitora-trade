@@ -193,7 +193,7 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                   disabled={loading}
                   className="w-full py-2.5 px-4 rounded-xl bg-muted hover:bg-primary text-foreground hover:text-primary-foreground font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <span>{loading ? 'Buscando opções...' : (template.builder === 'collar' ? 'Montar Collar' : 'Simular no Payoff')}</span>
+                  <span>{loading ? 'Buscando opções...' : (template.builder === 'collar' ? 'Montar Colar Perfeito' : 'Simular no Payoff')}</span>
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
                 </button>
               </div>

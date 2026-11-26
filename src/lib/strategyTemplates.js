@@ -94,7 +94,7 @@ export const strategyTemplates = [
   },
   {
     id: 'collar-tradicional',
-    name: 'Collar Tradicional de Proteção',
+    name: 'Colar Perfeito de Proteção',
     builder: 'collar',
     description: 'Ação comprada + CALL vendida + PUT comprada, montado numa faixa em que o resultado é positivo mesmo se o ativo cair.',
     detailedDescription: 'O prêmio da CALL vendida financia a PUT comprada. A diferença desta montagem é escolher a faixa de strikes de modo que, na queda até o strike da PUT, a estrutura ainda entregue ganho: o piso do resultado fica acima de zero. Monte automaticamente informando o lucro mínimo pretendido na queda, ou selecione CALL e PUT manualmente.',

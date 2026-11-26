@@ -1,4 +1,4 @@
-// Collar Tradicional — ação comprada + CALL vendida + PUT comprada.
+// Colar Perfeito — ação comprada + CALL vendida + PUT comprada.
 // A montagem busca uma faixa de strikes que gera resultado positivo
 // mesmo quando o ativo cai até o strike da PUT.
 

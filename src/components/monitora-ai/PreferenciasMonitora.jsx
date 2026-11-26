@@ -155,7 +155,7 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
         </div>
 
         <div>
-          <h3 className="font-heading text-sm font-semibold">Collar Tradicional — lucro mínimo na queda</h3>
+          <h3 className="font-heading text-sm font-semibold">Colar Perfeito — lucro mínimo na queda</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             A varredura só registra collars cujo piso de resultado (na queda até o strike da PUT) atinja esta meta.
           </p>

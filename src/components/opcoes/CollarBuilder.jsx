@@ -132,7 +132,7 @@ export default function CollarBuilder({ ativoBase, spotPrice, onEnviarParaSimula
     <div id="collar-builder" className="rounded-xl border bg-card">
       <div className="flex items-start justify-between gap-3 px-4 py-3 border-b">
         <div>
-          <h2 className="font-heading text-base font-bold">Collar Tradicional</h2>
+          <h2 className="font-heading text-base font-bold">Colar Perfeito</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Ação comprada + CALL vendida + PUT comprada, montado numa faixa que gera ganho mesmo na queda.
           </p>
