@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import MacroStrip from '@/components/monitora-ai/MacroStrip';
+import CotacoesMonitoradas from '@/components/monitora-ai/CotacoesMonitoradas';
+import NoticiasMercado from '@/components/monitora-ai/NoticiasMercado';
 import CarteiraResumo from '@/components/monitora-ai/CarteiraResumo';
 import PainelRiscoCarteira from '@/components/monitora-ai/PainelRiscoCarteira';
 import OportunidadeCard from '@/components/monitora-ai/OportunidadeCard';
@@ -250,12 +252,12 @@ export default function MonitoraAI() {
     }
   }
 
-  async function handleComite() {
+  async function handleComite(etapa = 'SOB_DEMANDA') {
     setRunning(true);
     try {
       const res = await base44.functions.invoke('monitoraAI', {
         action: 'committee',
-        rotina_etapa: 'SOB_DEMANDA',
+        rotina_etapa: etapa,
         tickers,
         quantPayload: {
           macro: macro ? {
@@ -372,7 +374,11 @@ export default function MonitoraAI() {
         </div>
       )}
 
+      <CotacoesMonitoradas quotes={quotes} />
+
       <MacroStrip macro={macro} loading={loadingMacro} />
+
+      <NoticiasMercado />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-4">

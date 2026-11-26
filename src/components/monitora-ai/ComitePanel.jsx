@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Brain, Loader2, RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,6 +10,17 @@ const VIES_STYLE = {
   NEUTRO: 'text-slate-600 bg-slate-50 border-slate-200',
 };
 
+// Etapas da rotina aceitas pela entidade AiAnalise
+const ETAPAS = [
+  { id: 'PRE_ABERTURA', label: 'Pré-abertura' },
+  { id: 'PREGAO', label: 'Pregão' },
+  { id: 'CRUZAMENTO', label: 'Cruzamento' },
+  { id: 'POS_FECHAMENTO', label: 'Pós-fechamento' },
+  { id: 'SOB_DEMANDA', label: 'Sob demanda' },
+];
+
+const etapaLabel = (id) => ETAPAS.find((e) => e.id === id)?.label || id;
+
 function fmtDate(iso) {
   if (!iso) return '—';
   try {
@@ -18,6 +29,8 @@ function fmtDate(iso) {
 }
 
 export default function ComitePanel({ analise, running, onRun, loading }) {
+  const [etapa, setEtapa] = useState('SOB_DEMANDA');
+
   return (
     <CollapsibleCard
       id="comite"
@@ -25,12 +38,30 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
       title="Comitê Monitora AI"
       subtitle="interpretação de IA"
       actions={
-        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onRun} disabled={running}>
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onRun(etapa)} disabled={running}>
           {running ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
           {running ? 'Processando' : 'Executar comitê'}
         </Button>
       }
     >
+      <div className="px-4 py-2 border-b">
+        <div className="flex flex-wrap gap-1.5">
+          {ETAPAS.map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              onClick={() => setEtapa(e.id)}
+              className={`px-2 py-0.5 rounded border text-xs transition-colors ${etapa === e.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+            >
+              {e.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1.5">
+          A leitura é gerada para a etapa escolhida, com dados observados e métricas calculadas no app.
+        </p>
+      </div>
+
       {loading ? (
         <div className="p-4 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-16 w-full" /></div>
       ) : !analise ? (
@@ -42,6 +73,9 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
           <div className="flex flex-wrap items-center gap-1.5">
             {analise.regime_mercado && (
               <span className="text-xs font-medium px-2 py-1 rounded border border-border bg-muted text-foreground/80">Regime: {analise.regime_mercado}</span>
+            )}
+            {analise.rotina_etapa && (
+              <span className="text-xs font-medium px-2 py-1 rounded border border-border bg-muted text-foreground/80">Etapa: {etapaLabel(analise.rotina_etapa)}</span>
             )}
             {analise.correlacao_chave && (
               <span className="text-xs font-medium px-2 py-1 rounded border border-border bg-muted text-foreground/80">{analise.correlacao_chave}</span>
