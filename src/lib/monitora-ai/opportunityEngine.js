@@ -2,6 +2,7 @@ import { strategyTemplates } from '@/lib/strategyTemplates';
 import { resolveStrategyLegs } from '@/lib/strategyResolver';
 import { evaluateOptionStructure } from './quantEngine';
 import { getOptionChain } from './marketEngine';
+import { buscarMontagens, legsDoCollar } from '@/lib/collar';
 
 const DEFAULT_TEMPLATE_IDS = [
   'venda-coberta',
@@ -45,6 +46,7 @@ export async function scanTemplatesForAsset({
   spotPrice,
   selicDecimal,
   selicMeta,
+  collarMeta,
   templateIds = DEFAULT_TEMPLATE_IDS,
 }) {
   if (!ativoBase || !spotPrice) return { candidates: [], chainAvailable: false };
@@ -56,7 +58,19 @@ export async function scanTemplatesForAsset({
   const candidates = [];
 
   for (const tpl of selected) {
-    const resolved = await resolveStrategyLegs(ativoBase, spotPrice, tpl.legs, chain);
+    let resolved;
+    if (tpl.id === 'collar-tradicional') {
+      // Collar só entra se houver montagem que atinja o lucro mínimo na queda
+      const [melhor] = buscarMontagens({ chain, spot: spotPrice, meta: collarMeta, quantidade: 100, limite: 1 });
+      if (!melhor) continue;
+      resolved = {
+        resolved: true,
+        dueDate: melhor.dueDate,
+        legs: legsDoCollar({ ativoBase, spot: spotPrice, call: melhor.call, put: melhor.put, quantidade: 100 }),
+      };
+    } else {
+      resolved = await resolveStrategyLegs(ativoBase, spotPrice, tpl.legs, chain);
+    }
     if (!resolved?.resolved || !resolved.legs?.length) continue;
 
     const { ivDecimal, ivSource } = ivFromLegs(resolved.legs, chain);

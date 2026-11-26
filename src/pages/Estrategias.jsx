@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import StrategyCatalog from '@/components/opcoes/StrategyCatalog';
+import CollarBuilder from '@/components/opcoes/CollarBuilder';
 import { resolveStrategyLegs } from '@/lib/strategyResolver';
 
 export default function Estrategias() {
@@ -14,6 +15,13 @@ export default function Estrategias() {
   const [spotPrice, setSpotPrice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [collarOpen, setCollarOpen] = useState(false);
+
+  useEffect(() => {
+    if (collarOpen) {
+      document.getElementById('collar-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [collarOpen]);
 
   const fetchSpot = useCallback(async () => {
     if (!ativoBase.trim()) return;
@@ -30,8 +38,31 @@ export default function Estrategias() {
 
   useEffect(() => { fetchSpot(); }, [fetchSpot]);
 
+  // Envia a montagem do Collar ao Simulador mantendo o fluxo de salvar operação
+  const enviarCollarAoSimulador = (legs) => {
+    navigate('/opcoes', { state: {
+      mode: 'simulador',
+      template: { name: 'Collar Tradicional', legs },
+      spotPrice: spotPrice || 0,
+      ativoBase,
+      strategyInfo: {
+        name: 'Collar Tradicional',
+        detailedDescription: 'Ação comprada + CALL vendida + PUT comprada. O prêmio da CALL financia a PUT e a faixa de strikes foi escolhida para gerar ganho mesmo na queda do ativo.',
+        b3PracticalTips: [
+          'As três pernas precisam ter a mesma quantidade e o mesmo vencimento.',
+          'No collar com ganho na queda, a PUT pode ficar no dinheiro ou levemente dentro do dinheiro.',
+        ],
+        marginRequirementB3: 'Margem zero: a ação cobre a CALL vendida e a PUT é comprada (titular).',
+      },
+    } });
+  };
+
   // Resolve as pernas do template para opções reais da B3 e envia ao Simulador
   const handleApplyTemplate = async (template) => {
+    if (template.builder === 'collar') {
+      setCollarOpen(true);
+      return;
+    }
     setResolving(true);
     try {
       const { legs: resolvedLegs } = await resolveStrategyLegs(ativoBase, spotPrice, template.legs);
@@ -99,6 +130,15 @@ export default function Estrategias() {
         </div>
 
         <StrategyCatalog onSelectTemplate={handleApplyTemplate} spotPrice={spotPrice} ativoBase={ativoBase} loading={resolving} />
+
+        {collarOpen && (
+          <CollarBuilder
+            ativoBase={ativoBase}
+            spotPrice={spotPrice}
+            onEnviarParaSimulador={enviarCollarAoSimulador}
+            onClose={() => setCollarOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

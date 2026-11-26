@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import ResponsiveDialog from '@/components/ResponsiveDialog';
+import MobileSelect from '@/components/MobileSelect';
 import { strategyTemplates } from '@/lib/strategyTemplates';
 import { normalizarAtivo, MAX_ATIVOS } from '@/lib/monitora-ai/preferences';
+import { META_COLLAR_PADRAO, normalizarMetaCollar } from '@/lib/collar';
 
-export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], estrategias = [], onSalvar, salvando }) {
+export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], estrategias = [], metaCollar = META_COLLAR_PADRAO, onSalvar, salvando }) {
   const [listaAtivos, setListaAtivos] = useState(ativos);
   const [listaEstrategias, setListaEstrategias] = useState(estrategias);
+  const [meta, setMeta] = useState(normalizarMetaCollar(metaCollar));
   const [novoAtivo, setNovoAtivo] = useState('');
   const [erro, setErro] = useState('');
 
@@ -17,9 +20,10 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
     if (!open) return;
     setListaAtivos(ativos);
     setListaEstrategias(estrategias);
+    setMeta(normalizarMetaCollar(metaCollar));
     setNovoAtivo('');
     setErro('');
-  }, [open, ativos, estrategias]);
+  }, [open, ativos, estrategias, metaCollar]);
 
   const categorias = useMemo(() => {
     const mapa = new Map();
@@ -68,7 +72,7 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
           <Button
             size="sm"
             disabled={salvando}
-            onClick={() => onSalvar({ ativos: listaAtivos, estrategias: listaEstrategias })}
+            onClick={() => onSalvar({ ativos: listaAtivos, estrategias: listaEstrategias, metaCollar: normalizarMetaCollar(meta) })}
           >
             {salvando && <Loader2 className="w-3 h-3 animate-spin" />} Salvar
           </Button>
@@ -147,6 +151,30 @@ export default function PreferenciasMonitora({ open, onOpenChange, ativos = [], 
                 </ul>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-heading text-sm font-semibold">Collar Tradicional — lucro mínimo na queda</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            A varredura só registra collars cujo piso de resultado (na queda até o strike da PUT) atinja esta meta.
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <Input
+              type="number"
+              step="0.1"
+              value={meta.valor}
+              onChange={(e) => setMeta((m) => ({ ...m, valor: e.target.value }))}
+              className="h-8 w-24 text-sm"
+            />
+            <div className="w-24">
+              <MobileSelect
+                value={meta.unidade}
+                onValueChange={(v) => setMeta((m) => ({ ...m, unidade: v }))}
+                options={[{ value: '%', label: '% do desembolso' }, { value: 'R$', label: 'R$ em reais' }]}
+                placeholder="Unidade"
+              />
+            </div>
           </div>
         </div>
 

@@ -95,8 +95,9 @@ export const strategyTemplates = [
   {
     id: 'collar-tradicional',
     name: 'Collar Tradicional de Proteção',
-    description: 'Posse da ação + Compra de PUT protetora financiada pela Venda de uma CALL OTM.',
-    detailedDescription: 'Permite travar o risco de queda de uma carteira de ações sem ter que gastar dinheiro com seguro. O prêmio recebido pela venda da CALL OTM paga integralmente (ou quase) o custo de aquisição da PUT OTM que funciona como stop garantido contra desastres.',
+    builder: 'collar',
+    description: 'Ação comprada + CALL vendida + PUT comprada, montado numa faixa em que o resultado é positivo mesmo se o ativo cair.',
+    detailedDescription: 'O prêmio da CALL vendida financia a PUT comprada. A diferença desta montagem é escolher a faixa de strikes de modo que, na queda até o strike da PUT, a estrutura ainda entregue ganho: o piso do resultado fica acima de zero. Monte automaticamente informando o lucro mínimo pretendido na queda, ou selecione CALL e PUT manualmente.',
     category: 'PROTEÇÃO & HEDGE',
     sentiment: 'BULLISH',
     maxProfit: 'Limitado: (Strike da CALL - Preço de Compra da Ação) - Custo Líquido',
@@ -108,6 +109,7 @@ export const strategyTemplates = [
     b3PracticalTips: [
       'Excelente para investidores institucionais ou pessoas físicas em períodos de eleições ou incerteza fiscal na B3.',
       'Ao montar um Zero-Cost Collar (custo zero), certifique-se de que a taxa de corretagem e emolumentos B3 não comam o benefício.',
+      'No collar com ganho na queda, a PUT pode ficar no dinheiro ou levemente dentro do dinheiro — o app procura a combinação que atinja o lucro mínimo configurado.',
     ],
     legs: [
       { id: 'tpl-8', type: 'STOCK', side: 'BUY', quantity: 100, strike: 38.00, premium: 38.00, ticker: 'PETR4', dueDate: 'À Vista' },

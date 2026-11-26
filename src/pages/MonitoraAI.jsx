@@ -22,6 +22,7 @@ import { scanTemplatesForAsset, buildOpportunityRecord } from '@/lib/monitora-ai
 import { validateOpportunityAgainstRisk, classifyRiskLevel } from '@/lib/monitora-ai/riskEngine';
 import { persistOpportunities, updateOpportunityStatus, evaluateSignals, diagnosticarSinais } from '@/lib/monitora-ai/signalEngine';
 import { normalizarAtivos, normalizarEstrategias, ativosEfetivos, MAX_ATIVOS } from '@/lib/monitora-ai/preferences';
+import { normalizarMetaCollar } from '@/lib/collar';
 
 const STATUS_ACOMPANHADOS = ['APROVADA', 'EXECUTADA'];
 
@@ -61,6 +62,7 @@ export default function MonitoraAI() {
       return {
         ativos: normalizarAtivos(me?.monitora_ativos),
         estrategias: normalizarEstrategias(me?.monitora_estrategias),
+        metaCollar: normalizarMetaCollar(me?.monitora_collar_meta),
       };
     },
   });
@@ -172,6 +174,7 @@ export default function MonitoraAI() {
         spotPrice: spot,
         selicDecimal: macro?.selicDecimal ?? 0.1325,
         selicMeta: macro?.selicMeta,
+        collarMeta: prefs?.metaCollar,
       });
 
       if (!chainAvailable) {
@@ -208,7 +211,7 @@ export default function MonitoraAI() {
     }
   }
 
-  async function handleSalvarPreferencias({ ativos: novosAtivos, estrategias }) {
+  async function handleSalvarPreferencias({ ativos: novosAtivos, estrategias, metaCollar }) {
     setSalvandoPrefs(true);
     try {
       const listaAtivos = normalizarAtivos(novosAtivos);
@@ -216,6 +219,7 @@ export default function MonitoraAI() {
       await base44.auth.updateMe({
         monitora_ativos: listaAtivos,
         monitora_estrategias: listaEstrategias,
+        monitora_collar_meta: normalizarMetaCollar(metaCollar),
       });
       await queryClient.invalidateQueries({ queryKey: ['monitora-ai-prefs'] });
       setPrefsOpen(false);
@@ -470,6 +474,7 @@ export default function MonitoraAI() {
         onOpenChange={setPrefsOpen}
         ativos={ativosMonitorados}
         estrategias={favoritas}
+        metaCollar={prefs?.metaCollar}
         onSalvar={handleSalvarPreferencias}
         salvando={salvandoPrefs}
       />
