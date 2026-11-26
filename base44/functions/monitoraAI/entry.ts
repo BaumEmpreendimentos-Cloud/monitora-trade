@@ -79,7 +79,9 @@ export default async function (req) {
     const token = secrets.get('OPLAB_ACCESS_TOKEN');
     const quotes = await fetchQuotes(tickers, token);
 
-    const snapshot = await base44.entities.AiSnapshotMercado.create({
+    // Snapshot verificável (auditoria) do mercado usado nesta análise.
+    // A persistência é feita pelo app com o token do próprio usuário (RLS owner).
+    const snapshotPayload = {
       capturado_em: macro.capturedAt,
       selic_meta: selic?.value ?? null,
       selic_data_ref: selic?.date ?? '',
@@ -88,7 +90,7 @@ export default async function (req) {
       ipca_12m: ipca12m?.value ?? null,
       cotacoes_json: JSON.stringify(quotes).slice(0, 40000),
       fonte_primaria: 'OpLab v3 + BCB SGS',
-    });
+    };
 
     const quantPayload = JSON.stringify(body.quantPayload || {}).slice(0, MAX_QUANT_PAYLOAD);
 
@@ -140,8 +142,7 @@ Regras:
     const llm = typeof llmResult === 'string' ? {} : (llmResult || {});
     const agentes = Array.isArray(llm.agentes) ? llm.agentes : [];
 
-    const analise = await base44.entities.AiAnalise.create({
-      snapshot_id: snapshot.id,
+    const analisePayload = {
       rotina_etapa: body.rotina_etapa || 'SOB_DEMANDA',
       regime_mercado: llm.regime_mercado || 'Não informado',
       correlacao_chave: llm.correlacao_chave || '',
@@ -149,9 +150,9 @@ Regras:
       agentes_json: JSON.stringify(agentes).slice(0, 20000),
       modelo_ia: 'gemini_3_8_flash (contexto de internet)',
       gerado_em: new Date().toISOString(),
-    });
+    };
 
-    return Response.json({ snapshot, analise, agentes, macro });
+    return Response.json({ snapshot: snapshotPayload, analise: analisePayload, agentes, macro, quotes });
   } catch (error) {
     console.log('monitoraAI error', error?.message);
     return Response.json({ error: error?.message || 'Erro interno' }, { status: 500 });

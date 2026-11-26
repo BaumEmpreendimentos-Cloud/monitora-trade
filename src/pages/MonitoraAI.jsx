@@ -11,7 +11,7 @@ import OportunidadeCard from '@/components/monitora-ai/OportunidadeCard';
 import ComitePanel from '@/components/monitora-ai/ComitePanel';
 import SinaisPanel from '@/components/monitora-ai/SinaisPanel';
 import { getOfficialMacroRates, getBatchQuotes, quotesToMap } from '@/lib/monitora-ai/marketEngine';
-import { analyzeOpenGroups, calcCapitalReferencia } from '@/lib/monitora-ai/portfolioEngine';
+import { analyzeOpenGroups } from '@/lib/monitora-ai/portfolioEngine';
 import { scanTemplatesForAsset, buildOpportunityRecord } from '@/lib/monitora-ai/opportunityEngine';
 import { validateOpportunityAgainstRisk, classifyRiskLevel } from '@/lib/monitora-ai/riskEngine';
 import { persistOpportunities, updateOpportunityStatus, evaluateSignals } from '@/lib/monitora-ai/signalEngine';
@@ -80,8 +80,6 @@ export default function MonitoraAI() {
     () => analyzeOpenGroups(openOps, quotesMap, { selicDecimal: macro?.selicDecimal ?? 0.1325 }),
     [openOps, quotesMap, macro]
   );
-  const capital = useMemo(() => calcCapitalReferencia(openOps), [openOps]);
-
   const ativos = useMemo(() => {
     const doPortfolio = [...new Set(groups.map((g) => g.ativoBase).filter(Boolean))];
     return [...new Set([...doPortfolio, ...FALLBACK_TICKERS])].slice(0, 6);
@@ -95,7 +93,7 @@ export default function MonitoraAI() {
   const avisos = [];
   if (macro?.indisponivel) avisos.push('BCB indisponível: a Selic usada é premissa padrão, não dado oficial.');
   if (!quotes.length) avisos.push('Cotações OpLab indisponíveis: o spot usa o preço de entrada das operações.');
-  if (!capital) avisos.push('Sem capital de referência (nenhuma posição aberta): limites por capital não avaliados.');
+  avisos.push('Limites de risco por capital não são avaliados: a plataforma não guarda saldo de conta. Veto por risco ilimitado e concentração seguem ativos.');
   if (groups.some((g) => g.spotSource === 'entrada')) avisos.push('Alguns grupos sem cotação atual — P&L calculado sobre o preço de entrada.');
 
   async function handleScan() {
@@ -127,10 +125,10 @@ export default function MonitoraAI() {
         const validation = validateOpportunityAgainstRisk({
           opportunity: c,
           portfolioGroups: groups,
-          capitalTotalBrl: capital,
+          capitalTotalBrl: 0,
         });
         return buildOpportunityRecord(c, validation, {
-          nivelRisco: classifyRiskLevel(validation, c.scoreQuant),
+          nivelRisco: classifyRiskLevel(validation, c.scoreQuant, c.quant?.marginEstimate?.riskLevel),
         });
       });
 
@@ -178,6 +176,11 @@ export default function MonitoraAI() {
         },
       });
       if (res.data?.error) throw new Error(res.data.error);
+
+      // Persistência com o token do usuário: o registro fica isolado na conta (RLS owner)
+      const snap = await base44.entities.AiSnapshotMercado.create(res.data.snapshot);
+      await base44.entities.AiAnalise.create({ ...res.data.analise, snapshot_id: snap.id });
+
       toast({ title: 'Comitê executado', description: 'Análise registrada com snapshot de mercado.' });
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-analises'] });
     } catch (error) {

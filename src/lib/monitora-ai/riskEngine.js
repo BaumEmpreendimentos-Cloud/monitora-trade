@@ -56,10 +56,9 @@ export function validateOpportunityAgainstRisk({
   };
 }
 
-export function classifyRiskLevel(validation, score) {
+export function classifyRiskLevel(validation, score, marginRiskLevel) {
   if (validation?.blocked) return 'BLOQUEADO';
-  if (!validation?.capitalKnown) return 'ALTO';
-  if (validation.riskPct > 1) return 'ALTO';
-  if (score >= 65) return 'MODERADO';
-  return 'BAIXO';
+  if (marginRiskLevel === 'CRITICO') return 'ALTO';
+  if (score >= 60) return 'MODERADO';
+  return 'ALTO';
 }
