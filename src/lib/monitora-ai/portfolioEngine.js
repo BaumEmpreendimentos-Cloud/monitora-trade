@@ -16,9 +16,22 @@ export function analyzeOpenGroups(operacoesAbertas, quotesMap = {}, { selicDecim
   });
 
   return Object.entries(byGroup).map(([groupId, ops]) => {
-    const ativoBase = ops[0]?.ativo_base || ops[0]?.ativo || '';
+    // Subjacente vem do ativo_base das pernas; sem ele, do ticker de ação mais repetido no grupo
+    const contagemAcoes = {};
+    ops.filter((o) => o.categoria === 'ACAO').forEach((o) => {
+      const t = o.ativo_base || o.ativo;
+      if (t) contagemAcoes[t] = (contagemAcoes[t] || 0) + 1;
+    });
+    const ativoBase = ops.map((o) => o.ativo_base).find(Boolean)
+      || Object.entries(contagemAcoes).sort((a, b) => b[1] - a[1])[0]?.[0]
+      || ops[0]?.ativo
+      || '';
     const quote = quotesMap[ativoBase];
-    const spotPrice = Number(quote) > 0 ? Number(quote) : Number(ops[0]?.preco_entrada || 0);
+    // Sem cotação, o spot cai no preço de entrada do subjacente (não no prêmio de uma opção)
+    const pernaBase = ops.find((o) => (o.ativo_base || o.ativo) === ativoBase && o.categoria === 'ACAO')
+      || ops.find((o) => (o.ativo_base || o.ativo) === ativoBase)
+      || ops[0];
+    const spotPrice = Number(quote) > 0 ? Number(quote) : Number(pernaBase?.preco_entrada || 0);
     const legs = operacoesToLegs(ops);
     // IV do ativo quando conhecida (oportunidade registrada); senão, a premissa padrão
     const ivDoAtivo = Number(ivMap[ativoBase]) > 0.02 ? Number(ivMap[ativoBase]) : ivDecimal;

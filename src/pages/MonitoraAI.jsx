@@ -105,8 +105,9 @@ export default function MonitoraAI() {
     const emAcompanhamento = oportunidades
       .filter((o) => STATUS_ACOMPANHADOS.includes(o.status))
       .map((o) => o.ativo_base);
-    const doPortfolio = (openOps || []).map((o) => o.ativo_base);
-    return [...new Set([...emAcompanhamento, ...ativosMonitorados, ...doPortfolio].filter(Boolean))].slice(0, 8);
+    // Posições abertas vêm antes: sem cotação, o P&L do grupo cai no preço de entrada
+    const doPortfolio = (openOps || []).map((o) => o.ativo_base || o.ativo);
+    return [...new Set([...emAcompanhamento, ...doPortfolio, ...ativosMonitorados].filter(Boolean))].slice(0, 16);
   }, [oportunidades, ativosMonitorados, openOps]);
 
   const { data: quotes = [] } = useQuery({
@@ -173,7 +174,11 @@ export default function MonitoraAI() {
   if (macro?.indisponivel) avisos.push('BCB indisponível: a Selic usada é premissa padrão, não dado oficial.');
   if (!quotes.length) avisos.push('Cotações OpLab indisponíveis: o spot usa o preço de entrada das operações.');
   if (!prefs?.capitalRef) avisos.push('Sem capital de referência informado: os vetos de risco por operação (1,5%) e de margem (35%) não são avaliados. Informe o capital em "Ativos e estratégias".');
-  if (groups.some((g) => g.spotSource === 'entrada')) avisos.push('Alguns grupos sem cotação atual — P&L calculado sobre o preço de entrada.');
+  const gruposSemCotacao = groups.filter((g) => g.spotSource === 'entrada');
+  if (gruposSemCotacao.length) {
+    const nomes = [...new Set(gruposSemCotacao.map((g) => g.grupoNome))].join(', ');
+    avisos.push(`Sem cotação atual em ${nomes} — P&L calculado sobre o preço de entrada.`);
+  }
 
   async function handleScan() {
     if (!ativo) return;

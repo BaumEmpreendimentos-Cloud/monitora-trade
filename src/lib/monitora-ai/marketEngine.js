@@ -36,25 +36,37 @@ export async function getOfficialMacroRates() {
   }
 }
 
+const TAMANHO_LOTE_COTACOES = 8;
+
 export async function getBatchQuotes(tickers = []) {
   const list = [...new Set((tickers || [])
     .map((t) => String(t || '').toUpperCase().trim())
-    .filter((t) => /^[A-Z0-9]{4,10}$/.test(t)))].slice(0, 8);
+    .filter((t) => /^[A-Z0-9]{4,10}$/.test(t)))].slice(0, 16);
   if (!list.length) return [];
 
-  try {
-    const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: list.join(',') });
-    const raw = res.data?.quotes || [];
-    return raw.map((q) => ({
-      symbol: String(q.symbol || q.ticker || '').toUpperCase(),
-      price: Number(q.close ?? q.last ?? q.price ?? 0),
-      variationPct: Number(q.variation ?? q.change ?? 0),
-      volume: Number(q.volume ?? 0),
-      source: 'OpLab v3',
-    })).filter((q) => q.symbol && q.price > 0);
-  } catch (error) {
-    return [];
+  // A OpLab aceita até 8 tickers por chamada: os demais vão em lotes paralelos
+  const lotes = [];
+  for (let i = 0; i < list.length; i += TAMANHO_LOTE_COTACOES) {
+    lotes.push(list.slice(i, i + TAMANHO_LOTE_COTACOES));
   }
+
+  const respostas = await Promise.all(lotes.map(async (lote) => {
+    try {
+      const res = await base44.functions.invoke('oplabMarket', { action: 'quote', tickers: lote.join(',') });
+      const raw = res.data?.quotes || [];
+      return raw.map((q) => ({
+        symbol: String(q.symbol || q.ticker || '').toUpperCase(),
+        price: Number(q.close ?? q.last ?? q.price ?? 0),
+        variationPct: Number(q.variation ?? q.change ?? 0),
+        volume: Number(q.volume ?? 0),
+        source: 'OpLab v3',
+      })).filter((q) => q.symbol && q.price > 0);
+    } catch (error) {
+      return [];
+    }
+  }));
+
+  return respostas.flat();
 }
 
 export async function getOptionChain(symbol) {
