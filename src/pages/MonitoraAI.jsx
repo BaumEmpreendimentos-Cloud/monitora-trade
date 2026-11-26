@@ -9,6 +9,8 @@ import MacroStrip from '@/components/monitora-ai/MacroStrip';
 import CarteiraResumo from '@/components/monitora-ai/CarteiraResumo';
 import PainelRiscoCarteira from '@/components/monitora-ai/PainelRiscoCarteira';
 import OportunidadeCard from '@/components/monitora-ai/OportunidadeCard';
+import ExecutarOportunidadeDialog from '@/components/monitora-ai/ExecutarOportunidadeDialog';
+import OperacoesMonitora from '@/components/monitora-ai/OperacoesMonitora';
 import ComitePanel from '@/components/monitora-ai/ComitePanel';
 import DesempenhoSinais from '@/components/monitora-ai/DesempenhoSinais';
 import SinaisPanel from '@/components/monitora-ai/SinaisPanel';
@@ -43,6 +45,7 @@ export default function MonitoraAI() {
   const [avaliando, setAvaliando] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [salvandoPrefs, setSalvandoPrefs] = useState(false);
+  const [opExecutando, setOpExecutando] = useState(null);
 
   const { data: macro, isLoading: loadingMacro } = useQuery({
     queryKey: ['monitora-ai-macro'],
@@ -76,6 +79,11 @@ export default function MonitoraAI() {
   const { data: analises = [], isLoading: loadingAnalises } = useQuery({
     queryKey: ['monitora-ai-analises'],
     queryFn: async () => (await base44.entities.AiAnalise.filter({}, { sort: '-created_date', limit: 6 })).items || [],
+  });
+
+  const { data: operacoesMonitora = [] } = useQuery({
+    queryKey: ['monitora-ai-operacoes-monitora'],
+    queryFn: async () => (await base44.entities.Operacao.filter({ origem: 'MONITORA_AI' }, { sort: '-data_abertura', limit: 200 })).items || [],
   });
 
   const { data: sinais = [] } = useQuery({
@@ -115,15 +123,21 @@ export default function MonitoraAI() {
 
   const ativo = ativoSel || ativos[0] || '';
 
+  // Executadas e encerradas saem do quadro de oportunidades (seguem em Operações)
+  const oportunidadesQuadro = useMemo(
+    () => oportunidades.filter((o) => !['EXECUTADA', 'EXPIRADA'].includes(o.status)),
+    [oportunidades]
+  );
+
   // Estratégias preferidas aparecem primeiro, sem esconder as demais
   const oportunidadesOrdenadas = useMemo(() => {
     const peso = (o) => (favoritas.includes(o.template_id) ? 1 : 0);
-    return [...oportunidades].sort((a, b) => {
+    return [...oportunidadesQuadro].sort((a, b) => {
       const diff = peso(b) - peso(a);
       if (diff !== 0) return diff;
       return String(b.created_date || '').localeCompare(String(a.created_date || ''));
     });
-  }, [oportunidades, favoritas]);
+  }, [oportunidadesQuadro, favoritas]);
 
   const diagnostico = useMemo(() => diagnosticarSinais(oportunidades, quotesMap), [oportunidades, quotesMap]);
 
@@ -262,6 +276,28 @@ export default function MonitoraAI() {
     }
   }
 
+  async function handleExecutada(grupo) {
+    notificar({
+      title: 'Operação executada',
+      description: `Grupo "${grupo?.nome || ''}" gravado em Operações e no quadro de acompanhamento.`,
+    });
+    queryClient.invalidateQueries({ queryKey: ['monitora-ai-oportunidades'] });
+    queryClient.invalidateQueries({ queryKey: ['monitora-ai-open-ops'] });
+    queryClient.invalidateQueries({ queryKey: ['monitora-ai-operacoes-monitora'] });
+  }
+
+  async function handleEncerrarSinal(sinal) {
+    try {
+      await base44.entities.AiResultadoSinal.delete(sinal.id);
+      if (sinal.oportunidade_id) await updateOpportunityStatus(sinal.oportunidade_id, 'EXPIRADA');
+      queryClient.invalidateQueries({ queryKey: ['monitora-ai-sinais'] });
+      queryClient.invalidateQueries({ queryKey: ['monitora-ai-oportunidades'] });
+      notificar({ title: 'Sinal encerrado', description: 'A oportunidade saiu do quadro de sinais.' });
+    } catch (error) {
+      notificar({ title: 'Não foi possível encerrar', description: error?.message, variant: 'destructive' });
+    }
+  }
+
   async function handleAvaliar() {
     setAvaliando(true);
     try {
@@ -336,7 +372,7 @@ export default function MonitoraAI() {
               <div className="px-4 py-2 border-t text-xs text-muted-foreground space-y-1">
                 <p className="flex items-start gap-1">
                   <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                  Fluxo: Ativa → Aprovada → Executada. Aprovar apenas registra o status; a oportunidade passa a ser acompanhada no painel Resultado dos sinais. Nenhuma ordem é enviada à corretora.
+                  Fluxo: Ativa → Aprovada → Executada. Executar abre o cadastro das pernas (quantidade, ativo e preço) e grava a estrutura em Operações, onde o resultado é acompanhado. Nenhuma ordem é enviada à corretora.
                 </p>
                 {favoritas.length > 0 && (
                   <p className="flex items-center gap-1">
@@ -377,6 +413,7 @@ export default function MonitoraAI() {
                     key={op.id}
                     op={op}
                     onStatus={handleStatus}
+                    onExecutar={setOpExecutando}
                     favorita={favoritas.includes(op.template_id)}
                   />
                 ))
@@ -387,10 +424,28 @@ export default function MonitoraAI() {
 
         <div className="space-y-4">
           <ComitePanel analise={analiseAtual} running={running} onRun={handleComite} loading={loadingAnalises} />
+          <OperacoesMonitora
+            operacoes={operacoesMonitora}
+            quotesMap={quotesMap}
+            selicDecimal={macro?.selicDecimal ?? 0.1325}
+          />
           <DesempenhoSinais sinais={sinais} diagnostico={diagnostico} />
-          <SinaisPanel sinais={sinais} avaliando={avaliando} onAvaliar={handleAvaliar} diagnostico={diagnostico} />
+          <SinaisPanel
+            sinais={sinais}
+            avaliando={avaliando}
+            onAvaliar={handleAvaliar}
+            onEncerrar={handleEncerrarSinal}
+            diagnostico={diagnostico}
+          />
         </div>
       </div>
+
+      <ExecutarOportunidadeDialog
+        open={!!opExecutando}
+        onOpenChange={(v) => { if (!v) setOpExecutando(null); }}
+        op={opExecutando}
+        onSaved={handleExecutada}
+      />
 
       <PreferenciasMonitora
         open={prefsOpen}

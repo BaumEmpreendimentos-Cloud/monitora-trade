@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Loader2, Info } from 'lucide-react';
+import { Activity, Loader2, Info, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CollapsibleCard from './CollapsibleCard';
 
@@ -22,7 +22,7 @@ const DESFECHO_LABEL = {
   EM_ACOMPANHAMENTO: 'Em acompanhamento',
 };
 
-export default function SinaisPanel({ sinais = [], avaliando, onAvaliar, diagnostico }) {
+export default function SinaisPanel({ sinais = [], avaliando, onAvaliar, onEncerrar, diagnostico }) {
   const d = diagnostico || {};
 
   return (
@@ -39,7 +39,7 @@ export default function SinaisPanel({ sinais = [], avaliando, onAvaliar, diagnos
       footer={
         <p className="px-4 py-2 border-t text-xs text-muted-foreground flex items-start gap-1">
           <Info className="w-3 h-3 mt-0.5 shrink-0" />
-          Compara a cotação atual do ativo base com o preço de referência da oportunidade. Não envia ordem.
+          Compara a cotação atual do ativo base com o preço de referência da oportunidade. Encerrar remove o sinal e expira a oportunidade. Não envia ordem.
         </p>
       }
     >
@@ -75,6 +75,15 @@ export default function SinaisPanel({ sinais = [], avaliando, onAvaliar, diagnos
                   {DESFECHO_LABEL[s.desfecho] || s.desfecho}
                 </span>
                 <div className={`text-xs tabular-nums mt-0.5 ${Number(s.retorno_pct) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{pct(s.retorno_pct)}</div>
+                {onEncerrar && (
+                  <button
+                    type="button"
+                    onClick={() => onEncerrar(s)}
+                    className="text-xs text-muted-foreground hover:text-destructive inline-flex items-center gap-0.5 mt-0.5"
+                  >
+                    <X className="w-3 h-3" /> Encerrar
+                  </button>
+                )}
               </div>
             </li>
           ))}

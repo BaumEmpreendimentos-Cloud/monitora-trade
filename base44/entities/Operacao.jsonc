@@ -92,6 +92,19 @@
       "type": "boolean",
       "default": false,
       "title": "Opera\u00e7\u00e3o simulada (acompanhamento)"
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "MANUAL",
+        "MONITORA_AI"
+      ],
+      "enumColors": [
+        "gray",
+        "purple"
+      ],
+      "default": "MANUAL",
+      "title": "Origem da opera\u00e7\u00e3o"
     }
   },
   "required": [

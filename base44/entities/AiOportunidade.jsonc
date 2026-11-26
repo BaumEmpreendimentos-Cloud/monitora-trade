@@ -150,6 +150,10 @@
       ],
       "default": "ATIVA",
       "title": "Status"
+    },
+    "grupo_operacao_id": {
+      "type": "string",
+      "title": "Grupo criado em Operacao ao executar"
     }
   },
   "required": [
