@@ -103,7 +103,6 @@ export function buildOpportunityRecord(candidate, validation, { nivelRisco, vali
     direcao: candidate.direcao,
     horizonte: `${quant.inputs.nearestDte} d.u.`,
     preco_referencia: Number(quant.inputs.spotPrice.toFixed(2)),
-    alvo_referencia: quant.breakEvens?.[0] ?? undefined,
     probabilidade_lucro_pct: quant.popPct ?? undefined,
     risco_retorno: quant.rewardToRisk ?? undefined,
     score_quant: candidate.scoreQuant,

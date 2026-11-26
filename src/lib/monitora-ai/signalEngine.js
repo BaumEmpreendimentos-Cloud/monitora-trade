@@ -2,7 +2,11 @@ import { base44 } from '@/api/base44Client';
 
 export async function persistOpportunities(records = []) {
   if (!records.length) return [];
-  return base44.entities.AiOportunidade.bulkCreate(records);
+  const salvos = [];
+  for (const record of records) {
+    salvos.push(await base44.entities.AiOportunidade.create(record));
+  }
+  return salvos;
 }
 
 export async function updateOpportunityStatus(id, status) {

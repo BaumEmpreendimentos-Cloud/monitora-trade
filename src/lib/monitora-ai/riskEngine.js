@@ -59,6 +59,6 @@ export function validateOpportunityAgainstRisk({
 export function classifyRiskLevel(validation, score, marginRiskLevel) {
   if (validation?.blocked) return 'BLOQUEADO';
   if (marginRiskLevel === 'CRITICO') return 'ALTO';
-  if (score >= 60) return 'MODERADO';
-  return 'ALTO';
+  if (marginRiskLevel === 'MODERADO') return 'MODERADO';
+  return 'BAIXO';
 }
