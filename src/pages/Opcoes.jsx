@@ -89,7 +89,12 @@ export default function Opcoes() {
 
   const ativoBase = useMemo(() => {
     if (simPosicao) return simPosicao.ativoBase || '';
-    return grupoOps.find((o) => o.ativo_base)?.ativo_base || grupoOps[0]?.ativo_base || '';
+    const comBase = grupoOps.find((o) => o.ativo_base);
+    if (comBase?.ativo_base) return comBase.ativo_base;
+    // Operações antigas sem ativo_base: a ação/FII do grupo define o ativo base
+    const acao = grupoOps.find((o) => ['ACAO', 'FII', 'DOLLAR'].includes(o.categoria) && o.ativo);
+    if (acao) return acao.ativo;
+    return grupoOps[0]?.ativo_base || '';
   }, [simPosicao, grupoOps]);
 
   const selectedGrupo = useMemo(() => grupos.find((g) => g.id === selectedGrupoId), [grupos, selectedGrupoId]);
