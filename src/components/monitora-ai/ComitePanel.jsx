@@ -41,13 +41,13 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
         <div className="px-4 py-3 space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
             {analise.regime_mercado && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border bg-muted text-muted-foreground">Regime: {analise.regime_mercado}</span>
+              <span className="text-xs font-medium px-2 py-1 rounded border border-border bg-muted text-foreground/80">Regime: {analise.regime_mercado}</span>
             )}
             {analise.correlacao_chave && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border bg-muted text-muted-foreground">{analise.correlacao_chave}</span>
+              <span className="text-xs font-medium px-2 py-1 rounded border border-border bg-muted text-foreground/80">{analise.correlacao_chave}</span>
             )}
-            <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1 ml-auto">
-              <Clock className="w-3 h-3" /> {fmtDate(analise.gerado_em)}
+            <span className="text-xs text-foreground/70 inline-flex items-center gap-1 ml-auto">
+              <Clock className="w-3.5 h-3.5" /> {fmtDate(analise.gerado_em)}
             </span>
           </div>
 
@@ -56,20 +56,20 @@ export default function ComitePanel({ analise, running, onRun, loading }) {
           {!!analise.agentes?.length && (
             <ul className="space-y-1.5">
               {analise.agentes.map((a, i) => (
-                <li key={`${a.nome}-${i}`} className="rounded-lg border bg-muted/30 px-2.5 py-1.5">
+                <li key={`${a.nome}-${i}`} className="rounded-lg border border-border bg-muted/40 px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium">{a.nome}</span>
+                    <span className="text-sm font-semibold text-foreground">{a.nome}</span>
                     {a.vies && (
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded border ${VIES_STYLE[String(a.vies).toUpperCase()] || VIES_STYLE.NEUTRO}`}>{a.vies}</span>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${VIES_STYLE[String(a.vies).toUpperCase()] || VIES_STYLE.NEUTRO}`}>{a.vies}</span>
                     )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{a.leitura}</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed mt-1">{a.leitura}</p>
                 </li>
               ))}
             </ul>
           )}
 
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-xs text-foreground/70">
             {analise.modelo_ia ? `Modelo: ${analise.modelo_ia} · ` : ''}Vinculada ao snapshot {analise.snapshot_id ? `#${analise.snapshot_id.slice(-6)}` : '—'} · conteúdo interpretativo, não recomendação.
           </p>
         </div>
