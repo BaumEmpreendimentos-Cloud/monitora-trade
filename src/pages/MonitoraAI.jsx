@@ -395,6 +395,7 @@ export default function MonitoraAI() {
             icon={ScanSearch}
             title="Oportunidades"
             subtitle="catálogo de estruturas"
+            defaultOpen
             actions={
               <>
                 <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPrefsOpen(true)}>

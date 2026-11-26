@@ -13,7 +13,7 @@ export default function CollapsibleCard({
   subtitle,
   actions,
   footer,
-  defaultOpen = true,
+  defaultOpen = false,
   className,
   children,
 }) {
