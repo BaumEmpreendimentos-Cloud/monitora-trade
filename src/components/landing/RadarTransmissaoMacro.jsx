@@ -29,16 +29,16 @@ export default function RadarTransmissaoMacro({ perspectiva }) {
             <div key={i} className="bg-muted/40 border rounded-xl p-3.5 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-xs">{item.indicador}</span>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-semibold shrink-0 ${statusStyle}`}>{statusLabel}</span>
+                <span className={`text-xs font-mono px-2 py-0.5 rounded border font-semibold shrink-0 ${statusStyle}`}>{statusLabel}</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs">
                 <span className="text-muted-foreground">Impacta:</span>
                 <span className="font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">{item.impacta}</span>
-                {item.correlacao && <span className="text-[11px] text-muted-foreground">• Corr: {item.correlacao}</span>}
+                {item.correlacao && <span className="text-xs text-muted-foreground">• Corr: {item.correlacao}</span>}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">{item.descricao}</p>
               {item.valor && (
-                <div className="pt-1.5 border-t flex items-center justify-between text-[11px] font-mono">
+                <div className="pt-1.5 border-t flex items-center justify-between text-xs font-mono">
                   <span className={item.variacao?.startsWith('-') ? 'text-red-600' : 'text-emerald-600'}>{item.variacao}</span>
                   <span className="font-semibold">{item.valor}</span>
                 </div>

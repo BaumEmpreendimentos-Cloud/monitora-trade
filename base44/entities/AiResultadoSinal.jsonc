@@ -1,0 +1,121 @@
+{
+  "name": "AiResultadoSinal",
+  "type": "object",
+  "properties": {
+    "oportunidade_id": {
+      "type": "string",
+      "title": "ID em AiOportunidade"
+    },
+    "operacao_grupo_id": {
+      "type": "string",
+      "title": "Grupo em Operacao (se executada)"
+    },
+    "ativo_base": {
+      "type": "string",
+      "title": "Ativo"
+    },
+    "motor": {
+      "type": "string",
+      "enum": [
+        "DAY_TRADE",
+        "OPCOES",
+        "LONGO_PRAZO"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "gray"
+      ],
+      "title": "Motor"
+    },
+    "preco_entrada_ref": {
+      "type": "number",
+      "title": "Pre\u00e7o de refer\u00eancia na emiss\u00e3o"
+    },
+    "preco_avaliacao": {
+      "type": "number",
+      "title": "Pre\u00e7o usado na avalia\u00e7\u00e3o"
+    },
+    "retorno_pct": {
+      "type": "number",
+      "title": "Retorno %"
+    },
+    "resultado_brl": {
+      "type": "number",
+      "title": "Resultado em R$ (quando aplic\u00e1vel)"
+    },
+    "drawdown_max_pct": {
+      "type": "number",
+      "title": "Drawdown m\u00e1ximo %"
+    },
+    "desfecho": {
+      "type": "string",
+      "enum": [
+        "ALVO_ATINGIDO",
+        "STOP_ATINGIDO",
+        "EXPIRADO_LUCRO",
+        "EXPIRADO_PREJUIZO",
+        "EM_ACOMPANHAMENTO"
+      ],
+      "enumColors": [
+        "green",
+        "red",
+        "green",
+        "red",
+        "gray"
+      ],
+      "title": "Desfecho"
+    },
+    "avaliado_em": {
+      "type": "string",
+      "title": "ISO timestamp"
+    }
+  },
+  "required": [
+    "oportunidade_id",
+    "ativo_base",
+    "desfecho",
+    "avaliado_em"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

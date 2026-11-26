@@ -71,7 +71,7 @@ export default function MapaCalor({ operation, currentPrice }) {
               return (
                 <div key={p.i} className="text-center text-white py-2 rounded text-xs" style={{ backgroundColor: cellColor(distance) }}>
                   <div className="font-semibold">{fmt(pnl)}</div>
-                  <div className="text-[10px] opacity-80">{p.i === 0 ? 'atual' : `${p.i > 0 ? '+' : ''}${p.i}`}</div>
+                  <div className="text-xs opacity-80">{p.i === 0 ? 'atual' : `${p.i > 0 ? '+' : ''}${p.i}`}</div>
                 </div>
               );
             })}

@@ -44,7 +44,7 @@ export default function PainelRiscoMargem({ legs, spotPrice }) {
               <Scale className="w-4 h-4" />
             </div>
             <div className="text-xl font-bold font-mono">{fmt(margin.netEstimatedMargin)}</div>
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {margin.hasShortRisk ? 'Exigência estimada de garantias pela corretora.' : 'Estrutura coberta ou de risco limitado. Margem praticamente zerada.'}
             </p>
           </CardContent>
@@ -59,7 +59,7 @@ export default function PainelRiscoMargem({ legs, spotPrice }) {
             <div className="text-lg font-bold">
               {margin.coveredCallQty > 0 ? `${margin.coveredCallQty} opções cobertas` : 'Sem ações em custódia'}
             </div>
-            <p className="text-[11px] mt-1">
+            <p className="text-xs mt-1">
               {margin.uncoveredCallQty > 0 ? (
                 <span className="text-red-600 font-semibold">Atenção: {margin.uncoveredCallQty} CALLs a descoberto.</span>
               ) : (
@@ -76,7 +76,7 @@ export default function PainelRiscoMargem({ legs, spotPrice }) {
               <DollarSign className="w-4 h-4" />
             </div>
             <div className="text-lg font-bold font-mono">{fmt(margin.spreadRelief)}</div>
-            <p className="text-[11px] text-muted-foreground mt-1">Redução de margem por opções compradas casadas com vendidas.</p>
+            <p className="text-xs text-muted-foreground mt-1">Redução de margem por opções compradas casadas com vendidas.</p>
           </CardContent>
         </Card>
       </div>
@@ -121,7 +121,7 @@ export default function PainelRiscoMargem({ legs, spotPrice }) {
             onChange={(e) => setSpotDropStress(Number(e.target.value))}
             className="w-full accent-primary cursor-pointer"
           />
-          <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
+          <div className="flex justify-between text-xs text-muted-foreground font-mono">
             <span>Queda: {fmt(margin.spotDropPrice)}</span>
             <span>Alta: {fmt(margin.spotSurgePrice)}</span>
           </div>
@@ -132,7 +132,7 @@ export default function PainelRiscoMargem({ legs, spotPrice }) {
         </CardContent>
       </Card>
 
-      <div className="text-[11px] text-muted-foreground space-y-1">
+      <div className="text-xs text-muted-foreground space-y-1">
         <div className="flex items-center gap-1.5 font-semibold text-foreground">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Diretrizes de Risco B3
         </div>

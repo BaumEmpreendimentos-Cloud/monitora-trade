@@ -110,17 +110,17 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                     </div>
                     <div>
                       <h3 className="font-bold text-sm group-hover:text-primary transition">{template.name}</h3>
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">{template.category}</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase">{template.category}</span>
                     </div>
                   </div>
                   {template.difficulty && (
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold whitespace-nowrap ${diffColor}`}>
+                    <span className={`px-2 py-0.5 rounded-full border text-xs font-bold whitespace-nowrap ${diffColor}`}>
                       {template.difficulty}
                     </span>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed min-h-[48px]">{template.description}</p>
-                <div className="p-3 rounded-lg border bg-muted/50 space-y-1.5 text-[11px]">
+                <div className="p-3 rounded-lg border bg-muted/50 space-y-1.5 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-muted-foreground font-medium">Lucro Máx:</span>
                     <span className="text-emerald-600 font-semibold text-right">{template.maxProfit}</span>
@@ -178,7 +178,7 @@ export default function StrategyCatalog({ onSelectTemplate, spotPrice, ativoBase
                   <button
                     type="button"
                     onClick={() => setExpandedId(isExpanded ? null : template.id)}
-                    className="w-full flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition cursor-pointer"
+                    className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-primary transition cursor-pointer"
                   >
                     {isExpanded ? (
                       <><ChevronUp className="w-3 h-3" /> Ocultar detalhes</>

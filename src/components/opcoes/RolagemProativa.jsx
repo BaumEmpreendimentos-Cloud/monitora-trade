@@ -76,7 +76,7 @@ export default function RolagemProativa({ diagnostico }) {
                     <Icon className={`w-5 h-5 ${cfg.color} mt-0.5 shrink-0`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-bold uppercase ${cfg.color}`}>{sug.priority}</span>
+                        <span className={`text-xs font-bold uppercase ${cfg.color}`}>{sug.priority}</span>
                         <h4 className="text-sm font-semibold">{sug.title}</h4>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{sug.triggerReason}</p>

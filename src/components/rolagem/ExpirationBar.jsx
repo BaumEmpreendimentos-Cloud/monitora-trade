@@ -48,7 +48,7 @@ export default function ExpirationBar({ expiracoes, expLeft, expRight, onSelect 
               }`}
             >
               <div
-                className={`text-[10px] font-bold py-0.5 uppercase tracking-wide ${
+                className={`text-xs font-bold py-0.5 uppercase tracking-wide ${
                   isLeft
                     ? 'bg-primary text-primary-foreground'
                     : isRight

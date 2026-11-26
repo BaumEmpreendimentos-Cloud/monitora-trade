@@ -1,0 +1,98 @@
+{
+  "name": "AiAnalise",
+  "type": "object",
+  "properties": {
+    "snapshot_id": {
+      "type": "string",
+      "title": "ID em AiSnapshotMercado"
+    },
+    "rotina_etapa": {
+      "type": "string",
+      "enum": [
+        "PRE_ABERTURA",
+        "PREGAO",
+        "CRUZAMENTO",
+        "POS_FECHAMENTO",
+        "SOB_DEMANDA"
+      ],
+      "enumColors": [
+        "gray",
+        "blue",
+        "purple",
+        "gray",
+        "yellow"
+      ],
+      "title": "Rotina"
+    },
+    "regime_mercado": {
+      "type": "string",
+      "title": "Regime detectado"
+    },
+    "correlacao_chave": {
+      "type": "string",
+      "title": "Principal cruzamento cross-asset"
+    },
+    "resumo_executivo": {
+      "type": "string",
+      "title": "S\u00edntese do comit\u00ea"
+    },
+    "agentes_json": {
+      "type": "string",
+      "title": "Parecer dos 6 agentes em JSON"
+    },
+    "modelo_ia": {
+      "type": "string",
+      "title": "Modelo utilizado"
+    },
+    "gerado_em": {
+      "type": "string",
+      "title": "ISO timestamp"
+    }
+  },
+  "required": [
+    "rotina_etapa",
+    "resumo_executivo",
+    "gerado_em"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

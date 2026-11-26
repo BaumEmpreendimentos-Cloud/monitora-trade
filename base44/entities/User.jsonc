@@ -74,6 +74,20 @@
         "type": "string"
       }
     },
+    "monitora_ativos": {
+      "type": "array",
+      "title": "Ativos monitorados na Monitora AI",
+      "items": {
+        "type": "string"
+      }
+    },
+    "monitora_estrategias": {
+      "type": "array",
+      "title": "Estrat\u00e9gias preferidas na Monitora AI",
+      "items": {
+        "type": "string"
+      }
+    },
     "notif_push": {
       "type": "boolean",
       "title": "Notifica\u00e7\u00f5es Push",

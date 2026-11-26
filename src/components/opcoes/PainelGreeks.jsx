@@ -23,7 +23,7 @@ export default function PainelGreeks({ greeks }) {
             <div className={`text-lg font-bold font-mono ${item.color || ''}`}>
               {fmt(item.value)}
             </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
           </CardContent>
         </Card>
       ))}

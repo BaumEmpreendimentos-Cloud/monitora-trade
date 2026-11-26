@@ -17,7 +17,7 @@ function Metric({ icon: Icon, label, value, valueClass = '' }) {
   return (
     <div className="bg-card p-3 flex flex-col items-center text-center gap-1">
       <Icon className="w-4 h-4 text-muted-foreground" />
-      <span className="text-[11px] text-muted-foreground leading-tight">{label}</span>
+      <span className="text-xs text-muted-foreground leading-tight">{label}</span>
       <span className={`text-sm font-bold ${valueClass}`}>{value}</span>
     </div>
   );

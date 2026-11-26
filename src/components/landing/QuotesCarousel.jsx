@@ -29,7 +29,7 @@ export default function QuotesCarousel({ cotacoes }) {
     <div className="w-full bg-card border-y">
       <div className="max-w-6xl mx-auto px-3 py-2 flex items-center gap-3">
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-[11px] font-mono">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <TrendingUp className="w-3.5 h-3.5 text-primary" />
             <span className="font-semibold hidden sm:inline">Cotações</span>

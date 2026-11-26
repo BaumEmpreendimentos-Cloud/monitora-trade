@@ -38,13 +38,23 @@ export default async function(req) {
     const tickersSet = new Set();
     precoAlertas.forEach(a => { if (a.ativo) tickersSet.add(a.ativo); });
 
-    // 3. Buscar operações abertas para alertas de RESULTADO, agrupadas por grupo
-    const grupoIds = [...new Set(resultadoAlertas.map(a => a.grupo_id).filter(Boolean))];
-    const opsByGrupo = {};
-    for (const gid of grupoIds) {
-      const ops = await base44.asServiceRole.entities.Operacao.filter({ grupo_id: gid, status: 'ABERTA' });
-      opsByGrupo[gid] = ops || [];
-      ops.forEach(o => { if (o.ativo) tickersSet.add(o.ativo); });
+    // 3. Buscar operações abertas para alertas de RESULTADO, agrupadas por grupo E proprietário
+    // Chave composta (ownerId::grupoId) evita colisão entre contas distintas sob asServiceRole
+    const seenKeys = new Set();
+    const opsByOwnerAndGrupo = {};
+    for (const alerta of resultadoAlertas) {
+      if (!alerta.grupo_id || !alerta.created_by_id) continue;
+      const key = `${alerta.created_by_id}::${alerta.grupo_id}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+
+      const ops = await base44.asServiceRole.entities.Operacao.filter({
+        grupo_id: alerta.grupo_id,
+        created_by_id: alerta.created_by_id,
+        status: 'ABERTA',
+      });
+      opsByOwnerAndGrupo[key] = ops || [];
+      (ops || []).forEach(o => { if (o.ativo) tickersSet.add(o.ativo); });
     }
 
     // 4. Uma única chamada à API OpLab para todos os tickers
@@ -81,7 +91,7 @@ export default async function(req) {
 
     // 6. Verificar alertas de RESULTADO
     for (const alerta of resultadoAlertas) {
-      const ops = opsByGrupo[alerta.grupo_id] || [];
+      const ops = opsByOwnerAndGrupo[`${alerta.created_by_id}::${alerta.grupo_id}`] || [];
       if (!ops.length) continue;
       const resultadoValor = ops.reduce((s, o) => {
         const atual = quotesMap[o.ativo];
