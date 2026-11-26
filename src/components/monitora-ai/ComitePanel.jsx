@@ -19,8 +19,8 @@ function fmtDate(iso) {
 export default function ComitePanel({ analise, running, onRun, loading }) {
   return (
     <section className="rounded-xl border bg-card">
-      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <Brain className="w-4 h-4 text-muted-foreground" />
           <h2 className="font-heading text-sm font-semibold">Comitê Monitora AI</h2>
           <span className="text-xs uppercase tracking-wide text-muted-foreground">interpretação de IA</span>

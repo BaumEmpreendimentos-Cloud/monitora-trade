@@ -7,8 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import MacroStrip from '@/components/monitora-ai/MacroStrip';
 import CarteiraResumo from '@/components/monitora-ai/CarteiraResumo';
+import PainelRiscoCarteira from '@/components/monitora-ai/PainelRiscoCarteira';
 import OportunidadeCard from '@/components/monitora-ai/OportunidadeCard';
 import ComitePanel from '@/components/monitora-ai/ComitePanel';
+import DesempenhoSinais from '@/components/monitora-ai/DesempenhoSinais';
 import SinaisPanel from '@/components/monitora-ai/SinaisPanel';
 import { getOfficialMacroRates, getBatchQuotes, quotesToMap } from '@/lib/monitora-ai/marketEngine';
 import { analyzeOpenGroups } from '@/lib/monitora-ai/portfolioEngine';
@@ -245,6 +247,7 @@ export default function MonitoraAI() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="space-y-4">
           <CarteiraResumo groups={groups} loading={loadingOps} avisos={[]} />
+          <PainelRiscoCarteira groups={groups} loading={loadingOps} />
 
           <section className="rounded-xl border bg-card">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
@@ -291,6 +294,7 @@ export default function MonitoraAI() {
 
         <div className="space-y-4">
           <ComitePanel analise={analiseAtual} running={running} onRun={handleComite} loading={loadingAnalises} />
+          <DesempenhoSinais sinais={sinais} />
           <SinaisPanel sinais={sinais} avaliando={avaliando} onAvaliar={handleAvaliar} />
         </div>
       </div>
