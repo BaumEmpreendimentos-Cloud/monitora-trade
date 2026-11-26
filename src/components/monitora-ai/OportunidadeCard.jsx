@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, Ban, Check, PlayCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { parseLegs, estimarLucratividade } from '@/lib/monitora-ai/lucratividade';
+import { margemDaOportunidade } from '@/lib/monitora-ai/margemOportunidade';
 
 const brl = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—');
 const num = (v, suffix = '') => (Number.isFinite(Number(v)) ? `${Number(v).toFixed(2)}${suffix}` : '—');
@@ -27,6 +28,7 @@ export default function OportunidadeCard({ op, onStatus, onExecutar, favorita })
   const greeks = op.greeks || {};
   const bloqueada = op.status === 'VETADA_RISCO';
   const { maxProfit, maxLoss, unlimitedLoss } = estimarLucratividade(op);
+  const margem = margemDaOportunidade(op);
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -53,10 +55,16 @@ export default function OportunidadeCard({ op, onStatus, onExecutar, favorita })
             <p className="text-sm mt-0.5 truncate">{op.estrategia_nome}</p>
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <div className="text-xs text-muted-foreground">Lucro máx. aprox.</div>
-          <div className={`text-sm font-semibold tabular-nums ${Number(maxProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            {maxProfit === null ? '—' : brl(maxProfit)}
+        <div className="text-right shrink-0 space-y-1">
+          <div>
+            <div className="text-xs text-muted-foreground">Lucro máx. aprox.</div>
+            <div className={`text-sm font-semibold tabular-nums ${Number(maxProfit) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {maxProfit === null ? '—' : brl(maxProfit)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Margem est.</div>
+            <div className="text-xs font-medium tabular-nums">{brl(margem)}</div>
           </div>
         </div>
       </button>
@@ -98,7 +106,7 @@ export default function OportunidadeCard({ op, onStatus, onExecutar, favorita })
             <span className="text-muted-foreground">Selic usada</span>
             <span className="tabular-nums text-right">{num(op.selic_referencia, '%')}</span>
             <span className="text-muted-foreground">Margem estimada</span>
-            <span className="tabular-nums text-right">{brl(op.margem_estimada_brl)}</span>
+            <span className="tabular-nums text-right">{brl(margem)}</span>
           </div>
 
           {!!pernas.length && (
