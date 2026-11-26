@@ -152,19 +152,38 @@ export default function Operacoes() {
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
 
-  const handleEncerrar = async (preco, irrf) => {
+  const handleEncerrar = async (preco, irrf, quantidadeEncerrada) => {
     const o = encerrar;
     if (!o) return;
+    const total = Number(o.quantidade) || 0;
+    const qtd = Math.min(Number(quantidadeEncerrada) || total, total);
+    const restante = total - qtd;
+    setError('');
     try {
-      const updated = await base44.entities.Operacao.update(o.id, {
-        status: 'FECHADA',
+      const fechamento = {
         preco_fechamento: preco,
         irrf: irrf || 0,
-        resultado_valor: calcResultadoValor(o.operacao, o.quantidade, o.preco_entrada, preco),
+        resultado_valor: calcResultadoValor(o.operacao, qtd, o.preco_entrada, preco),
         resultado_pct: calcResultadoPct(o.operacao, o.preco_entrada, preco),
         data_fechamento: new Date().toISOString(),
-      });
-      setOps((p) => p.map((x) => (x.id === o.id ? updated : x)));
+      };
+      if (restante <= 0) {
+        const updated = await base44.entities.Operacao.update(o.id, { status: 'FECHADA', ...fechamento });
+        setOps((p) => p.map((x) => (x.id === o.id ? updated : x)));
+      } else {
+        const fechada = await base44.entities.Operacao.create({
+          grupo_id: o.grupo_id, grupo_nome: o.grupo_nome, ativo: o.ativo, ativo_base: o.ativo_base,
+          categoria: o.categoria, operacao: o.operacao, quantidade: qtd,
+          preco_entrada: o.preco_entrada, valor_inicial: calcValorInicial(o.operacao, qtd, o.preco_entrada),
+          data_abertura: o.data_abertura, strike: o.strike, vencimento: o.vencimento,
+          simulada: o.simulada || false, status: 'FECHADA', ...fechamento,
+        });
+        const reduzida = await base44.entities.Operacao.update(o.id, {
+          quantidade: restante,
+          valor_inicial: calcValorInicial(o.operacao, restante, o.preco_entrada),
+        });
+        setOps((p) => [...p.map((x) => (x.id === o.id ? reduzida : x)), fechada]);
+      }
       setEncerrar(null);
     } catch (e) { setError(e.response?.data?.error || e.message); }
   };
