@@ -95,6 +95,18 @@
       "type": "number",
       "title": "Valor patrimonial por a\u00e7\u00e3o impl\u00edcito (R$/a\u00e7\u00e3o)"
     },
+    "alteracoes": {
+      "type": "object",
+      "title": "\u00cdndices alterados na \u00faltima sincroniza\u00e7\u00e3o (anterior \u2192 novo)"
+    },
+    "alteracoes_em": {
+      "type": "string",
+      "title": "ISO timestamp da sincroniza\u00e7\u00e3o que detectou altera\u00e7\u00f5es"
+    },
+    "periodo_ref_anterior": {
+      "type": "string",
+      "title": "Per\u00edodo de refer\u00eancia do balan\u00e7o anterior"
+    },
     "fonte": {
       "type": "string",
       "title": "Origem oficial (CVM Dados Abertos DFP + ITR)"

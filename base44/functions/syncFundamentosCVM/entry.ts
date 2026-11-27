@@ -61,6 +61,42 @@ const B3_CVM_REGISTRY = {
   CYRE3: { cnpj: '73.178.600/0001-18', company: 'Cyrela', sector: 'Construção Civil', shareClass: 'ON' },
   ASAI3: { cnpj: '06.057.223/0001-71', company: 'Assaí', sector: 'Varejo Alimentar', shareClass: 'ON' },
   ENEV3: { cnpj: '04.423.567/0001-21', company: 'Eneva', sector: 'Energia Elétrica', shareClass: 'ON' },
+  ITSA3: { cnpj: '61.532.644/0001-15', company: 'Itaúsa', sector: 'Holding Financeira', shareClass: 'ON' },
+  BRSR6: { cnpj: '92.702.067/0001-96', company: 'Banrisul', sector: 'Financeiro', shareClass: 'PNB' },
+  CPFE3: { cnpj: '02.429.144/0001-93', company: 'CPFL Energia', sector: 'Energia Elétrica', shareClass: 'ON' },
+  CPLE3: { cnpj: '76.483.817/0001-20', company: 'Copel', sector: 'Energia Elétrica', shareClass: 'ON' },
+  NEOE3: { cnpj: '01.083.200/0001-18', company: 'Neoenergia', sector: 'Energia Elétrica', shareClass: 'ON' },
+  AURE3: { cnpj: '28.594.234/0001-23', company: 'Auren Energia', sector: 'Energia Elétrica', shareClass: 'ON' },
+  CSMG3: { cnpj: '17.281.106/0001-03', company: 'Copasa', sector: 'Saneamento', shareClass: 'ON' },
+  SAPR11: { cnpj: '76.484.013/0001-45', company: 'Sanepar', sector: 'Saneamento', shareClass: 'UNIT' },
+  GOAU4: { cnpj: '92.690.783/0001-09', company: 'Metalúrgica Gerdau', sector: 'Siderurgia', shareClass: 'PN' },
+  BRAP4: { cnpj: '03.847.461/0001-92', company: 'Bradespar', sector: 'Holding de Mineração', shareClass: 'PN' },
+  KLBN4: { cnpj: '89.637.490/0001-45', company: 'Klabin', sector: 'Papel & Celulose', shareClass: 'PN' },
+  RAPT4: { cnpj: '89.086.144/0001-16', company: 'Randoncorp', sector: 'Bens Industriais', shareClass: 'PN' },
+  POMO4: { cnpj: '88.611.835/0001-29', company: 'Marcopolo', sector: 'Bens Industriais', shareClass: 'PN' },
+  VLID3: { cnpj: '33.113.309/0001-47', company: 'Valid', sector: 'Bens Industriais', shareClass: 'ON' },
+  JBSS3: { cnpj: '02.916.265/0001-60', company: 'JBS', sector: 'Alimentos', shareClass: 'ON' },
+  MRFG3: { cnpj: '03.853.896/0001-40', company: 'Marfrig', sector: 'Alimentos', shareClass: 'ON' },
+  MDIA3: { cnpj: '07.206.816/0001-15', company: 'M. Dias Branco', sector: 'Alimentos', shareClass: 'ON' },
+  GMAT3: { cnpj: '24.990.777/0001-09', company: 'Grupo Mateus', sector: 'Varejo Alimentar', shareClass: 'ON' },
+  ALPA4: { cnpj: '61.079.117/0001-05', company: 'Alpargatas', sector: 'Vestuário', shareClass: 'PN' },
+  GRND3: { cnpj: '89.850.341/0001-60', company: 'Grendene', sector: 'Vestuário', shareClass: 'ON' },
+  VIVA3: { cnpj: '33.839.910/0001-11', company: 'Vivara', sector: 'Varejo', shareClass: 'ON' },
+  CVCB3: { cnpj: '10.760.260/0001-19', company: 'CVC Brasil', sector: 'Turismo', shareClass: 'ON' },
+  AZUL4: { cnpj: '09.305.994/0001-29', company: 'Azul', sector: 'Transporte Aéreo', shareClass: 'PN' },
+  FLRY3: { cnpj: '60.840.055/0001-31', company: 'Fleury', sector: 'Saúde', shareClass: 'ON' },
+  DASA3: { cnpj: '61.486.650/0001-83', company: 'Dasa', sector: 'Saúde', shareClass: 'ON' },
+  MRVE3: { cnpj: '08.343.492/0001-20', company: 'MRV', sector: 'Construção Civil', shareClass: 'ON' },
+  DIRR3: { cnpj: '16.614.075/0001-00', company: 'Direcional', sector: 'Construção Civil', shareClass: 'ON' },
+  JHSF3: { cnpj: '08.294.224/0001-65', company: 'JHSF', sector: 'Construção Civil', shareClass: 'ON' },
+  TRIS3: { cnpj: '08.811.643/0001-27', company: 'Trisul', sector: 'Construção Civil', shareClass: 'ON' },
+  HBOR3: { cnpj: '49.263.189/0001-02', company: 'Helbor', sector: 'Construção Civil', shareClass: 'ON' },
+  ALOS3: { cnpj: '05.878.397/0001-32', company: 'Allos', sector: 'Shoppings', shareClass: 'ON' },
+  IGTI11: { cnpj: '60.543.816/0001-93', company: 'Iguatemi', sector: 'Shoppings', shareClass: 'UNIT' },
+  SIMH3: { cnpj: '07.415.333/0001-20', company: 'Simpar', sector: 'Logística', shareClass: 'ON' },
+  VAMO3: { cnpj: '23.373.000/0001-32', company: 'Vamos', sector: 'Logística', shareClass: 'ON' },
+  MILLS3: { cnpj: '27.093.558/0001-15', company: 'Mills', sector: 'Logística', shareClass: 'ON' },
+  ECOR3: { cnpj: '04.149.454/0001-80', company: 'EcoRodovias', sector: 'Concessões Rodoviárias', shareClass: 'ON' },
 };
 
 const toList = (res) => (Array.isArray(res) ? res : (Array.isArray(res?.items) ? res.items : []));
@@ -358,6 +394,33 @@ function buildRecord(ticker, meta, stmt, nowIso) {
   };
 }
 
+// Indicadores de balanço comparados a cada sincronização para marcar o que mudou
+const CAMPOS_COMPARADOS = [
+  'receita_ltm_m', 'ebit_ltm_m', 'lucro_liquido_ltm_m', 'ativo_total_m', 'patrimonio_liquido_m',
+  'roe_pct', 'roa_pct', 'margem_liquida_pct', 'margem_ebit_pct',
+  'divida_liquida_pl', 'divida_liquida_ebit', 'lpa_ltm', 'vpa',
+];
+
+function diffRecord(anterior, novo) {
+  if (!anterior?.id) return { alteracoes: {}, alteracoes_em: null, periodo_ref_anterior: null };
+  const alteracoes = {};
+  for (const campo of CAMPOS_COMPARADOS) {
+    const de = Number(anterior[campo]);
+    const para = Number(novo[campo]);
+    if (!Number.isFinite(de) || !Number.isFinite(para)) continue;
+    // Variação relevante: 0,5% do valor anterior (mínimo de 0,01 para bases próximas de zero)
+    if (Math.abs(para - de) > Math.max(Math.abs(de) * 0.005, 0.01)) {
+      alteracoes[campo] = { de: round2(de), para: round2(para) };
+    }
+  }
+  const temAlteracao = Object.keys(alteracoes).length > 0;
+  return {
+    alteracoes,
+    alteracoes_em: temAlteracao ? novo.atualizado_em : null,
+    periodo_ref_anterior: temAlteracao ? (anterior.periodo_ref || null) : null,
+  };
+}
+
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -428,7 +491,8 @@ export default async function (req) {
       const meta = B3_CVM_REGISTRY[ticker];
       const stmt = byCnpj.get(meta.cnpj);
       if (!stmt) continue;
-      const payload = buildRecord(ticker, meta, stmt, nowIso);
+      const record = buildRecord(ticker, meta, stmt, nowIso);
+      const payload = { ...record, ...diffRecord(porTicker[ticker], record) };
       if (body?.dry_run) {
         porTicker[ticker] = payload;
         atualizados += 1;

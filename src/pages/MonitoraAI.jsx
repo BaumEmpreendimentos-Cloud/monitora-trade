@@ -627,6 +627,7 @@ export default function MonitoraAI() {
             runningComite={running}
             onSync={handleSyncCvm}
             onRunComite={handleComite}
+            onOpenAtivos={() => setPrefsOpen(true)}
           />
         </TabsContent>
 

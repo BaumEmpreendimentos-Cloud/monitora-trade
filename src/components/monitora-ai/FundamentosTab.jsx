@@ -9,11 +9,13 @@ import {
   Building2,
   ArrowUpDown,
   X,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import MobileSelect from '@/components/MobileSelect';
+import ValorAlterado from '@/components/monitora-ai/ValorAlterado';
 
 const fmtPct = (v, dec = 1) =>
   v === null || v === undefined || !Number.isFinite(Number(v))
@@ -51,6 +53,31 @@ function median(values) {
   return nums.length % 2 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
 }
 
+const ROTULOS_CAMPO = {
+  receita_ltm_m: 'Receita LTM',
+  ebit_ltm_m: 'EBIT LTM',
+  lucro_liquido_ltm_m: 'Lucro líquido LTM',
+  ativo_total_m: 'Ativo total',
+  patrimonio_liquido_m: 'Patrimônio líquido',
+  roe_pct: 'ROE',
+  roa_pct: 'ROA',
+  margem_liquida_pct: 'Margem líquida',
+  margem_ebit_pct: 'Margem EBIT',
+  divida_liquida_pl: 'Dívida líquida/PL',
+  divida_liquida_ebit: 'Dívida líquida/EBIT',
+  lpa_ltm: 'LPA',
+  vpa: 'VPA',
+};
+
+const qtdAlteracoes = (f) => (f?.alteracoes ? Object.keys(f.alteracoes).length : 0);
+
+const formatarCampo = (campo, valor) => (
+  campo.endsWith('_m') ? fmtBi(valor)
+    : campo.endsWith('_pct') ? fmtPct(valor)
+      : campo === 'lpa_ltm' || campo === 'vpa' ? fmtBrl(valor)
+        : fmtX(valor)
+);
+
 const ORDENACAO = [
   { value: 'roe_pct', label: 'Maior ROE' },
   { value: 'margem_liquida_pct', label: 'Maior margem líquida' },
@@ -75,6 +102,7 @@ export default function FundamentosTab({
   runningComite = false,
   onSync,
   onRunComite,
+  onOpenAtivos,
 }) {
   const [busca, setBusca] = useState('');
   const [setorSel, setSetorSel] = useState('TODOS');
@@ -163,6 +191,11 @@ export default function FundamentosTab({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {onOpenAtivos && (
+            <Button size="sm" variant="outline" onClick={onOpenAtivos}>
+              <ListChecks className="w-3.5 h-3.5 mr-1.5" /> Ativos monitorados
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={onSync} disabled={syncing}>
             {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
             {syncing ? 'Sincronizando CVM...' : 'Sincronizar CVM (DFP + ITR)'}
@@ -316,18 +349,29 @@ export default function FundamentosTab({
                           <span className="text-[10px] font-normal text-muted-foreground border rounded px-1">
                             {f.periodo_ref}
                           </span>
+                          {qtdAlteracoes(f) > 0 && (
+                            <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-300 rounded px-1">
+                              ▲ {qtdAlteracoes(f)}
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">
                           {f.setor}{f.razao_social ? ` · ${f.razao_social}` : ''}
                         </div>
                       </td>
                       <td className="px-2 py-2.5 text-right tabular-nums">{fmtBrl(f.spot)}</td>
-                      <td className="px-2 py-2.5 text-right tabular-nums">{fmtBi(f.receita_ltm_m)}</td>
-                      <td className={`px-2 py-2.5 text-right tabular-nums font-medium ${Number(f.lucro_liquido_ltm_m) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {fmtBi(f.lucro_liquido_ltm_m)}
+                      <td className="px-2 py-2.5 text-right tabular-nums">
+                        <ValorAlterado valor={f.receita_ltm_m} alteracao={f.alteracoes?.receita_ltm_m} formatar={fmtBi} />
                       </td>
-                      <td className="px-2 py-2.5 text-right font-semibold tabular-nums">{fmtPct(f.roe_pct)}</td>
-                      <td className="px-2 py-2.5 text-right tabular-nums">{fmtPct(f.margem_liquida_pct)}</td>
+                      <td className={`px-2 py-2.5 text-right tabular-nums font-medium ${Number(f.lucro_liquido_ltm_m) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        <ValorAlterado valor={f.lucro_liquido_ltm_m} alteracao={f.alteracoes?.lucro_liquido_ltm_m} formatar={fmtBi} />
+                      </td>
+                      <td className="px-2 py-2.5 text-right font-semibold tabular-nums">
+                        <ValorAlterado valor={f.roe_pct} alteracao={f.alteracoes?.roe_pct} formatar={fmtPct} className="font-semibold" />
+                      </td>
+                      <td className="px-2 py-2.5 text-right tabular-nums">
+                        <ValorAlterado valor={f.margem_liquida_pct} alteracao={f.alteracoes?.margem_liquida_pct} formatar={fmtPct} />
+                      </td>
                       <td className="px-2 py-2.5 text-right tabular-nums">
                         <div>{fmtX(f.pl)}</div>
                         {f.spreadSelic !== null && (
@@ -338,7 +382,9 @@ export default function FundamentosTab({
                       </td>
                       <td className="px-2 py-2.5 text-right tabular-nums">{fmtX(f.pvp)}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
-                        {f.instituicao_financeira ? 'IF (Banco)' : fmtX(f.divida_liquida_pl)}
+                        {f.instituicao_financeira ? 'IF (Banco)' : (
+                          <ValorAlterado valor={f.divida_liquida_pl} alteracao={f.alteracoes?.divida_liquida_pl} formatar={fmtX} />
+                        )}
                       </td>
                     </tr>
                   );
@@ -394,13 +440,37 @@ export default function FundamentosTab({
                 </div>
               </div>
             </div>
+
+            {qtdAlteracoes(selecionado) > 0 && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  Alterações nesta sincronização
+                </div>
+                <p className="text-[11px] text-amber-800/80">
+                  Comparado ao balanço anterior{selecionado.periodo_ref_anterior ? ` (${selecionado.periodo_ref_anterior})` : ''}: valor anterior → novo.
+                </p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                  {Object.entries(selecionado.alteracoes).map(([campo, v]) => (
+                    <li key={campo} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="text-muted-foreground">{ROTULOS_CAMPO[campo] || campo}</span>
+                      <span className="tabular-nums whitespace-nowrap">
+                        <span className="text-muted-foreground">{formatarCampo(campo, v.de)}</span>
+                        <span className="text-muted-foreground"> → </span>
+                        <span className="font-semibold">{formatarCampo(campo, v.para)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
         <div className="px-4 py-2.5 border-t text-xs text-muted-foreground flex items-start gap-1.5">
           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>
-            Fonte oficial: Portal de Dados Abertos da CVM (DFP + ITR · Licença ODbL). Toque em uma linha para abrir a ficha completa de balanço e indicadores.
+            Fonte oficial: Portal de Dados Abertos da CVM (DFP + ITR · Licença ODbL). Toque em uma linha para abrir a ficha completa de balanço e indicadores. O selo ▲ marca os índices alterados pela publicação de um novo balanço, com o valor anterior ao lado do novo.
           </span>
         </div>
       </div>
