@@ -47,9 +47,9 @@ const STATUS_ACOMPANHADOS = ['APROVADA', 'EXECUTADA'];
 const notificar = (props) => toast({ duration: 2000, ...props });
 
 const TABS = [
-  { id: 'operacional', path: '/monitora-ai', label: 'Operacional & Opções', icon: Layers },
-  { id: 'fundamentos', path: '/monitora-ai/fundamentos', label: 'Fundamentalista & Longo Prazo', icon: Database },
-  { id: 'macro', path: '/monitora-ai/macro', label: 'Macro & Notícias', icon: Globe2 },
+  { id: 'operacional', path: '/monitora-ai', label: 'Operacional & Opções', labelCurto: 'Operacional', icon: Layers },
+  { id: 'fundamentos', path: '/monitora-ai/fundamentos', label: 'Fundamentalista & Longo Prazo', labelCurto: 'Fundamentos', icon: Database },
+  { id: 'macro', path: '/monitora-ai/macro', label: 'Macro & Notícias', labelCurto: 'Macro', icon: Globe2 },
 ];
 
 function parseAgentes(json) {
@@ -439,13 +439,14 @@ export default function MonitoraAI() {
             </p>
           </div>
 
-          <TabsList className="w-full lg:w-auto justify-start overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 whitespace-nowrap">
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
+                <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 px-1.5 lg:px-3 whitespace-nowrap">
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="lg:hidden">{tab.labelCurto}</span>
+                  <span className="hidden lg:inline">{tab.label}</span>
                   {tab.id === 'fundamentos' && fundamentos.length > 0 && (
                     <span className="ml-0.5 text-[10px] px-1.5 rounded-full bg-primary/10 text-primary tabular-nums">
                       {fundamentos.length}

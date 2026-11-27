@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.63';
-import JSZip from 'npm:jszip@3.10.1';
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_TICKERS = 24;
@@ -82,43 +81,85 @@ function shouldReplace(current, endDate, version) {
   return 'same';
 }
 
-function ingestCsv(text, targetCnpjs, byCnpj, kind) {
-  const lines = text.split(/\r?\n/);
-  if (lines.length < 2) return;
-  const hdr = lines[0].split(';');
-  const iCnpj = hdr.indexOf('CNPJ_CIA');
-  const iVer = hdr.indexOf('VERSAO');
-  const iEsc = hdr.indexOf('ESCALA_MOEDA');
-  const iOrd = hdr.indexOf('ORDEM_EXERC');
-  const iIni = hdr.indexOf('DT_INI_EXERC');
-  const iFim = hdr.indexOf('DT_FIM_EXERC');
-  const iCd = hdr.indexOf('CD_CONTA');
-  const iDs = hdr.indexOf('DS_CONTA');
-  const iVal = hdr.indexOf('VL_CONTA');
-  if (iCnpj < 0 || iCd < 0 || iVal < 0 || iOrd < 0 || iFim < 0) return;
+// ---------- Leitor de ZIP em fluxo (sem carregar o CSV inteiro na memória) ----------
 
+const u16 = (dv, off) => dv.getUint16(off, true);
+const u32 = (dv, off) => dv.getUint32(off, true);
+
+function listZipEntries(buf) {
+  const dv = new DataView(buf);
+  let eocd = -1;
+  const min = Math.max(0, buf.byteLength - 66000);
+  for (let i = buf.byteLength - 22; i >= min; i--) {
+    if (u32(dv, i) === 0x06054b50) { eocd = i; break; }
+  }
+  const map = new Map();
+  if (eocd < 0) return map;
+  const total = u16(dv, eocd + 10);
+  let off = u32(dv, eocd + 16);
+  for (let i = 0; i < total; i++) {
+    if (off + 46 > buf.byteLength || u32(dv, off) !== 0x02014b50) break;
+    const method = u16(dv, off + 10);
+    const compSize = u32(dv, off + 20);
+    const nameLen = u16(dv, off + 28);
+    const extraLen = u16(dv, off + 30);
+    const commentLen = u16(dv, off + 32);
+    const localOff = u32(dv, off + 42);
+    const name = new TextDecoder('utf-8').decode(new Uint8Array(buf, off + 46, nameLen));
+    map.set(name, { method, compSize, localOff });
+    off += 46 + nameLen + extraLen + commentLen;
+  }
+  return map;
+}
+
+function entryStream(buf, entry) {
+  const dv = new DataView(buf);
+  const nameLen = u16(dv, entry.localOff + 26);
+  const extraLen = u16(dv, entry.localOff + 28);
+  const start = entry.localOff + 30 + nameLen + extraLen;
+  const bytes = new Uint8Array(buf, start, entry.compSize);
+  const stream = new Blob([bytes]).stream();
+  return entry.method === 0 ? stream : stream.pipeThrough(new DecompressionStream('deflate-raw'));
+}
+
+function makeLineProcessor(targetCnpjs, byCnpj, kind) {
   const isItrDre = kind === 'itr_dre';
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line) continue;
+  let idx = null;
+
+  return (rawLine) => {
+    const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
+    if (!line) return;
     const cols = line.split(';');
-    const cnpj = cols[iCnpj];
-    if (!targetCnpjs.has(cnpj)) continue;
 
-    const ordem = cols[iOrd];
-    if (!isItrDre && ordem !== 'ÚLTIMO') continue;
-    if (isItrDre && ordem !== 'ÚLTIMO' && ordem !== 'PENÚLTIMO') continue;
+    if (!idx) {
+      const h = (name) => cols.indexOf(name);
+      const found = {
+        cnpj: h('CNPJ_CIA'), ver: h('VERSAO'), esc: h('ESCALA_MOEDA'), ord: h('ORDEM_EXERC'),
+        ini: h('DT_INI_EXERC'), fim: h('DT_FIM_EXERC'), cd: h('CD_CONTA'), ds: h('DS_CONTA'), val: h('VL_CONTA'),
+      };
+      const invalid = found.cnpj < 0 || found.cd < 0 || found.val < 0 || found.ord < 0 || found.fim < 0;
+      idx = invalid ? { invalid: true } : found;
+      return;
+    }
+    if (idx.invalid) return;
 
-    const endDate = cols[iFim] || '';
-    const startDate = iIni >= 0 ? (cols[iIni] || '') : '';
-    if (isItrDre && startDate && !startDate.endsWith('-01-01')) continue;
+    const cnpj = cols[idx.cnpj];
+    if (!targetCnpjs.has(cnpj)) return;
 
-    const cd = cols[iCd] || '';
-    if (cd.split('.').length > 3 && !cd.startsWith('3.99')) continue;
+    const ordem = cols[idx.ord];
+    if (!isItrDre && ordem !== 'ÚLTIMO') return;
+    if (isItrDre && ordem !== 'ÚLTIMO' && ordem !== 'PENÚLTIMO') return;
 
-    const val = Number(cols[iVal]);
-    if (!Number.isFinite(val)) continue;
-    const version = Number(cols[iVer]) || 1;
+    const endDate = cols[idx.fim] || '';
+    const startDate = idx.ini >= 0 ? (cols[idx.ini] || '') : '';
+    if (isItrDre && startDate && !startDate.endsWith('-01-01')) return;
+
+    const cd = cols[idx.cd] || '';
+    if (cd.split('.').length > 3 && !cd.startsWith('3.99')) return;
+
+    const val = Number(cols[idx.val]);
+    if (!Number.isFinite(val)) return;
+    const version = Number(cols[idx.ver]) || 1;
 
     let comp = byCnpj.get(cnpj);
     if (!comp) {
@@ -134,43 +175,62 @@ function ingestCsv(text, targetCnpjs, byCnpj, kind) {
       : (ordem === 'ÚLTIMO' ? 'itrDreCur' : 'itrDrePrev');
 
     const dec = shouldReplace(comp[slot], endDate, version);
-    if (dec === 'skip') continue;
+    if (dec === 'skip') return;
     if (dec === 'replace') {
-      comp[slot] = { version, endDate, divisor: scaleDivisor(iEsc >= 0 ? cols[iEsc] : 'MIL'), accounts: new Map() };
+      comp[slot] = { version, endDate, divisor: scaleDivisor(idx.esc >= 0 ? cols[idx.esc] : 'MIL'), accounts: new Map() };
     }
-    comp[slot].accounts.set(cd, { desc: iDs >= 0 ? cols[iDs] : '', value: val });
-  }
+    comp[slot].accounts.set(cd, { desc: idx.ds >= 0 ? cols[idx.ds] : '', value: val });
+  };
 }
 
-async function fetchCvmZip(kind, year) {
+async function ingestEntry(buf, entry, processLine) {
+  const decoder = new TextDecoder('windows-1252');
+  const reader = entryStream(buf, entry).getReader();
+  let pending = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    pending += decoder.decode(value, { stream: true });
+    const lines = pending.split('\n');
+    pending = lines.pop() || '';
+    for (const line of lines) processLine(line.replace(/^\uFEFF/, ''));
+  }
+  pending += decoder.decode();
+  if (pending) processLine(pending.replace(/^\uFEFF/, ''));
+}
+
+async function fetchCvmPackage(kind, year) {
   const safeYear = Math.trunc(year);
   if (safeYear < 2020 || safeYear > 2035) return null;
   const prefix = kind === 'DFP' ? 'dfp' : 'itr';
   const url = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/${kind}/DADOS/${prefix}_cia_aberta_${safeYear}.zip`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
     if (!res.ok) return null;
-    return await JSZip.loadAsync(await res.arrayBuffer());
+    const buf = await res.arrayBuffer();
+    const entries = listZipEntries(buf);
+    if (!entries.size) return null;
+    return { buf, entries, prefix, year: safeYear };
   } catch (error) {
-    console.log('fetchCvmZip falhou', kind, safeYear, error?.message);
+    console.log('fetchCvmPackage falhou', kind, safeYear, error?.message);
     return null;
   }
 }
 
-async function extractZip(zip, prefix, year, targetCnpjs, byCnpj) {
-  const decoder = new TextDecoder('latin1');
+async function extractPackage(pkg, targetCnpjs, byCnpj) {
   const files = [
-    [`${prefix}_cia_aberta_DRE_con_${year}.csv`, `${prefix}_dre`],
-    [`${prefix}_cia_aberta_BPA_con_${year}.csv`, `${prefix}_bpa`],
-    [`${prefix}_cia_aberta_BPP_con_${year}.csv`, `${prefix}_bpp`],
+    [`${pkg.prefix}_cia_aberta_DRE_con_${pkg.year}.csv`, `${pkg.prefix}_dre`],
+    [`${pkg.prefix}_cia_aberta_BPA_con_${pkg.year}.csv`, `${pkg.prefix}_bpa`],
+    [`${pkg.prefix}_cia_aberta_BPP_con_${pkg.year}.csv`, `${pkg.prefix}_bpp`],
   ];
   for (const [name, kind] of files) {
-    const entry = zip.file(name);
+    const entry = pkg.entries.get(name);
     if (!entry) continue;
-    const raw = await entry.async('uint8array');
-    ingestCsv(decoder.decode(raw), targetCnpjs, byCnpj, kind);
+    await ingestEntry(pkg.buf, entry, makeLineProcessor(targetCnpjs, byCnpj, kind));
   }
 }
+
+// ---------- Extração dos indicadores ----------
 
 const getScaled = (p, cd) => (p?.accounts.has(cd) ? p.accounts.get(cd).value / p.divisor : null);
 const findScaled = (p, fn) => {
@@ -344,21 +404,19 @@ export default async function (req) {
     const targetCnpjs = new Set(pendentes.map((t) => B3_CVM_REGISTRY[t].cnpj));
     const byCnpj = new Map();
 
-    const [prevDfp, curDfp] = await Promise.all([
-      fetchCvmZip('DFP', currentYear - 1),
-      fetchCvmZip('DFP', currentYear),
-    ]);
-    if (prevDfp) await extractZip(prevDfp, 'dfp', currentYear - 1, targetCnpjs, byCnpj);
-    else {
-      const olderDfp = await fetchCvmZip('DFP', currentYear - 2);
-      if (olderDfp) await extractZip(olderDfp, 'dfp', currentYear - 2, targetCnpjs, byCnpj);
+    // DFP: último exercício fechado (e o anterior como reserva)
+    let dfp = await fetchCvmPackage('DFP', currentYear - 1);
+    if (!dfp) dfp = await fetchCvmPackage('DFP', currentYear - 2);
+    if (dfp) {
+      await extractPackage(dfp, targetCnpjs, byCnpj);
+      dfp = null;
     }
-    if (curDfp) await extractZip(curDfp, 'dfp', currentYear, targetCnpjs, byCnpj);
 
+    // ITR: acumulado do exercício corrente (LTM = DFP + ITR atual - ITR anterior)
     for (const y of [currentYear, currentYear - 1]) {
-      const itrZip = await fetchCvmZip('ITR', y);
-      if (itrZip) {
-        await extractZip(itrZip, 'itr', y, targetCnpjs, byCnpj);
+      const itr = await fetchCvmPackage('ITR', y);
+      if (itr) {
+        await extractPackage(itr, targetCnpjs, byCnpj);
         break;
       }
     }
@@ -371,6 +429,11 @@ export default async function (req) {
       const stmt = byCnpj.get(meta.cnpj);
       if (!stmt) continue;
       const payload = buildRecord(ticker, meta, stmt, nowIso);
+      if (body?.dry_run) {
+        porTicker[ticker] = payload;
+        atualizados += 1;
+        continue;
+      }
       const existente = porTicker[ticker];
       if (existente?.id) {
         porTicker[ticker] = await base44.asServiceRole.entities.FundamentoAtivo.update(existente.id, payload);
