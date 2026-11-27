@@ -1,13 +1,25 @@
 import React, { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Sparkles, ScanSearch, Loader2, AlertTriangle, Info, SlidersHorizontal, Star } from 'lucide-react';
+import {
+  Sparkles,
+  ScanSearch,
+  Loader2,
+  AlertTriangle,
+  Info,
+  SlidersHorizontal,
+  Star,
+  Database,
+  Globe2,
+  Layers,
+  ChevronRight,
+} from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
-import MacroStrip from '@/components/monitora-ai/MacroStrip';
 import CotacoesMonitoradas from '@/components/monitora-ai/CotacoesMonitoradas';
-import NoticiasMercado from '@/components/monitora-ai/NoticiasMercado';
 import CarteiraResumo from '@/components/monitora-ai/CarteiraResumo';
 import PainelRiscoCarteira from '@/components/monitora-ai/PainelRiscoCarteira';
 import OportunidadeCard from '@/components/monitora-ai/OportunidadeCard';
@@ -18,6 +30,8 @@ import DesempenhoSinais from '@/components/monitora-ai/DesempenhoSinais';
 import SinaisPanel from '@/components/monitora-ai/SinaisPanel';
 import CollapsibleCard from '@/components/monitora-ai/CollapsibleCard';
 import PreferenciasMonitora from '@/components/monitora-ai/PreferenciasMonitora';
+import FundamentosTab from '@/components/monitora-ai/FundamentosTab';
+import MacroTab from '@/components/monitora-ai/MacroTab';
 import { getOfficialMacroRates, getBatchQuotes, quotesToMap } from '@/lib/monitora-ai/marketEngine';
 import { analyzeOpenGroups } from '@/lib/monitora-ai/portfolioEngine';
 import { scanTemplatesForAsset, buildOpportunityRecord, DEFAULT_TEMPLATE_IDS } from '@/lib/monitora-ai/opportunityEngine';
@@ -32,6 +46,12 @@ const STATUS_ACOMPANHADOS = ['APROVADA', 'EXECUTADA'];
 // Avisos das rotinas somem sozinhos após 2 segundos
 const notificar = (props) => toast({ duration: 2000, ...props });
 
+const TABS = [
+  { id: 'operacional', path: '/monitora-ai', label: 'Operacional & Opções', labelCurto: 'Operacional', icon: Layers },
+  { id: 'fundamentos', path: '/monitora-ai/fundamentos', label: 'Fundamentalista & Longo Prazo', labelCurto: 'Fundamentos', icon: Database },
+  { id: 'macro', path: '/monitora-ai/macro', label: 'Macro & Notícias', labelCurto: 'Macro', icon: Globe2 },
+];
+
 function parseAgentes(json) {
   try {
     const list = JSON.parse(json || '[]');
@@ -41,12 +61,23 @@ function parseAgentes(json) {
   }
 }
 
+function abaDaRota(pathname) {
+  if (pathname.startsWith('/monitora-ai/fundamentos')) return 'fundamentos';
+  if (pathname.startsWith('/monitora-ai/macro')) return 'macro';
+  return 'operacional';
+}
+
 export default function MonitoraAI() {
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const abaAtiva = abaDaRota(location.pathname);
+
   const [ativoSel, setAtivoSel] = useState('');
   const [scanning, setScanning] = useState(false);
   const [running, setRunning] = useState(false);
   const [avaliando, setAvaliando] = useState(false);
+  const [syncingCvm, setSyncingCvm] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [salvandoPrefs, setSalvandoPrefs] = useState(false);
   const [opExecutando, setOpExecutando] = useState(null);
@@ -117,15 +148,29 @@ export default function MonitoraAI() {
     refetchInterval: 2 * 60 * 1000,
   });
 
+  const { data: fundamentos = [] } = useQuery({
+    queryKey: ['monitora-ai-fundamentos', tickers.join(',')],
+    queryFn: async () => toList(
+      await base44.entities.FundamentoAtivo.filter(
+        tickers.length ? { ativo_base: { $in: tickers } } : {},
+        { sort: '-atualizado_em', limit: 30 }
+      )
+    ),
+    enabled: tickers.length > 0,
+    staleTime: 30 * 60 * 1000,
+  });
+
   const quotesMap = useMemo(() => quotesToMap(quotes), [quotes]);
 
-  // IV por ativo: aproveita a IV de referência da última oportunidade registrada do ativo
+  // IV por ativo: preserva a IV da oportunidade MAIS RECENTE (lista já vem ordenada por -created_date)
   const ivMap = useMemo(() => {
     const mapa = {};
-    [...oportunidades].forEach((o) => {
+    for (const o of oportunidades) {
       const iv = Number(o.iv_referencia) / 100;
-      if (o.ativo_base && iv > 0.02) mapa[o.ativo_base] = iv;
-    });
+      if (o.ativo_base && !mapa[o.ativo_base] && iv > 0.02) {
+        mapa[o.ativo_base] = iv;
+      }
+    }
     return mapa;
   }, [oportunidades]);
 
@@ -178,6 +223,11 @@ export default function MonitoraAI() {
   if (gruposSemCotacao.length) {
     const nomes = [...new Set(gruposSemCotacao.map((g) => g.grupoNome))].join(', ');
     avisos.push(`Sem cotação atual em ${nomes} — P&L calculado sobre o preço de entrada.`);
+  }
+
+  function handleTabChange(valor) {
+    const tab = TABS.find((t) => t.id === valor);
+    if (tab && tab.path !== location.pathname) navigate(tab.path);
   }
 
   async function handleScan() {
@@ -257,6 +307,24 @@ export default function MonitoraAI() {
     }
   }
 
+  async function handleSyncCvm() {
+    setSyncingCvm(true);
+    try {
+      const res = await base44.functions.invoke('syncFundamentosCVM', { tickers, force: true });
+      if (res.data?.error) throw new Error(res.data.error);
+      queryClient.invalidateQueries({ queryKey: ['monitora-ai-fundamentos'] });
+      const naoMapeados = res.data?.nao_mapeados || [];
+      notificar({
+        title: 'Fundamentos CVM atualizados',
+        description: `${res.data?.atualizados ?? 0} atualizado(s) · ${res.data?.cacheados ?? 0} em cache${naoMapeados.length ? ` · sem CNPJ mapeado: ${naoMapeados.join(', ')}` : ''}.`,
+      });
+    } catch (error) {
+      notificar({ title: 'Falha ao sincronizar CVM', description: error?.message, variant: 'destructive' });
+    } finally {
+      setSyncingCvm(false);
+    }
+  }
+
   async function handleComite(etapa = 'SOB_DEMANDA') {
     setRunning(true);
     try {
@@ -292,7 +360,7 @@ export default function MonitoraAI() {
       const snap = await base44.entities.AiSnapshotMercado.create(res.data.snapshot);
       await base44.entities.AiAnalise.create({ ...res.data.analise, snapshot_id: snap.id });
 
-      notificar({ title: 'Comitê executado', description: 'Análise registrada com snapshot de mercado.' });
+      notificar({ title: 'Comitê executado', description: 'Análise registrada com snapshot de mercado e fundamentos CVM.' });
       queryClient.invalidateQueries({ queryKey: ['monitora-ai-analises'] });
     } catch (error) {
       notificar({ title: 'Comitê não executado', description: error?.message || 'Erro ao gerar a análise.', variant: 'destructive' });
@@ -358,138 +426,216 @@ export default function MonitoraAI() {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6 space-y-4">
-      <div>
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <h1 className="font-heading text-xl md:text-2xl font-bold">Monitora AI</h1>
-        </div>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Central de inteligência sob demanda — carteira, mercado e risco, com números calculados no app.
-        </p>
-      </div>
-
-      {avisos.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 space-y-0.5">
-          {avisos.map((a) => (
-            <p key={a} className="text-xs text-amber-800 flex items-start gap-1.5">
-              <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {a}
+    <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6">
+      <Tabs value={abaAtiva} onValueChange={handleTabChange}>
+        <div className="flex flex-col gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h1 className="font-heading text-xl md:text-2xl font-bold">Monitora AI</h1>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Central de inteligência sob demanda — operacional de opções, fundamentos CVM e cenário macro.
             </p>
-          ))}
+          </div>
+
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 px-1.5 lg:px-3 whitespace-nowrap">
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="lg:hidden">{tab.labelCurto}</span>
+                  <span className="hidden lg:inline">{tab.label}</span>
+                  {tab.id === 'fundamentos' && fundamentos.length > 0 && (
+                    <span className="ml-0.5 text-[10px] px-1.5 rounded-full bg-primary/10 text-primary tabular-nums">
+                      {fundamentos.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
         </div>
-      )}
 
-      <CotacoesMonitoradas quotes={quotes} />
-
-      <MacroStrip macro={macro} loading={loadingMacro} />
-
-      <NoticiasMercado />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="space-y-4">
-          <CarteiraResumo groups={groups} loading={loadingOps} avisos={[]} />
-          <PainelRiscoCarteira groups={groups} loading={loadingOps} />
-
-          <CollapsibleCard
-            id="oportunidades"
-            icon={ScanSearch}
-            title="Oportunidades"
-            subtitle="catálogo de estruturas"
-            defaultOpen
-            actions={
-              <>
-                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPrefsOpen(true)}>
-                  <SlidersHorizontal className="w-3 h-3" /> Ativos e estratégias
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleScan} disabled={scanning || !ativo}>
-                  {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanSearch className="w-3 h-3" />}
-                  {scanning ? 'Varrendo' : 'Varredura'}
-                </Button>
-              </>
-            }
-            footer={
-              <div className="px-4 py-2 border-t text-xs text-muted-foreground space-y-1">
-                <p className="flex items-start gap-1">
-                  <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                  Fluxo: Ativa → Aprovada → Executada. Executar abre o cadastro das pernas (quantidade, ativo e preço) e grava a estrutura em Operações, onde o resultado é acompanhado. Nenhuma ordem é enviada à corretora.
+        {/* ABA 1: OPERACIONAL & OPÇÕES */}
+        <TabsContent value="operacional" className="mt-4 space-y-4">
+          {avisos.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 space-y-0.5">
+              {avisos.map((a) => (
+                <p key={a} className="text-xs text-amber-800 flex items-start gap-1.5">
+                  <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {a}
                 </p>
-                {favoritas.length > 0 && (
-                  <p className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-amber-500" />
-                    {favoritas.length} estratégia(s) preferida(s) marcadas com ★ e listadas primeiro.
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-xs">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+              <span>
+                Selic:{' '}
+                <strong className="text-foreground tabular-nums">
+                  {Number.isFinite(Number(macro?.selicPct)) ? `${Number(macro.selicPct).toFixed(2)}%` : '—'}
+                </strong>
+              </span>
+              <span>
+                PTAX:{' '}
+                <strong className="text-foreground tabular-nums">
+                  {Number.isFinite(Number(macro?.ptax?.value)) ? `R$ ${Number(macro.ptax.value).toFixed(4)}` : '—'}
+                </strong>
+              </span>
+              <span>
+                Balanços CVM:{' '}
+                <strong className="text-foreground tabular-nums">{fundamentos.length}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/monitora-ai/fundamentos')}
+                className="inline-flex items-center gap-0.5 text-primary hover:underline font-medium"
+              >
+                Fundamentalista <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/monitora-ai/macro')}
+                className="inline-flex items-center gap-0.5 text-primary hover:underline font-medium"
+              >
+                Macro & Notícias <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <CotacoesMonitoradas quotes={quotes} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <CarteiraResumo groups={groups} loading={loadingOps} avisos={[]} />
+              <PainelRiscoCarteira groups={groups} loading={loadingOps} />
+
+              <CollapsibleCard
+                id="oportunidades"
+                icon={ScanSearch}
+                title="Oportunidades"
+                subtitle="catálogo de estruturas"
+                defaultOpen
+                actions={
+                  <>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPrefsOpen(true)}>
+                      <SlidersHorizontal className="w-3 h-3" /> Ativos e estratégias
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleScan} disabled={scanning || !ativo}>
+                      {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <ScanSearch className="w-3 h-3" />}
+                      {scanning ? 'Varrendo' : 'Varredura'}
+                    </Button>
+                  </>
+                }
+                footer={
+                  <div className="px-4 py-2 border-t text-xs text-muted-foreground space-y-1">
+                    <p className="flex items-start gap-1">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                      Fluxo: Ativa → Aprovada → Executada. Executar abre o cadastro das pernas (quantidade, ativo e preço) e grava a estrutura em Operações, onde o resultado é acompanhado. Nenhuma ordem é enviada à corretora.
+                    </p>
+                    {favoritas.length > 0 && (
+                      <p className="flex items-center gap-1">
+                        <Star className="w-3 h-3 text-amber-500" />
+                        {favoritas.length} estratégia(s) preferida(s) marcadas com ★ e listadas primeiro.
+                      </p>
+                    )}
+                  </div>
+                }
+              >
+                <div className="px-4 py-2 border-b">
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setAtivoSel('')}
+                      className={`px-2 py-0.5 rounded border text-xs transition-colors ${!ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+                    >
+                      Todos
+                    </button>
+                    {ativos.map((a) => (
+                      <button
+                        key={a}
+                        onClick={() => setAtivoSel(a)}
+                        className={`px-2 py-0.5 rounded border text-xs transition-colors ${a === ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
+                      >
+                        {a}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {ativoSel
+                      ? `${oportunidadesOrdenadas.length} oportunidade(s) de ${ativoSel} · varredura em ${ativoSel}`
+                      : `${oportunidadesOrdenadas.length} oportunidade(s) no quadro · clique em um ativo para filtrar`}
+                    {ativosMonitorados.length ? ` · ${ativosMonitorados.length} ativo(s) monitorado(s)` : ''} · ajuste em "Ativos e estratégias"
                   </p>
-                )}
-              </div>
-            }
-          >
-            <div className="px-4 py-2 border-b">
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => setAtivoSel('')}
-                  className={`px-2 py-0.5 rounded border text-xs transition-colors ${!ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
-                >
-                  Todos
-                </button>
-                {ativos.map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAtivoSel(a)}
-                    className={`px-2 py-0.5 rounded border text-xs transition-colors ${a === ativoSel ? 'bg-primary text-primary-foreground border-primary' : 'bg-card hover:bg-accent'}`}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {ativoSel
-                  ? `${oportunidadesOrdenadas.length} oportunidade(s) de ${ativoSel} · varredura em ${ativoSel}`
-                  : `${oportunidadesOrdenadas.length} oportunidade(s) no quadro · clique em um ativo para filtrar`}
-                {ativosMonitorados.length ? ` · ${ativosMonitorados.length} ativo(s) monitorado(s)` : ''} · ajuste em "Ativos e estratégias"
-              </p>
+                </div>
+
+                <div className="p-3 space-y-2">
+                  {loadingOportunidades ? (
+                    <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}</div>
+                  ) : !oportunidadesOrdenadas.length ? (
+                    <p className="text-sm text-muted-foreground py-3">
+                      {ativoSel
+                        ? `Nenhuma oportunidade registrada para ${ativoSel}. Rode a varredura com esse ativo selecionado.`
+                        : 'Nenhuma oportunidade registrada. Escolha um ativo e rode a varredura — os números vêm da cadeia OpLab e dos módulos de cálculo do app.'}
+                    </p>
+                  ) : (
+                    oportunidadesOrdenadas.map((op) => (
+                      <OportunidadeCard
+                        key={op.id}
+                        op={op}
+                        onStatus={handleStatus}
+                        onExecutar={setOpExecutando}
+                        favorita={favoritas.includes(op.template_id)}
+                      />
+                    ))
+                  )}
+                </div>
+              </CollapsibleCard>
             </div>
 
-            <div className="p-3 space-y-2">
-              {loadingOportunidades ? (
-                <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}</div>
-              ) : !oportunidadesOrdenadas.length ? (
-                <p className="text-sm text-muted-foreground py-3">
-                  {ativoSel
-                    ? `Nenhuma oportunidade registrada para ${ativoSel}. Rode a varredura com esse ativo selecionado.`
-                    : 'Nenhuma oportunidade registrada. Escolha um ativo e rode a varredura — os números vêm da cadeia OpLab e dos módulos de cálculo do app.'}
-                </p>
-              ) : (
-                oportunidadesOrdenadas.map((op) => (
-                  <OportunidadeCard
-                    key={op.id}
-                    op={op}
-                    onStatus={handleStatus}
-                    onExecutar={setOpExecutando}
-                    favorita={favoritas.includes(op.template_id)}
-                  />
-                ))
-              )}
+            <div className="space-y-4">
+              <ComitePanel analise={analiseAtual} running={running} onRun={handleComite} loading={loadingAnalises} />
+              <OperacoesMonitora
+                operacoes={operacoesMonitora}
+                quotesMap={quotesMap}
+                selicDecimal={macro?.selicDecimal ?? 0.1325}
+                ivMap={ivMap}
+              />
+              <DesempenhoSinais sinais={sinais} diagnostico={diagnostico} />
+              <SinaisPanel
+                sinais={sinais}
+                avaliando={avaliando}
+                onAvaliar={handleAvaliar}
+                onEncerrar={handleEncerrarSinal}
+                diagnostico={diagnostico}
+              />
             </div>
-          </CollapsibleCard>
-        </div>
+          </div>
+        </TabsContent>
 
-        <div className="space-y-4">
-          <ComitePanel analise={analiseAtual} running={running} onRun={handleComite} loading={loadingAnalises} />
-          <OperacoesMonitora
-            operacoes={operacoesMonitora}
+        {/* ABA 2: FUNDAMENTALISTA & LONGO PRAZO */}
+        <TabsContent value="fundamentos" className="mt-4">
+          <FundamentosTab
+            fundamentos={fundamentos}
             quotesMap={quotesMap}
-            selicDecimal={macro?.selicDecimal ?? 0.1325}
-            ivMap={ivMap}
+            selicPct={macro?.selicPct ?? null}
+            analiseAtual={analiseAtual}
+            syncing={syncingCvm}
+            runningComite={running}
+            onSync={handleSyncCvm}
+            onRunComite={handleComite}
+            onOpenAtivos={() => setPrefsOpen(true)}
           />
-          <DesempenhoSinais sinais={sinais} diagnostico={diagnostico} />
-          <SinaisPanel
-            sinais={sinais}
-            avaliando={avaliando}
-            onAvaliar={handleAvaliar}
-            onEncerrar={handleEncerrarSinal}
-            diagnostico={diagnostico}
-          />
-        </div>
-      </div>
+        </TabsContent>
+
+        {/* ABA 3: MACRO & NOTÍCIAS */}
+        <TabsContent value="macro" className="mt-4">
+          <MacroTab macro={macro} loadingMacro={loadingMacro} analiseAtual={analiseAtual} />
+        </TabsContent>
+      </Tabs>
 
       <ExecutarOportunidadeDialog
         open={!!opExecutando}
