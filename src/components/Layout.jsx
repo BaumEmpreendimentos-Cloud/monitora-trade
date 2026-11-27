@@ -47,6 +47,8 @@ const PAGE_TITLES = {
   '/estrategias': 'Estratégias',
   '/instagram': 'Instagram',
   '/monitora-ai': 'Monitora AI',
+  '/monitora-ai/fundamentos': 'Fundamentalista · CVM',
+  '/monitora-ai/macro': 'Macro & Notícias',
 };
 
 const MAIN_TABS = ['/operacoes', '/estrategias', '/monitora-ai', '/mensagens', '/instagram', '/configuracoes'];

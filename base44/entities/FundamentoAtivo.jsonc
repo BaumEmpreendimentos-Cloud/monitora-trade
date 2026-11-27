@@ -1,0 +1,132 @@
+{
+  "name": "FundamentoAtivo",
+  "type": "object",
+  "properties": {
+    "ativo_base": {
+      "type": "string",
+      "title": "Ticker B3 (ex: PETR4, ITUB4)"
+    },
+    "cnpj": {
+      "type": "string",
+      "title": "CNPJ oficial CVM"
+    },
+    "razao_social": {
+      "type": "string",
+      "title": "Nome da companhia"
+    },
+    "setor": {
+      "type": "string",
+      "title": "Setor econ\u00f4mico"
+    },
+    "instituicao_financeira": {
+      "type": "boolean",
+      "title": "Plano de contas financeiro (COSIF/IFRS)",
+      "default": false
+    },
+    "periodo_ref": {
+      "type": "string",
+      "title": "Per\u00edodo de refer\u00eancia (ex: 3T26 (LTM), DFP 2025)"
+    },
+    "data_referencia": {
+      "type": "string",
+      "title": "Data-base do balan\u00e7o (YYYY-MM-DD)"
+    },
+    "receita_ltm_m": {
+      "type": "number",
+      "title": "Receita l\u00edquida LTM (R$ milh\u00f5es)"
+    },
+    "ebit_ltm_m": {
+      "type": "number",
+      "title": "EBIT LTM (R$ milh\u00f5es)"
+    },
+    "lucro_liquido_ltm_m": {
+      "type": "number",
+      "title": "Lucro l\u00edquido controlador LTM (R$ milh\u00f5es)"
+    },
+    "ativo_total_m": {
+      "type": "number",
+      "title": "Ativo total (R$ milh\u00f5es)"
+    },
+    "patrimonio_liquido_m": {
+      "type": "number",
+      "title": "Patrim\u00f4nio l\u00edquido consolidado (R$ milh\u00f5es)"
+    },
+    "caixa_m": {
+      "type": "number",
+      "title": "Caixa e aplica\u00e7\u00f5es financeiras (R$ milh\u00f5es)"
+    },
+    "divida_bruta_m": {
+      "type": "number",
+      "title": "Empr\u00e9stimos e financiamentos CP+LP (R$ milh\u00f5es)"
+    },
+    "divida_liquida_m": {
+      "type": "number",
+      "title": "D\u00edvida l\u00edquida (R$ milh\u00f5es)"
+    },
+    "roe_pct": {
+      "type": "number",
+      "title": "ROE LTM (%)"
+    },
+    "roa_pct": {
+      "type": "number",
+      "title": "ROA LTM (%)"
+    },
+    "margem_liquida_pct": {
+      "type": "number",
+      "title": "Margem l\u00edquida LTM (%)"
+    },
+    "margem_ebit_pct": {
+      "type": "number",
+      "title": "Margem EBIT LTM (%)"
+    },
+    "divida_liquida_pl": {
+      "type": "number",
+      "title": "D\u00edvida l\u00edquida / Patrim\u00f4nio l\u00edquido"
+    },
+    "divida_liquida_ebit": {
+      "type": "number",
+      "title": "D\u00edvida l\u00edquida / EBIT"
+    },
+    "lpa_ltm": {
+      "type": "number",
+      "title": "Lucro b\u00e1sico por a\u00e7\u00e3o LTM (R$/a\u00e7\u00e3o)"
+    },
+    "vpa": {
+      "type": "number",
+      "title": "Valor patrimonial por a\u00e7\u00e3o impl\u00edcito (R$/a\u00e7\u00e3o)"
+    },
+    "fonte": {
+      "type": "string",
+      "title": "Origem oficial (CVM Dados Abertos DFP + ITR)"
+    },
+    "atualizado_em": {
+      "type": "string",
+      "title": "ISO timestamp da \u00faltima sincroniza\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "ativo_base",
+    "cnpj",
+    "periodo_ref",
+    "fonte",
+    "atualizado_em"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

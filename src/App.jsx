@@ -84,6 +84,8 @@ const AuthenticatedApp = () => {
           <Route path="/estrategias" element={<Estrategias />} />
           <Route path="/instagram" element={<Instagram />} />
           <Route path="/monitora-ai" element={<MonitoraAI />} />
+          <Route path="/monitora-ai/fundamentos" element={<MonitoraAI />} />
+          <Route path="/monitora-ai/macro" element={<MonitoraAI />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

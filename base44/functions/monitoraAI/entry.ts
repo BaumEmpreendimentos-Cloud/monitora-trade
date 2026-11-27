@@ -4,8 +4,20 @@ import { secrets } from 'base44:runtime';
 const OPLAB_BASE = 'https://api.oplab.com.br/v3';
 const BCB_BASE = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs';
 
-const MAX_TICKERS = 8;
+const MAX_TICKERS = 16;
+const LOTE_OPLAB = 8;
 const MAX_QUANT_PAYLOAD = 12000;
+
+const ETAPA_DESCRICAO = {
+  PRE_ABERTURA: 'Pré-abertura (leitura de risco global, juros, câmbio e preparação do pregão)',
+  PREGAO: 'Durante o pregão (acompanhamento de cotações, liquidez e proteção de posições abertas)',
+  CRUZAMENTO: 'Cruzamento cross-asset (juros, câmbio, fundamentos CVM e carteira)',
+  POS_FECHAMENTO: 'Pós-fechamento (balanço do dia, P&L consolidado e preparo para o próximo pregão)',
+  SOB_DEMANDA: 'Análise sob demanda (síntese geral do cenário atual)',
+};
+
+const toList = (res) => (Array.isArray(res) ? res : (Array.isArray(res?.items) ? res.items : []));
+const round2 = (n) => (n !== null && Number.isFinite(n) ? Number(n.toFixed(2)) : null);
 
 async function fetchBcb(seriesId) {
   try {
@@ -30,20 +42,67 @@ function sanitizeTickers(input) {
     .filter((t) => /^[A-Z0-9]{4,10}$/.test(t)))].slice(0, MAX_TICKERS);
 }
 
+// A OpLab aceita até 8 tickers por chamada: o excedente vai em lotes paralelos
 async function fetchQuotes(tickers, token) {
   if (!token || !tickers.length) return [];
-  try {
-    const params = new URLSearchParams({ tickers: tickers.join(',') });
-    const res = await fetch(`${OPLAB_BASE}/market/quote?${params}`, {
-      headers: { 'Access-Token': token, Accept: 'application/json' },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : [data];
-  } catch (error) {
-    return [];
+  const lotes = [];
+  for (let i = 0; i < tickers.length; i += LOTE_OPLAB) {
+    lotes.push(tickers.slice(i, i + LOTE_OPLAB));
   }
+  const respostas = await Promise.all(lotes.map(async (lote) => {
+    try {
+      const params = new URLSearchParams({ tickers: lote.join(',') });
+      const res = await fetch(`${OPLAB_BASE}/market/quote?${params}`, {
+        headers: { 'Access-Token': token, Accept: 'application/json' },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [data];
+    } catch (error) {
+      return [];
+    }
+  }));
+  return respostas.flat();
+}
+
+function enrichFundamentals(fundamentos, quotes, selicPct) {
+  const priceMap = {};
+  for (const q of quotes || []) {
+    const sym = String(q.symbol || q.ticker || '').toUpperCase();
+    const p = Number(q.close ?? q.last ?? q.price ?? 0);
+    if (sym && p > 0) priceMap[sym] = p;
+  }
+  return (fundamentos || []).map((f) => {
+    const preco = priceMap[f.ativo_base] || null;
+    const pl = preco && f.lpa_ltm > 0 ? round2(preco / f.lpa_ltm) : null;
+    const pvp = preco && f.vpa > 0 ? round2(preco / f.vpa) : null;
+    const earningsYieldPct = preco && Number.isFinite(f.lpa_ltm) ? round2((f.lpa_ltm / preco) * 100) : null;
+    const spreadSelicPp = earningsYieldPct !== null && Number.isFinite(selicPct)
+      ? round2(earningsYieldPct - selicPct)
+      : null;
+
+    return {
+      ativo: f.ativo_base,
+      setor: f.setor,
+      periodo_cvm: f.periodo_ref,
+      instituicao_financeira: Boolean(f.instituicao_financeira),
+      preco_atual: preco,
+      receita_ltm_mi: f.receita_ltm_m,
+      lucro_liquido_ltm_mi: f.lucro_liquido_ltm_m,
+      patrimonio_liquido_mi: f.patrimonio_liquido_m,
+      roe_pct: f.roe_pct,
+      margem_liquida_pct: f.margem_liquida_pct,
+      divida_liquida_pl: f.divida_liquida_pl,
+      lpa_ltm: f.lpa_ltm,
+      vpa: f.vpa,
+      pl,
+      pvp,
+      earnings_yield_pct: earningsYieldPct,
+      spread_vs_selic_pp: spreadSelicPp,
+      fonte: f.fonte,
+    };
+  });
 }
 
 export default async function (req) {
@@ -77,7 +136,18 @@ export default async function (req) {
 
     const tickers = sanitizeTickers(body.tickers);
     const token = secrets.get('OPLAB_ACCESS_TOKEN');
-    const quotes = await fetchQuotes(tickers, token);
+    const [quotes, rawFundamentos] = await Promise.all([
+      fetchQuotes(tickers, token),
+      tickers.length
+        ? base44.asServiceRole.entities.FundamentoAtivo.filter({ ativo_base: { $in: tickers } }, { limit: 30 }).then(toList).catch(() => [])
+        : Promise.resolve([]),
+    ]);
+
+    const fundamentosCvm = enrichFundamentals(rawFundamentos, quotes, selic?.value ?? null);
+
+    const etapaCodigo = Object.prototype.hasOwnProperty.call(ETAPA_DESCRICAO, body.rotina_etapa)
+      ? body.rotina_etapa
+      : 'SOB_DEMANDA';
 
     // Snapshot verificável (auditoria) do mercado usado nesta análise.
     // A persistência é feita pelo app com o token do próprio usuário (RLS owner).
@@ -89,14 +159,17 @@ export default async function (req) {
       ptax_venda: ptax?.value ?? null,
       ipca_12m: ipca12m?.value ?? null,
       cotacoes_json: JSON.stringify(quotes).slice(0, 40000),
-      fonte_primaria: 'OpLab v3 + BCB SGS',
+      fonte_primaria: fundamentosCvm.length ? 'OpLab v3 + BCB SGS + CVM (DFP/ITR)' : 'OpLab v3 + BCB SGS',
     };
 
     const quantPayload = JSON.stringify(body.quantPayload || {}).slice(0, MAX_QUANT_PAYLOAD);
 
     const invokeComite = (model) => base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: `Você é o Comitê Monitora AI de uma plataforma brasileira de controle de operações na B3.
-Sua função é EXCLUSIVAMENTE interpretar os números já calculados pelo sistema. Não recalcule gregas, payoffs, resultados, margem ou probabilidades, e não invente valores ausentes.
+Sua função é EXCLUSIVAMENTE interpretar os números já calculados pelo sistema. Não recalcule gregas, payoffs, resultados, margem, múltiplos ou probabilidades, e não invente valores ausentes.
+
+ETAPA DA ROTINA:
+${etapaCodigo} — ${ETAPA_DESCRICAO[etapaCodigo]}
 
 DADOS OFICIAIS BCB (fonte: BCB SGS):
 ${JSON.stringify({ selic, cdi, ptax, ipca12m })}
@@ -104,11 +177,15 @@ ${JSON.stringify({ selic, cdi, ptax, ipca12m })}
 COTAÇÕES OPLAB (fonte: OpLab v3):
 ${JSON.stringify(quotes)}
 
+DADOS FUNDAMENTALISTAS OFICIAIS (fonte: CVM Dados Abertos · DFP + ITR · LTM):
+${fundamentosCvm.length ? JSON.stringify(fundamentosCvm) : 'Nenhum fundamento CVM sincronizado ainda (oriente o usuário a clicar em Sincronizar CVM).'}
+
 CARTEIRA E MÉTRICAS DETERMINÍSTICAS CALCULADAS NO APP:
 ${quantPayload}
 
 Regras:
-- Escreva em português do Brasil, de forma objetiva e operacional.
+- Escreva em português do Brasil, de forma objetiva e operacional, coerente com a ETAPA DA ROTINA informada.
+- Para o agente Fundamentalista, utilize explicitamente os múltiplos oficiais da CVM (P/L, P/VP, ROE, Margem Líquida, Dívida Líquida/PL, Earnings Yield e spread vs. Selic) quando presentes acima. Só diga que o dado está ausente para ativos que não constem na lista CVM acima.
 - Se um dado estiver ausente, vazio ou marcado como premissa padrão, diga explicitamente que ele não está disponível em vez de estimar.
 - Nunca afirme margem oficial da B3 nem probabilidade calibrada/validada: os números são estimativas do modelo.
 - Não emita ordem, recomendação garantida ou promessa de retorno.
@@ -154,7 +231,7 @@ Regras:
     const agentes = Array.isArray(llm.agentes) ? llm.agentes : [];
 
     const analisePayload = {
-      rotina_etapa: body.rotina_etapa || 'SOB_DEMANDA',
+      rotina_etapa: etapaCodigo,
       regime_mercado: llm.regime_mercado || 'Não informado',
       correlacao_chave: llm.correlacao_chave || '',
       resumo_executivo: llm.resumo_executivo || 'A IA não retornou um resumo nesta execução.',
@@ -163,7 +240,7 @@ Regras:
       gerado_em: new Date().toISOString(),
     };
 
-    return Response.json({ snapshot: snapshotPayload, analise: analisePayload, agentes, macro, quotes });
+    return Response.json({ snapshot: snapshotPayload, analise: analisePayload, agentes, macro, quotes, fundamentosCvm });
   } catch (error) {
     console.log('monitoraAI error', error?.message);
     return Response.json({ error: error?.message || 'Erro interno' }, { status: 500 });
